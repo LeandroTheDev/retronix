@@ -44,6 +44,9 @@ class _RetroOsAppState extends State<RetroOsApp> {
           textTheme: ThemeData.dark(useMaterial3: false).textTheme.apply(
             fontFamily: 'PressStart',
           ),
+          snackBarTheme: const SnackBarThemeData(
+            contentTextStyle: TextStyle(fontFamily: 'PressStart', color: Colors.white),
+          ),
         ),
         home: const ConsoleSelectorPage(),
       ),

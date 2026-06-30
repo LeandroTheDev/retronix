@@ -1,7 +1,13 @@
 { pkgs, ... }:
 
+let
+  retroarchWithCores = pkgs.retroarch.override {
+    cores = [ pkgs.libretro.mupen64plus ];
+  };
+in
 {
   environment.systemPackages = with pkgs; [
+    retroarchWithCores
     vim
     wget
     sudo
@@ -10,7 +16,5 @@
     file
     binutils
     git
-    retroarch
-    libretro.mupen64plus
   ];
 }
