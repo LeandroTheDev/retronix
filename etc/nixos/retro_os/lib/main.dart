@@ -40,7 +40,11 @@ class _RetroOsAppState extends State<RetroOsApp> {
       child: MaterialApp(
         title: 'RetroOS',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData.dark(),
+        theme: ThemeData.dark(useMaterial3: false).copyWith(
+          textTheme: ThemeData.dark(useMaterial3: false).textTheme.apply(
+            fontFamily: 'PressStart',
+          ),
+        ),
         home: const ConsoleSelectorPage(),
       ),
     );
