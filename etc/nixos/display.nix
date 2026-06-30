@@ -4,7 +4,10 @@ let
   retro_os = pkgs.callPackage ./retro-os.nix {};
 in
 {
-  hardware.graphics.enable = true;
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [ mesa ];
+  };
 
   # cage: Wayland kiosk compositor — boots directly into retro_os Flutter frontend
   services.cage = {

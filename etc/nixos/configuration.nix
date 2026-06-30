@@ -23,6 +23,13 @@
   # Increase CMA pool so the GPU (DRM/KMS) can allocate framebuffers for Wayland
   boot.kernelParams = [ "cma=256M" ];
 
+  programs.retroarch = {
+    enable = true;
+    settings = {
+      video_driver = "vulkan";
+    };
+  };
+
   networking.hostName = "retronix";
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
