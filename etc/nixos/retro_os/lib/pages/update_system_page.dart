@@ -9,6 +9,14 @@ import '../utils/dialogs.dart';
 import '../utils/locale_service.dart';
 
 enum _UpdateState { idle, running, success, error }
+enum _StepStatus { pending, running, success, error }
+
+class _Step {
+  const _Step({required this.label, required this.command});
+
+  final String Function(AppLocalizations) label;
+  final String command;
+}
 
 class UpdateSystemPage extends StatefulWidget {
   const UpdateSystemPage({super.key});
@@ -24,6 +32,20 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
   _UpdateState _state = _UpdateState.idle;
   final _outputLines = <String>[];
   Process? _process;
+
+  static final _steps = [
+    _Step(label: (l) => l.updateStepCleanTmp, command: 'rm -rf $_tmpDir'),
+    _Step(label: (l) => l.updateStepClone, command: 'git clone $_repoUrl $_tmpDir'),
+    _Step(label: (l) => l.updateStepRemoveOld, command: 'sudo rm -rf /etc/nixos'),
+    _Step(
+      label: (l) => l.updateStepCopyNew,
+      command: 'sudo cp -r $_tmpDir/etc/nixos /etc/nixos && rm -rf $_tmpDir',
+    ),
+    _Step(label: (l) => l.updateStepRebuild, command: 'sudo nixos-rebuild switch'),
+  ];
+
+  late List<_StepStatus> _stepStatuses =
+      List.filled(_steps.length, _StepStatus.pending);
 
   @override
   void initState() {
@@ -57,70 +79,84 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
 
   Future<void> _startUpdate() async {
     DebugLogger.log('[UpdateSystemPage] starting update from $_repoUrl');
+    final l = AppLocalizations(LocaleService.instance.locale);
     setState(() {
       _state = _UpdateState.running;
       _outputLines.clear();
+      _stepStatuses = List.filled(_steps.length, _StepStatus.pending);
     });
 
-    // Chain all steps in a single shell invocation so stdout/stderr are unified
-    final script = [
-      'rm -rf $_tmpDir',
-      'git clone $_repoUrl $_tmpDir',
-      'sudo rm -rf /etc/nixos',
-      'sudo cp -r $_tmpDir/etc/nixos /etc/nixos',
-      'rm -rf $_tmpDir',
-      'sudo nixos-rebuild switch',
-    ].join(' && ');
-
-    try {
-      _process = await Process.start('sh', ['-c', script]);
-
-      _process!.stdout
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .listen(_appendLine);
-
-      _process!.stderr
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .listen(_appendLine);
-
-      final exitCode = await _process!.exitCode;
-      DebugLogger.log('[UpdateSystemPage] script exited with code: $exitCode');
-
+    for (var i = 0; i < _steps.length; i++) {
       if (!mounted) return;
+      final step = _steps[i];
+      setState(() => _stepStatuses[i] = _StepStatus.running);
+      _appendLine('\$ ${step.label(l)}');
 
-      if (exitCode == 0) {
-        setState(() => _state = _UpdateState.success);
-        _scrollToBottom();
-        final l = AppLocalizations(LocaleService.instance.locale);
-        final reboot = await showConfirmDialog(
-          context,
-          message: l.updateRebootQuestion,
-          labelYes: l.yes,
-          labelNo: l.no,
-        );
+      int exitCode;
+      try {
+        exitCode = await _runStep(step.command);
+      } catch (e) {
+        DebugLogger.log('[UpdateSystemPage] step "${step.label(l)}" failed to start: $e');
         if (!mounted) return;
-        if (reboot) {
-          DebugLogger.log('[UpdateSystemPage] rebooting system');
-          await Process.run('systemctl', ['reboot']);
-        } else {
-          Navigator.pop(context);
-        }
-      } else if (exitCode == -15) {
-        // -15 = SIGTERM, user pressed Back — page already popped, nothing to do
-      } else {
-        setState(() => _state = _UpdateState.error);
+        setState(() {
+          _outputLines.add('$e');
+          _stepStatuses[i] = _StepStatus.error;
+          _state = _UpdateState.error;
+        });
         _scrollToBottom();
+        return;
       }
-    } catch (e) {
-      DebugLogger.log('[UpdateSystemPage] failed to start script: $e');
+
+      DebugLogger.log('[UpdateSystemPage] step "${step.label(l)}" exited with code: $exitCode');
       if (!mounted) return;
-      setState(() {
-        _outputLines.add('$e');
-        _state = _UpdateState.error;
-      });
+
+      if (exitCode == -15) {
+        // -15 = SIGTERM, user pressed Back — page already popped, nothing to do
+        return;
+      } else if (exitCode != 0) {
+        setState(() {
+          _stepStatuses[i] = _StepStatus.error;
+          _state = _UpdateState.error;
+        });
+        _scrollToBottom();
+        return;
+      }
+
+      setState(() => _stepStatuses[i] = _StepStatus.success);
     }
+
+    if (!mounted) return;
+    setState(() => _state = _UpdateState.success);
+    _scrollToBottom();
+    final reboot = await showConfirmDialog(
+      context,
+      message: l.updateRebootQuestion,
+      labelYes: l.yes,
+      labelNo: l.no,
+    );
+    if (!mounted) return;
+    if (reboot) {
+      DebugLogger.log('[UpdateSystemPage] rebooting system');
+      await Process.run('systemctl', ['reboot']);
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
+  Future<int> _runStep(String command) async {
+    _process = await Process.start('sh', ['-c', command]);
+
+    _process!.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen(_appendLine);
+
+    _process!.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen(_appendLine);
+
+    return _process!.exitCode;
   }
 
   void _appendLine(String line) {
@@ -190,7 +226,9 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _StatusBadge(state: _state, l: l),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
+        _StepList(steps: _steps, statuses: _stepStatuses, l: l),
+        const SizedBox(height: 20),
         Expanded(
           child: Container(
             width: double.infinity,
@@ -224,6 +262,67 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
       child: Text(
         l.updateBackHint,
         style: const TextStyle(color: Colors.white24, fontSize: 13),
+      ),
+    );
+  }
+}
+
+class _StepList extends StatelessWidget {
+  const _StepList({required this.steps, required this.statuses, required this.l});
+
+  final List<_Step> steps;
+  final List<_StepStatus> statuses;
+  final AppLocalizations l;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < steps.length; i++) _StepRow(step: steps[i], status: statuses[i], l: l),
+      ],
+    );
+  }
+}
+
+class _StepRow extends StatelessWidget {
+  const _StepRow({required this.step, required this.status, required this.l});
+
+  final _Step step;
+  final _StepStatus status;
+  final AppLocalizations l;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget icon;
+    final Color textColor;
+    switch (status) {
+      case _StepStatus.pending:
+        icon = const Icon(Icons.radio_button_unchecked, color: Colors.white24, size: 16);
+        textColor = Colors.white38;
+      case _StepStatus.running:
+        icon = const SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
+        );
+        textColor = Colors.white;
+      case _StepStatus.success:
+        icon = const Icon(Icons.check_circle, color: Colors.green, size: 18);
+        textColor = Colors.white70;
+      case _StepStatus.error:
+        icon = const Icon(Icons.cancel, color: Colors.red, size: 18);
+        textColor = Colors.red;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          icon,
+          const SizedBox(width: 12),
+          Text(step.label(l), style: TextStyle(color: textColor, fontSize: 14)),
+        ],
       ),
     );
   }

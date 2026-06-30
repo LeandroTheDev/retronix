@@ -39,6 +39,12 @@ class AppLocalizations {
   String get updateBackHint      => _pick('Back to cancel / return', 'Voltar para cancelar / retornar');
   String get updateRebootQuestion => _pick('Update complete. Restart the system?', 'Atualização concluída, deseja reiniciar o sistema?');
 
+  String get updateStepCleanTmp   => _pick('Cleaning temporary files', 'Limpando arquivos temporários');
+  String get updateStepClone      => _pick('Cloning repository', 'Clonando repositório');
+  String get updateStepRemoveOld  => _pick('Removing old configuration', 'Removendo configuração antiga');
+  String get updateStepCopyNew    => _pick('Applying new configuration', 'Aplicando nova configuração');
+  String get updateStepRebuild    => _pick('Rebuilding system (nixos-rebuild)', 'Recompilando sistema (nixos-rebuild)');
+
   // ── Console Selector ──────────────────────────────────────────────────────
 
   String get selectConsole  => _pick('SELECT CONSOLE', 'SELECIONAR CONSOLE');
