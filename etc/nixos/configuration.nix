@@ -23,6 +23,8 @@
   # Increase CMA pool so the GPU (DRM/KMS) can allocate framebuffers for Wayland
   boot.kernelParams = [ "cma=256M" ];
 
+  fonts.packages = with pkgs; [ noto-fonts ];
+
   networking.hostName = "retronix";
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
