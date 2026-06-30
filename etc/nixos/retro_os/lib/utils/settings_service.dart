@@ -33,6 +33,18 @@ class SettingsService {
     return '${File(Platform.resolvedExecutable).parent.path}/settings.json';
   }
 
+  String _retroarchCfgPath() =>
+      '${Platform.environment['HOME']}/.config/retroarch/retroarch.cfg';
+
+  Future<void> applyRetroarchConfig() async {
+    final file = File(_retroarchCfgPath());
+    await file.parent.create(recursive: true);
+    if (!await file.exists()) {
+      await file.writeAsString('video_driver = "vulkan"\n');
+      DebugLogger.log('[SettingsService] created retroarch.cfg with vulkan driver');
+    }
+  }
+
   String _optFilePath() {
     if (Platform.isLinux) {
       return '${Platform.environment['HOME']}/.config/retroarch/config/Mupen64Plus-Next/Mupen64Plus-Next.opt';
@@ -170,6 +182,7 @@ class SettingsService {
     final frameDupesValue = frameDupes == 'true' ? 'True' : 'False';
 
     final content = [
+      'mupen64plus-rdp-plugin = "angrylion"',
       'mupen64plus-169resolutions = "${res[0]}"',
       'mupen64plus-43resolutions = "${res[1]}"',
       'mupen64plus-MSAA = "$msaa"',
