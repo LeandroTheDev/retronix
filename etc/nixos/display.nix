@@ -11,6 +11,7 @@ in
     enable = true;
     user = "admin";
     program = "${retro_os}/bin/retro_os";
+    environment.FONTCONFIG_FILE = "/etc/fonts/fonts.conf";
   };
 
   # Audio
