@@ -20,7 +20,7 @@
   # Enables the generation of /boot/extlinux/extlinux.conf
   boot.loader.generic-extlinux-compatible.enable = true;
 
-  networking.hostName = "dont_forget_to_change_the_machine_name_here_alright_interrogation_pontuation";
+  networking.hostName = "retronix";
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
 
