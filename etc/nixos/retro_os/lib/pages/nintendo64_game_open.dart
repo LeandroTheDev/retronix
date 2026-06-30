@@ -52,9 +52,16 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
 
       final process = await Process.start(
         'retroarch',
-        ['-L', corePath, '--fullscreen', romPath],
+        ['-L', corePath, '--fullscreen', '--verbose', romPath],
       );
       DebugLogger.log('[Nintendo64GameOpen] retroarch launched (pid: ${process.pid})');
+
+      process.stdout.transform(const SystemEncoding().decoder).listen(
+        (line) => DebugLogger.log('[retroarch:stdout] $line'),
+      );
+      process.stderr.transform(const SystemEncoding().decoder).listen(
+        (line) => DebugLogger.log('[retroarch:stderr] $line'),
+      );
 
       final sub = _watchExitCombo(process);
 
