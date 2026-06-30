@@ -3,7 +3,7 @@ import 'dart:io';
 import 'debug_logger.dart';
 
 const _n64CoreDefault =
-    '/run/current-system/sw/lib/retroarch/cores/mupen64plus_next_libretro.so';
+    '/run/current-system/sw/lib/retroarch/cores/parallel_n64_libretro.so';
 
 // Resolution: user key → [16:9 value, 4:3 value]
 const _resolutionMap = {

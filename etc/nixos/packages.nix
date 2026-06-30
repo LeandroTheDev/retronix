@@ -3,7 +3,7 @@
 {
   environment.systemPackages = with pkgs; [
     retroarch
-    libretro.mupen64plus
+    libretro.parallel-n64
     vim
     wget
     sudo
