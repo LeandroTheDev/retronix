@@ -1,13 +1,9 @@
 { pkgs, ... }:
 
-let
-  retroarchWithCores = pkgs.retroarch.override {
-    cores = [ pkgs.libretro.mupen64plus ];
-  };
-in
 {
   environment.systemPackages = with pkgs; [
-    retroarchWithCores
+    retroarch
+    libretro.mupen64plus
     vim
     wget
     sudo
