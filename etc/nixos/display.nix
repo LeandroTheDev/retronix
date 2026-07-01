@@ -76,6 +76,11 @@ in
   # nixpkgs revision (unlike gdm/sddm/lemurs) — it still lives under xserver.
   services.xserver.displayManager.lightdm.enable = true;
 
-  # Audio — raw ALSA without PipeWire middleware for lowest latency
-  hardware.alsa.enable = true;
+  # Audio
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    pulse.enable = true;
+  };
 }

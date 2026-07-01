@@ -40,7 +40,6 @@ class _RetroOsAppState extends State<RetroOsApp> {
       localizations: AppLocalizations(LocaleService.instance.locale),
       child: MaterialApp(
         title: 'RetroOS',
-        showPerformanceOverlay: true,
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(useMaterial3: false).copyWith(
           textTheme: ThemeData.dark(useMaterial3: false).textTheme.apply(fontFamily: 'PressStart'),

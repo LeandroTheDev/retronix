@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 import 'debug_logger.dart';
 
 const _unknown = 'Unknown';
@@ -177,6 +179,86 @@ Future<bool> applyDisplayMode(DisplayMode mode) async {
     DebugLogger.log('[system_info] applyDisplayMode(${mode.label}) failed: $e');
     return false;
   }
+}
+
+class AudioDevice {
+  const AudioDevice(this.name, this.label);
+  final String name;  // PipeWire sink name, empty = system default
+  final String label;
+}
+
+// Plays a short beep on [deviceName] (PipeWire sink). Empty = system default.
+// Generates raw PCM inline — no sound file needed.
+Future<void> playBeep(String deviceName) async {
+  const rate = 44100;
+  const freq = 520.0;
+  final frames = (rate * 0.18).toInt();
+  final data = ByteData(frames * 2);
+  for (var i = 0; i < frames; i++) {
+    final fadeIn  = i < frames * 0.1 ? i / (frames * 0.1) : 1.0;
+    final fadeOut = i > frames * 0.5 ? (frames - i) / (frames * 0.5) : 1.0;
+    final sample  = (sin(2 * pi * freq * i / rate) * 5000 * fadeIn * fadeOut).round();
+    data.setInt16(i * 2, sample, Endian.little);
+  }
+  try {
+    final args = ['--raw', '--format=s16le', '--rate=$rate', '--channels=1'];
+    if (deviceName.isNotEmpty) args.add('--device=$deviceName');
+    final process = await Process.start('paplay', args);
+    process.stdin.add(data.buffer.asUint8List());
+    await process.stdin.close();
+    await process.exitCode;
+  } catch (e) {
+    DebugLogger.log('[system_info] playBeep failed: $e');
+  }
+}
+
+// Softer, shorter beep for volume feedback.
+Future<void> playVolumeBeep(String deviceName) async {
+  const rate = 44100;
+  const freq = 480.0;
+  final frames = (rate * 0.1).toInt();
+  final data = ByteData(frames * 2);
+  for (var i = 0; i < frames; i++) {
+    final fadeIn  = i < frames * 0.1 ? i / (frames * 0.1) : 1.0;
+    final fadeOut = i > frames * 0.4 ? (frames - i) / (frames * 0.6) : 1.0;
+    final sample  = (sin(2 * pi * freq * i / rate) * 2500 * fadeIn * fadeOut).round();
+    data.setInt16(i * 2, sample, Endian.little);
+  }
+  try {
+    final args = ['--raw', '--format=s16le', '--rate=$rate', '--channels=1'];
+    if (deviceName.isNotEmpty) args.add('--device=$deviceName');
+    final process = await Process.start('paplay', args);
+    process.stdin.add(data.buffer.asUint8List());
+    await process.stdin.close();
+    await process.exitCode;
+  } catch (e) {
+    DebugLogger.log('[system_info] playVolumeBeep failed: $e');
+  }
+}
+
+// Lists PipeWire sinks via pactl. Always includes a "Default" entry first.
+Future<List<AudioDevice>> getAudioDevices() async {
+  final devices = <AudioDevice>[const AudioDevice('', 'Default')];
+  try {
+    final result = await Process.run('sh', ['-c', 'pactl list sinks 2>/dev/null']);
+    final output = result.stdout as String;
+    String? currentName;
+    for (final line in output.split('\n')) {
+      final nameMatch = RegExp(r'^\s+Name:\s+(.+)$').firstMatch(line);
+      if (nameMatch != null) {
+        currentName = nameMatch.group(1)!.trim();
+        continue;
+      }
+      final descMatch = RegExp(r'^\s+Description:\s+(.+)$').firstMatch(line);
+      if (descMatch != null && currentName != null) {
+        devices.add(AudioDevice(currentName, descMatch.group(1)!.trim()));
+        currentName = null;
+      }
+    }
+  } catch (e) {
+    DebugLogger.log('[system_info] getAudioDevices failed: $e');
+  }
+  return devices;
 }
 
 // Returns the current master volume as a percentage (0–100), trying 'Master'

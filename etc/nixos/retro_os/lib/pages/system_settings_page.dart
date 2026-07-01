@@ -5,6 +5,7 @@ import '../utils/app_localizations.dart';
 import '../utils/locale_service.dart';
 import '../utils/settings_service.dart';
 import '../utils/system_info.dart';
+import '../utils/debug_logger.dart';
 
 class SystemSettingsPage extends StatefulWidget {
   const SystemSettingsPage({super.key});
@@ -28,6 +29,10 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   int _volumeIdx = 5; // default 50%
   bool _loadingVolume = true;
 
+  List<AudioDevice> _audioDevices = [];
+  int _audioIdx = 0;
+  bool _loadingAudio = true;
+
   @override
   void initState() {
     super.initState();
@@ -35,12 +40,26 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     _sub = GamepadService.instance.actions.listen(_handleAction);
     _loadResolutions();
     _loadVolume();
+    _loadAudioDevices();
   }
 
   @override
   void dispose() {
     _sub.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadAudioDevices() async {
+    final devices = await getAudioDevices();
+    final saved = await SettingsService.instance.audioDevice();
+    if (!mounted) return;
+    setState(() {
+      _audioDevices = devices;
+      final idx = devices.indexWhere((d) => d.name == saved);
+      _audioIdx = idx == -1 ? 0 : idx;
+      _loadingAudio = false;
+    });
+    DebugLogger.log('[SystemSettingsPage] audio devices: ${devices.map((d) => d.name).toList()}');
   }
 
   Future<void> _loadVolume() async {
@@ -70,9 +89,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 2));
+        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 3));
       case GamepadAction.down:
-        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 2));
+        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 3));
       case GamepadAction.left:
         _cycleValue(-1);
       case GamepadAction.right:
@@ -104,7 +123,17 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         final next = (_volumeIdx + dir).clamp(0, _volumeOptions.length - 1);
         if (next == _volumeIdx) return;
         setState(() => _volumeIdx = next);
-        setVolumeLevel(int.parse(_volumeOptions[next]));
+        final vol = int.parse(_volumeOptions[next]);
+        setVolumeLevel(vol);
+        playVolumeBeep(_audioDevices.isNotEmpty ? _audioDevices[_audioIdx].name : '');
+      case 3:
+        if (_loadingAudio || _audioDevices.isEmpty) return;
+        final next = (_audioIdx + dir).clamp(0, _audioDevices.length - 1);
+        if (next == _audioIdx) return;
+        setState(() => _audioIdx = next);
+        final device = _audioDevices[next];
+        SettingsService.instance.setAudioDevice(device.name);
+        playBeep(device.name);
     }
   }
 
@@ -123,6 +152,11 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     }
 
     final String volumeValue = _loadingVolume ? '...' : '${_volumeOptions[_volumeIdx]}%';
+    final String audioValue = _loadingAudio
+        ? '...'
+        : _audioDevices.isEmpty
+            ? '—'
+            : _audioDevices[_audioIdx].label;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -162,6 +196,14 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                   selected: _selectedIndex == 2,
                   canLeft:  !_loadingVolume && _volumeIdx > 0,
                   canRight: !_loadingVolume && _volumeIdx < _volumeOptions.length - 1,
+                ),
+                _OptionRow(
+                  icon: Icons.speaker,
+                  label: l.audioDevice,
+                  value: audioValue,
+                  selected: _selectedIndex == 3,
+                  canLeft:  !_loadingAudio && _audioIdx > 0,
+                  canRight: !_loadingAudio && _audioIdx < _audioDevices.length - 1,
                 ),
               ],
             ),

@@ -197,6 +197,20 @@ class SettingsService {
     await file.writeAsString('$resolution\n${rate.toStringAsFixed(2)}\n');
   }
 
+  // ── Audio device ─────────────────────────────────────────────────────────
+  // Empty string = system default.
+
+  Future<String> audioDevice() async {
+    await _ensureLoaded();
+    return (_data['audio_device'] as String?) ?? '';
+  }
+
+  Future<void> setAudioDevice(String value) async {
+    await _ensureLoaded();
+    _data['audio_device'] = value;
+    await _save();
+  }
+
   // ── Language ──────────────────────────────────────────────────────────────
 
   Future<String> language() async {
@@ -289,11 +303,17 @@ class SettingsService {
     // aspectratio_lut index: 22 = Core Provided, 24 = Full (stretch to fill,
     // ignoring aspect entirely).
     final aspectRatioIndex = aspect == 'fill' ? '24' : '22';
+    final device = await audioDevice();
+
+    final lines = [
+      'aspect_ratio_index = "$aspectRatioIndex"',
+      'audio_device = "$device"',
+    ];
 
     final path = _retroarchOverridePath();
     final file = File(path);
     await file.parent.create(recursive: true);
-    await file.writeAsString('aspect_ratio_index = "$aspectRatioIndex"\n');
+    await file.writeAsString('${lines.join('\n')}\n');
     DebugLogger.log('[SettingsService] wrote RetroArch overrides to $path');
     return path;
   }
