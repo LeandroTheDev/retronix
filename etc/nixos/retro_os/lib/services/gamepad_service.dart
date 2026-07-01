@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:gamepads/gamepads.dart';
+import 'package:retro_os/utils/debug_logger.dart';
 
 enum GamepadAction { up, down, left, right, confirm, back, start, select }
 
@@ -13,22 +14,23 @@ class GamepadService {
 
   StreamSubscription? _subscription;
   final Map<String, double> _analogState = {};
+  final Map<String, Timer?> _repeatTimers = {};
 
-  DateTime _lastAnalog = DateTime.fromMillisecondsSinceEpoch(0);
+  static const _repeatDelay = Duration(milliseconds: 400);
+  static const _repeatInterval = Duration(milliseconds: 120);
 
   void init() {
     _subscription = Gamepads.events.listen((event) {
-      if (event.type == KeyType.analog) {
-        final now = DateTime.now();
-        if (now.difference(_lastAnalog).inMilliseconds < 32) return;
-        _lastAnalog = now;
-      }
+      DebugLogger.log('GAMEPAD RAW: type=${event.type.name} key=${event.key} value=${event.value} gamepadId=${event.gamepadId}');
       _handleEvent(event);
     });
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
   }
 
   void dispose() {
+    for (final t in _repeatTimers.values) {
+      t?.cancel();
+    }
     _subscription?.cancel();
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
     _controller.close();
@@ -62,10 +64,10 @@ class GamepadService {
 
   GamepadAction? _mapButton(String key) {
     return switch (key) {
-      'a' || 'button_0' => GamepadAction.confirm,
-      'b' || 'button_1' => GamepadAction.back,
-      'start' || 'button_9' => GamepadAction.start,
-      'select' || 'button_8' => GamepadAction.select,
+      'a' || 'button_0' || '5' => GamepadAction.confirm,
+      'b' || 'button_1' || '4' => GamepadAction.back,
+      'start' || 'button_9' || '9' => GamepadAction.start,
+      'select' || 'button_8' || '8' => GamepadAction.select,
       'dpad_up' => GamepadAction.up,
       'dpad_down' => GamepadAction.down,
       'dpad_left' => GamepadAction.left,
@@ -74,17 +76,36 @@ class GamepadService {
     };
   }
 
-  // Fires once per direction cross (avoids continuous events while stick is held)
+  static const _analogThreshold = 16000.0;
+
+  void _startRepeat(String timerKey, GamepadAction action) {
+    _repeatTimers[timerKey]?.cancel();
+    _controller.add(action);
+    _repeatTimers[timerKey] = Timer(_repeatDelay, () {
+      _repeatTimers[timerKey] = Timer.periodic(_repeatInterval, (_) {
+        _controller.add(action);
+      });
+    });
+  }
+
+  void _stopRepeat(String timerKey) {
+    _repeatTimers[timerKey]?.cancel();
+    _repeatTimers[timerKey] = null;
+  }
+
   void _handleAnalog(String key, double value) {
     final prev = _analogState[key] ?? 0.0;
     _analogState[key] = value;
 
-    if (key == 'left_stick_x' || key == 'hat_x') {
-      if (value < -0.5 && prev >= -0.5) _controller.add(GamepadAction.left);
-      if (value > 0.5 && prev <= 0.5) _controller.add(GamepadAction.right);
-    } else if (key == 'left_stick_y' || key == 'hat_y') {
-      if (value < -0.5 && prev >= -0.5) _controller.add(GamepadAction.up);
-      if (value > 0.5 && prev <= 0.5) _controller.add(GamepadAction.down);
+    // key '0'/'4' = X axis (stick/hat), key '1'/'5' = Y axis (stick/hat)
+    if (key == 'left_stick_x' || key == 'hat_x' || key == '0' || key == '4') {
+      if (value < -_analogThreshold && prev >= -_analogThreshold) _startRepeat('${key}_neg', GamepadAction.left);
+      else if (value > _analogThreshold && prev <= _analogThreshold) _startRepeat('${key}_pos', GamepadAction.right);
+      else if (value.abs() <= _analogThreshold) { _stopRepeat('${key}_neg'); _stopRepeat('${key}_pos'); }
+    } else if (key == 'left_stick_y' || key == 'hat_y' || key == '1' || key == '5') {
+      if (value < -_analogThreshold && prev >= -_analogThreshold) _startRepeat('${key}_neg', GamepadAction.up);
+      else if (value > _analogThreshold && prev <= _analogThreshold) _startRepeat('${key}_pos', GamepadAction.down);
+      else if (value.abs() <= _analogThreshold) { _stopRepeat('${key}_neg'); _stopRepeat('${key}_pos'); }
     }
   }
 }
