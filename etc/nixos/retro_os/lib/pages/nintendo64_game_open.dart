@@ -50,13 +50,14 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
 
     try {
       await SettingsService.instance.applyN64CoreOptions();
+      final overridePath = await SettingsService.instance.applyRetroarchOverrides();
 
       DebugLogger.log('[Nintendo64GameOpen] core: $corePath');
       DebugLogger.log('[Nintendo64GameOpen] ROM: $romPath');
 
       final process = await Process.start(
         'retroarch',
-        ['-L', corePath, '--fullscreen', '--verbose', romPath],
+        ['-L', corePath, '--appendconfig=$overridePath', '--fullscreen', '--verbose', romPath],
         environment: {
           ...Platform.environment,
           'MESA_GL_VERSION_OVERRIDE': '3.3COMPAT',

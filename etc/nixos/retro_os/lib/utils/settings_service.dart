@@ -85,7 +85,7 @@ class SettingsService {
   // n64_resolution: 'native' | 'hd' | 'fullhd' | '4k'
   Future<String> n64Resolution() async {
     await _ensureLoaded();
-    return (_data['n64_resolution'] as String?) ?? 'hd';
+    return (_data['n64_resolution'] as String?) ?? 'native';
   }
 
   Future<void> setN64Resolution(String value) async {
@@ -109,7 +109,7 @@ class SettingsService {
   // n64_texture_filter: 'nearest' | 'linear'
   Future<String> n64TextureFilter() async {
     await _ensureLoaded();
-    return (_data['n64_texture_filter'] as String?) ?? 'linear';
+    return (_data['n64_texture_filter'] as String?) ?? 'nearest';
   }
 
   Future<void> setN64TextureFilter(String value) async {
@@ -121,7 +121,7 @@ class SettingsService {
   // n64_frame_dupes: 'false' | 'true'
   Future<String> n64FrameDupes() async {
     await _ensureLoaded();
-    return (_data['n64_frame_dupes'] as String?) ?? 'false';
+    return (_data['n64_frame_dupes'] as String?) ?? 'true';
   }
 
   Future<void> setN64FrameDupes(String value) async {
@@ -233,6 +233,10 @@ class SettingsService {
     final frameDupesValue = frameDupes == 'true' ? 'True' : 'False';
 
     final aspect = await n64Aspect();
+    // 'fill' isn't a valid mupen64plus-aspect value — that's handled at the
+    // RetroArch level instead, via applyRetroarchOverrides(). The core still
+    // needs a real base aspect to render, so fall back to 16:9 for it.
+    final coreAspect = aspect == 'fill' ? '16:9' : aspect;
     final overscanEnabled = await n64OverscanEnabled();
     final overscanEnabledValue = overscanEnabled == 'true' ? 'Enabled' : 'Disabled';
     final overscanAmount = await n64OverscanAmount();
@@ -243,7 +247,7 @@ class SettingsService {
       'mupen64plus-MultiSampling = "$msaa"',
       'mupen64plus-BilinearMode = "$bilinear"',
       'mupen64plus-FrameDuping = "$frameDupesValue"',
-      'mupen64plus-aspect = "$aspect"',
+      'mupen64plus-aspect = "$coreAspect"',
       'mupen64plus-EnableOverscan = "$overscanEnabledValue"',
       'mupen64plus-OverscanTop = "$overscanAmount"',
       'mupen64plus-OverscanLeft = "$overscanAmount"',
@@ -255,5 +259,35 @@ class SettingsService {
     await file.parent.create(recursive: true);
     await file.writeAsString(content);
     DebugLogger.log('[SettingsService] wrote N64 core options to ${_optFilePath()}');
+  }
+
+  // ── Apply to RetroArch (transient, via --appendconfig) ──────────────────
+
+  String _retroarchOverridePath() {
+    if (Platform.isLinux) {
+      return '${Platform.environment['HOME']}/.config/retroarch/retro_os_override.cfg';
+    } else if (Platform.isWindows) {
+      final appData = Platform.environment['APPDATA'] ??
+          '${Platform.environment['USERPROFILE']}\\AppData\\Roaming';
+      return '$appData\\RetroArch\\retro_os_override.cfg';
+    }
+    return '${File(Platform.resolvedExecutable).parent.path}/retro_os_override.cfg';
+  }
+
+  // Writes a small cfg meant for `retroarch --appendconfig=<path>` — settings
+  // that live on the RetroArch side rather than in a core's .opt file, so we
+  // never touch the main retroarch.cfg. Returns the path to pass along.
+  Future<String> applyRetroarchOverrides() async {
+    final aspect = await n64Aspect();
+    // aspectratio_lut index: 22 = Core Provided, 24 = Full (stretch to fill,
+    // ignoring aspect entirely).
+    final aspectRatioIndex = aspect == 'fill' ? '24' : '22';
+
+    final path = _retroarchOverridePath();
+    final file = File(path);
+    await file.parent.create(recursive: true);
+    await file.writeAsString('aspect_ratio_index = "$aspectRatioIndex"\n');
+    DebugLogger.log('[SettingsService] wrote RetroArch overrides to $path');
+    return path;
   }
 }

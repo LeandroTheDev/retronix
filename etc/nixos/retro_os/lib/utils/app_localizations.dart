@@ -87,7 +87,8 @@ class AppLocalizations {
   List<String> get msaaLabels       => [off, '2x', '4x', '8x'];
   List<String> get filterLabels     => [_pick('Nearest (pixelated)', 'Nearest (pixelado)'), _pick('Linear (smoothed)', 'Linear (suavizado)')];
   List<String> get frameDupesLabels => [off, on];
-  List<String> get aspectLabels     => ['4:3', '16:9', _pick('16:9 (adjusted)', '16:9 (ajustado)')];
+  List<String> get aspectLabels     =>
+      ['4:3', '16:9', _pick('16:9 (adjusted)', '16:9 (ajustado)'), _pick('Fill Screen', 'Preencher Tela')];
   List<String> get overscanEnabledLabels => [off, on];
 
   // ── About System Page ─────────────────────────────────────────────────────

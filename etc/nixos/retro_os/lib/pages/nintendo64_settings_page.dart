@@ -22,14 +22,14 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
   final _msaaOptions           = const ['0', '2', '4', '8'];
   final _filterOptions         = const ['nearest', 'linear'];
   final _frameDupesOptions     = const ['false', 'true'];
-  final _aspectOptions         = const ['4:3', '16:9', '16:9 adjusted'];
+  final _aspectOptions         = const ['4:3', '16:9', '16:9 adjusted', 'fill'];
   final _overscanEnabledOptions = const ['false', 'true'];
   final _overscanAmountOptions = const ['0', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50'];
 
-  int _resIdx             = 1;
+  int _resIdx             = 0;
   int _msaaIdx            = 0;
-  int _filterIdx          = 1;
-  int _frameDupesIdx      = 0;
+  int _filterIdx          = 0;
+  int _frameDupesIdx      = 1;
   int _aspectIdx          = 0;
   int _overscanEnabledIdx = 1;
   int _overscanAmountIdx  = 0;
