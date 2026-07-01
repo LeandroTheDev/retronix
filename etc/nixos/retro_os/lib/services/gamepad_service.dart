@@ -14,8 +14,17 @@ class GamepadService {
   StreamSubscription? _subscription;
   final Map<String, double> _analogState = {};
 
+  DateTime _lastAnalog = DateTime.fromMillisecondsSinceEpoch(0);
+
   void init() {
-    _subscription = Gamepads.events.listen(_handleEvent);
+    _subscription = Gamepads.events.listen((event) {
+      if (event.type == KeyType.analog) {
+        final now = DateTime.now();
+        if (now.difference(_lastAnalog).inMilliseconds < 32) return;
+        _lastAnalog = now;
+      }
+      _handleEvent(event);
+    });
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
   }
 

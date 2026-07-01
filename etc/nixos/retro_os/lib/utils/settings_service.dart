@@ -182,7 +182,6 @@ class SettingsService {
     final frameDupesValue = frameDupes == 'true' ? 'True' : 'False';
 
     final content = [
-      'mupen64plus-rdp-plugin = "angrylion"',
       'mupen64plus-169resolutions = "${res[0]}"',
       'mupen64plus-43resolutions = "${res[1]}"',
       'mupen64plus-MSAA = "$msaa"',
