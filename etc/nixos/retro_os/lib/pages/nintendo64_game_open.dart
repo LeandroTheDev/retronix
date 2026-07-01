@@ -18,6 +18,10 @@ class Nintendo64GameOpen extends StatefulWidget {
 }
 
 class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
+  // Once retroarch's dynarec is up, the emulator owns the screen — keeping
+  // our own spinner animating underneath just burns CPU/GPU for nothing.
+  bool _showLoadingUi = true;
+
   @override
   void initState() {
     super.initState();
@@ -63,7 +67,13 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       DebugLogger.log('[Nintendo64GameOpen] retroarch launched (pid: ${process.pid})');
 
       process.stdout.transform(const SystemEncoding().decoder).listen(
-        (line) => DebugLogger.log('[retroarch:stdout] $line'),
+        (line) {
+          DebugLogger.log('[retroarch:stdout] $line');
+          if (_showLoadingUi && line.contains('Init new dynarec')) {
+            DebugLogger.log('[Nintendo64GameOpen] dynarec ready — dropping loading UI');
+            if (mounted) setState(() => _showLoadingUi = false);
+          }
+        },
       );
       process.stderr.transform(const SystemEncoding().decoder).listen(
         (line) => DebugLogger.log('[retroarch:stderr] $line'),
@@ -108,6 +118,12 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_showLoadingUi) {
+      // Retroarch's own fullscreen window is on top by now; a bare black
+      // scaffold with nothing animating costs nothing to keep composited.
+      return const Scaffold(backgroundColor: Colors.black);
+    }
+
     final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.black,
