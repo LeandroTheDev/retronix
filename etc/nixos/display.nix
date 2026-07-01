@@ -39,7 +39,7 @@ let
       fi
     fi
 
-    ${pkgs.xorg.xset}/bin/xset s off -dpms
+    ${pkgs.xset}/bin/xset s off -dpms
     ${pkgs.matchbox}/bin/matchbox-window-manager &
     exec ${retro_os}/bin/retro_os
   '';
