@@ -179,6 +179,40 @@ Future<bool> applyDisplayMode(DisplayMode mode) async {
   }
 }
 
+// Returns the current master volume as a percentage (0–100), trying 'Master'
+// then 'PCM' as fallback. Returns 50 if neither control is found.
+Future<int> getVolumeLevel() async {
+  for (final control in ['Master', 'PCM']) {
+    try {
+      final result = await Process.run('sh', [
+        '-c',
+        "amixer get '$control' 2>/dev/null | grep -oP '(?<=\\[)\\d+(?=%\\])' | head -1",
+      ]);
+      final value = int.tryParse((result.stdout as String).trim());
+      if (value != null) return value;
+    } catch (e) {
+      DebugLogger.log('[system_info] getVolumeLevel($control) failed: $e');
+    }
+  }
+  return 50;
+}
+
+// Sets the master volume to [percent] (0–100), trying 'Master' then 'PCM'.
+Future<void> setVolumeLevel(int percent) async {
+  for (final control in ['Master', 'PCM']) {
+    try {
+      final result = await Process.run('sh', [
+        '-c',
+        "amixer set '$control' $percent% 2>/dev/null",
+      ]);
+      if (result.exitCode == 0) return;
+    } catch (e) {
+      DebugLogger.log('[system_info] setVolumeLevel($control) failed: $e');
+    }
+  }
+  DebugLogger.log('[system_info] setVolumeLevel: no working amixer control found');
+}
+
 // e.g. "3.1 Mesa 24.0.0" — via glxinfo, requires the glxinfo package
 Future<String> getOpenGlVersion() async {
   try {

@@ -24,18 +24,33 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   int _resIdx = 0;
   bool _loadingResolutions = true;
 
+  final _volumeOptions = const ['0', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100'];
+  int _volumeIdx = 5; // default 50%
+  bool _loadingVolume = true;
+
   @override
   void initState() {
     super.initState();
     _langIdx = _langOptions.indexOf(LocaleService.instance.locale).clamp(0, _langOptions.length - 1);
     _sub = GamepadService.instance.actions.listen(_handleAction);
     _loadResolutions();
+    _loadVolume();
   }
 
   @override
   void dispose() {
     _sub.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadVolume() async {
+    final vol = await getVolumeLevel();
+    if (!mounted) return;
+    setState(() {
+      final rounded = (vol / 10).round() * 10;
+      _volumeIdx = _volumeOptions.indexOf(rounded.toString()).clamp(0, _volumeOptions.length - 1);
+      _loadingVolume = false;
+    });
   }
 
   Future<void> _loadResolutions() async {
@@ -55,9 +70,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 1));
+        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 2));
       case GamepadAction.down:
-        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 1));
+        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 2));
       case GamepadAction.left:
         _cycleValue(-1);
       case GamepadAction.right:
@@ -84,6 +99,12 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         final mode = _resolutionOptions[next];
         applyDisplayMode(mode);
         SettingsService.instance.setSystemDisplayMode(mode.resolution, mode.rate);
+      case 2:
+        if (_loadingVolume) return;
+        final next = (_volumeIdx + dir).clamp(0, _volumeOptions.length - 1);
+        if (next == _volumeIdx) return;
+        setState(() => _volumeIdx = next);
+        setVolumeLevel(int.parse(_volumeOptions[next]));
     }
   }
 
@@ -100,6 +121,8 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     } else {
       resolutionValue = _resolutionOptions[_resIdx].label;
     }
+
+    final String volumeValue = _loadingVolume ? '...' : '${_volumeOptions[_volumeIdx]}%';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -131,6 +154,14 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                   selected: _selectedIndex == 1,
                   canLeft:  !_loadingResolutions && _resIdx > 0,
                   canRight: !_loadingResolutions && _resIdx < _resolutionOptions.length - 1,
+                ),
+                _OptionRow(
+                  icon: Icons.volume_up,
+                  label: l.volume,
+                  value: volumeValue,
+                  selected: _selectedIndex == 2,
+                  canLeft:  !_loadingVolume && _volumeIdx > 0,
+                  canRight: !_loadingVolume && _volumeIdx < _volumeOptions.length - 1,
                 ),
               ],
             ),
