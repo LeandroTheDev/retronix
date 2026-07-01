@@ -49,7 +49,6 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
     }
 
     try {
-      await SettingsService.instance.applyRetroarchConfig();
       await SettingsService.instance.applyN64CoreOptions();
 
       DebugLogger.log('[Nintendo64GameOpen] core: $corePath');

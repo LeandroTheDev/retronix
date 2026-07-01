@@ -33,35 +33,6 @@ class SettingsService {
     return '${File(Platform.resolvedExecutable).parent.path}/settings.json';
   }
 
-  String _retroarchCfgPath() =>
-      '${Platform.environment['HOME']}/.config/retroarch/retroarch.cfg';
-
-  Future<void> applyRetroarchConfig() async {
-    final file = File(_retroarchCfgPath());
-    await file.parent.create(recursive: true);
-    if (!await file.exists()) {
-      await file.writeAsString(
-        'video_driver = "vulkan"\n'
-        'suspend_screensaver_enable = "false"\n',
-      );
-      DebugLogger.log(
-        '[SettingsService] created retroarch.cfg with vulkan driver, screensaver suspend disabled',
-      );
-      return;
-    }
-    // Screensaver/DPMS is already disabled at the Xorg level, so RetroArch's
-    // own xdg-screensaver suspend (which spawns a watcher bash+xprop pair
-    // per session) is redundant — patch it off for cfgs written before this.
-    final content = await file.readAsString();
-    if (!content.contains('suspend_screensaver_enable')) {
-      await file.writeAsString(
-        'suspend_screensaver_enable = "false"\n',
-        mode: FileMode.append,
-      );
-      DebugLogger.log('[SettingsService] patched retroarch.cfg: screensaver suspend disabled');
-    }
-  }
-
   String _optFilePath() {
     if (Platform.isLinux) {
       return '${Platform.environment['HOME']}/.config/retroarch/config/Mupen64Plus-Next/Mupen64Plus-Next.opt';
