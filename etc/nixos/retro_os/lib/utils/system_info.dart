@@ -240,7 +240,10 @@ Future<void> playVolumeBeep(String deviceName) async {
 Future<List<AudioDevice>> getAudioDevices() async {
   final devices = <AudioDevice>[const AudioDevice('', 'Default')];
   try {
-    final result = await Process.run('sh', ['-c', 'pactl list sinks 2>/dev/null']);
+    final result = await Process.run('sh', ['-c', 'pactl list sinks']);
+    DebugLogger.log('[getAudioDevices] exitCode: ${result.exitCode}');
+    DebugLogger.log('[getAudioDevices] stderr: ${result.stderr}');
+    DebugLogger.log('[getAudioDevices] stdout length: ${(result.stdout as String).length}');
     final output = result.stdout as String;
     String? currentName;
     for (final line in output.split('\n')) {
