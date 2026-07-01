@@ -88,9 +88,7 @@ class GamepadService {
     DebugLogger.log('[GamepadService] Gamepads.list() -> ${controllers.length} controller(s)');
     for (final c in controllers) {
       _controllerNames[c.id] = c.name;
-      DebugLogger.log(
-        '[GamepadService]   id="${c.id}" name="${c.name}" guessedType=${controllerTypeFromName(c.name)}',
-      );
+      DebugLogger.log('[GamepadService]   id="${c.id}" name="${c.name}" guessedType=${controllerTypeFromName(c.name)}');
     }
 
     final connectedIds = controllers.map((c) => c.id).toSet();
@@ -137,12 +135,7 @@ class GamepadService {
     return action != null;
   }
 
-  static const _repeatableActions = {
-    GamepadAction.up,
-    GamepadAction.down,
-    GamepadAction.left,
-    GamepadAction.right,
-  };
+  static const _repeatableActions = {GamepadAction.up, GamepadAction.down, GamepadAction.left, GamepadAction.right};
 
   void _handleEvent(GamepadEvent event) {
     if (event.type == KeyType.button) {
@@ -201,13 +194,23 @@ class GamepadService {
 
     // key '0'/'4' = X axis (stick/hat), key '1'/'5' = Y axis (stick/hat)
     if (key == 'left_stick_x' || key == 'hat_x' || key == '0' || key == '4') {
-      if (value < -_analogThreshold && prev >= -_analogThreshold) _startRepeat('${key}_neg', GamepadAction.left);
-      else if (value > _analogThreshold && prev <= _analogThreshold) _startRepeat('${key}_pos', GamepadAction.right);
-      else if (value.abs() <= _analogThreshold) { _stopRepeat('${key}_neg'); _stopRepeat('${key}_pos'); }
+      if (value < -_analogThreshold && prev >= -_analogThreshold) {
+        _startRepeat('${key}_neg', GamepadAction.left);
+      } else if (value > _analogThreshold && prev <= _analogThreshold)
+        _startRepeat('${key}_pos', GamepadAction.right);
+      else if (value.abs() <= _analogThreshold) {
+        _stopRepeat('${key}_neg');
+        _stopRepeat('${key}_pos');
+      }
     } else if (key == 'left_stick_y' || key == 'hat_y' || key == '1' || key == '5') {
-      if (value < -_analogThreshold && prev >= -_analogThreshold) _startRepeat('${key}_neg', GamepadAction.up);
-      else if (value > _analogThreshold && prev <= _analogThreshold) _startRepeat('${key}_pos', GamepadAction.down);
-      else if (value.abs() <= _analogThreshold) { _stopRepeat('${key}_neg'); _stopRepeat('${key}_pos'); }
+      if (value < -_analogThreshold && prev >= -_analogThreshold) {
+        _startRepeat('${key}_neg', GamepadAction.up);
+      } else if (value > _analogThreshold && prev <= _analogThreshold)
+        _startRepeat('${key}_pos', GamepadAction.down);
+      else if (value.abs() <= _analogThreshold) {
+        _stopRepeat('${key}_neg');
+        _stopRepeat('${key}_pos');
+      }
     }
   }
 }

@@ -66,17 +66,19 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       );
       DebugLogger.log('[Nintendo64GameOpen] retroarch launched (pid: ${process.pid})');
 
+      void onRetroarchLine(String line, String src) {
+        DebugLogger.log('[retroarch:$src] $line');
+        if (_showLoadingUi && line.contains('Init new dynarec')) {
+          DebugLogger.log('[Nintendo64GameOpen] dynarec ready — dropping loading UI');
+          if (mounted) setState(() => _showLoadingUi = false);
+        }
+      }
+
       process.stdout.transform(const SystemEncoding().decoder).listen(
-        (line) {
-          DebugLogger.log('[retroarch:stdout] $line');
-          if (_showLoadingUi && line.contains('Init new dynarec')) {
-            DebugLogger.log('[Nintendo64GameOpen] dynarec ready — dropping loading UI');
-            if (mounted) setState(() => _showLoadingUi = false);
-          }
-        },
+        (line) => onRetroarchLine(line, 'stdout'),
       );
       process.stderr.transform(const SystemEncoding().decoder).listen(
-        (line) => DebugLogger.log('[retroarch:stderr] $line'),
+        (line) => onRetroarchLine(line, 'stderr'),
       );
 
       final sub = _watchExitCombo(process);
@@ -119,9 +121,15 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
   @override
   Widget build(BuildContext context) {
     if (!_showLoadingUi) {
-      // Retroarch's own fullscreen window is on top by now; a bare black
-      // scaffold with nothing animating costs nothing to keep composited.
-      return const Scaffold(backgroundColor: Colors.black);
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Text(
+            'Jogo esta rodando!',
+            style: TextStyle(color: Colors.white54, fontSize: 20, letterSpacing: 3),
+          ),
+        ),
+      );
     }
 
     final l = AppLocalizations.of(context);

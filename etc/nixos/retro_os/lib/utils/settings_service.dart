@@ -2,8 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'debug_logger.dart';
 
-const _n64CoreDefault =
-    '/run/current-system/sw/lib/retroarch/cores/mupen64plus_next_libretro.so';
+const _n64CoreCandidates = [
+  '/run/current-system/sw/lib/retroarch/cores/mupen64plus_next_libretro.so', // NixOS
+  '/usr/lib/libretro/mupen64plus_next_libretro.so',                          // Arch Linux
+  '/usr/share/libretro/cores/mupen64plus_next_libretro.so',                  // Debian/Ubuntu
+];
 
 // Resolution: user key → [16:9 value, 4:3 value]
 const _resolutionMap = {
@@ -71,7 +74,11 @@ class SettingsService {
 
   Future<String> n64CorePath() async {
     await _ensureLoaded();
-    return (_data['n64_core_path'] as String?) ?? _n64CoreDefault;
+    if (_data['n64_core_path'] is String) return _data['n64_core_path'] as String;
+    for (final candidate in _n64CoreCandidates) {
+      if (File(candidate).existsSync()) return candidate;
+    }
+    return _n64CoreCandidates.first;
   }
 
   Future<void> setN64CorePath(String path) async {
