@@ -16,6 +16,6 @@
     xrandr
     drm_info
     nvtopPackages.v3d
-    glxinfo
+    mesa-demos
   ];
 }
