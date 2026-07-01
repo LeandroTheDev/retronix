@@ -54,6 +54,11 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       final process = await Process.start(
         'retroarch',
         ['-L', corePath, '--fullscreen', '--verbose', romPath],
+        environment: {
+          ...Platform.environment,
+          'MESA_GL_VERSION_OVERRIDE': '3.3COMPAT',
+          'MESA_GLSL_VERSION_OVERRIDE': '330',
+        },
       );
       DebugLogger.log('[Nintendo64GameOpen] retroarch launched (pid: ${process.pid})');
 

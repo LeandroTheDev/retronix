@@ -41,9 +41,7 @@ class _RetroOsAppState extends State<RetroOsApp> {
         title: 'RetroOS',
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(useMaterial3: false).copyWith(
-          textTheme: ThemeData.dark(useMaterial3: false).textTheme.apply(
-            fontFamily: 'PressStart',
-          ),
+          textTheme: ThemeData.dark(useMaterial3: false).textTheme.apply(fontFamily: 'PressStart'),
           snackBarTheme: const SnackBarThemeData(
             contentTextStyle: TextStyle(fontFamily: 'PressStart', color: Colors.white),
           ),

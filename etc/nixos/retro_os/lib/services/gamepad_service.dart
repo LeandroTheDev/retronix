@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:gamepads/gamepads.dart';
-import 'package:retro_os/utils/debug_logger.dart';
+import '../utils/debug_logger.dart';
 
 enum GamepadAction { up, down, left, right, confirm, back, start, select }
 
@@ -20,10 +20,7 @@ class GamepadService {
   static const _repeatInterval = Duration(milliseconds: 120);
 
   void init() {
-    _subscription = Gamepads.events.listen((event) {
-      DebugLogger.log('GAMEPAD RAW: type=${event.type.name} key=${event.key} value=${event.value} gamepadId=${event.gamepadId}');
-      _handleEvent(event);
-    });
+    _subscription = Gamepads.events.listen(_handleEvent);
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
   }
 
@@ -38,6 +35,7 @@ class GamepadService {
 
   bool _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent) return false;
+    DebugLogger.log('[GamepadService] key event: ${event.logicalKey}');
     final action = switch (event.logicalKey) {
       LogicalKeyboardKey.arrowUp => GamepadAction.up,
       LogicalKeyboardKey.arrowDown => GamepadAction.down,

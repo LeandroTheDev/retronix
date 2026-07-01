@@ -40,6 +40,9 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
 
   Future<void> _loadConsoles() async {
     final consoles = await getAvailableConsoles();
+    DebugLogger.log(
+      '[ConsoleSelectorPage] setState from _loadConsoles: consoles=$consoles loading=false',
+    );
     setState(() {
       _consoles = consoles;
       _loading = false;
@@ -47,6 +50,7 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
   }
 
   void _handleAction(GamepadAction action) {
+    DebugLogger.log('[ConsoleSelectorPage] _handleAction received: $action');
     if (ModalRoute.of(context)?.isCurrent != true) return;
     if (action == GamepadAction.back) {
       _showExitDialog();
@@ -59,12 +63,20 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
     if (_consoles.isEmpty) return;
     switch (action) {
       case GamepadAction.up:
+        final newIndexUp = (_selectedIndex - 1).clamp(0, _consoles.length - 1);
+        DebugLogger.log(
+          '[ConsoleSelectorPage] setState from _handleAction(up): $_selectedIndex -> $newIndexUp',
+        );
         setState(() {
-          _selectedIndex = (_selectedIndex - 1).clamp(0, _consoles.length - 1);
+          _selectedIndex = newIndexUp;
         });
       case GamepadAction.down:
+        final newIndexDown = (_selectedIndex + 1).clamp(0, _consoles.length - 1);
+        DebugLogger.log(
+          '[ConsoleSelectorPage] setState from _handleAction(down): $_selectedIndex -> $newIndexDown',
+        );
         setState(() {
-          _selectedIndex = (_selectedIndex + 1).clamp(0, _consoles.length - 1);
+          _selectedIndex = newIndexDown;
         });
       case GamepadAction.confirm:
         _navigate();
@@ -159,20 +171,24 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
     final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 48),
-            child: Text(
-              l.selectConsole,
-              style: const TextStyle(
-                color: Colors.white54,
-                fontSize: 18,
-                letterSpacing: 6,
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 48),
+                child: Text(
+                  l.selectConsole,
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 18,
+                    letterSpacing: 6,
+                  ),
+                ),
               ),
-            ),
+              Expanded(child: _buildBody(l)),
+            ],
           ),
-          Expanded(child: _buildBody(l)),
         ],
       ),
     );

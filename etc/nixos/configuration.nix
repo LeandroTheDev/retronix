@@ -20,8 +20,8 @@
   # Enables the generation of /boot/extlinux/extlinux.conf
   boot.loader.generic-extlinux-compatible.enable = true;
 
-  # Increase CMA pool so the GPU (DRM/KMS) can allocate framebuffers for Wayland
-  boot.kernelParams = [ "cma=256M" ];
+  # Increase CMA pool so the GPU (DRM/KMS) can allocate framebuffers
+  boot.kernelParams = [ "cma=256M" ];  
 
   networking.hostName = "retronix";
   networking.networkmanager.enable = true;
