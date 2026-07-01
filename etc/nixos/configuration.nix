@@ -33,6 +33,14 @@
   # Time zone.
   time.timeZone = "America/SaoPaulo";
 
+  # Audio — PipeWire with PulseAudio compatibility (pactl/paplay) and ALSA
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    pulse.enable = true;
+  };
+
   # Open SSH
   services.openssh = {
     enable = true;

@@ -17,5 +17,7 @@
     drm_info
     nvtopPackages.v3d
     mesa-demos
+    alsa-utils
+    pulseaudio
   ];
 }
