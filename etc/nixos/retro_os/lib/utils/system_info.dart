@@ -237,35 +237,27 @@ Future<void> playVolumeBeep(String deviceName) async {
 }
 
 // Lists PipeWire sinks via pactl. Always includes a "Default" entry first.
-// Retries up to 3 times with 600ms delay to handle socket-activation race.
 Future<List<AudioDevice>> getAudioDevices() async {
   final devices = <AudioDevice>[const AudioDevice('', 'Default')];
-  String output = '';
-  for (var attempt = 0; attempt < 3; attempt++) {
-    try {
-      if (attempt > 0) await Future.delayed(const Duration(milliseconds: 600));
-      final result = await Process.run('sh', ['-c', 'pactl list sinks 2>/dev/null']);
-      output = result.stdout as String;
-      if (output.trim().isNotEmpty) break;
-      DebugLogger.log('[getAudioDevices] empty output, attempt ${attempt + 1}/3');
-    } catch (e) {
-      DebugLogger.log('[system_info] getAudioDevices failed: $e');
+  try {
+    final result = await Process.run('sh', ['-c', 'pactl list sinks 2>/dev/null']);
+    final output = result.stdout as String;
+    String? currentName;
+    for (final line in output.split('\n')) {
+      final nameMatch = RegExp(r'^\s+Name:\s+(.+)$').firstMatch(line);
+      if (nameMatch != null) {
+        currentName = nameMatch.group(1)!.trim();
+        continue;
+      }
+      final descMatch = RegExp(r'^\s+Description:\s+(.+)$').firstMatch(line);
+      if (descMatch != null && currentName != null) {
+        devices.add(AudioDevice(currentName, descMatch.group(1)!.trim()));
+        currentName = null;
+      }
     }
+  } catch (e) {
+    DebugLogger.log('[system_info] getAudioDevices failed: $e');
   }
-  String? currentName;
-  for (final line in output.split('\n')) {
-    final nameMatch = RegExp(r'^\s+Name:\s+(.+)$').firstMatch(line);
-    if (nameMatch != null) {
-      currentName = nameMatch.group(1)!.trim();
-      continue;
-    }
-    final descMatch = RegExp(r'^\s+Description:\s+(.+)$').firstMatch(line);
-    if (descMatch != null && currentName != null) {
-      devices.add(AudioDevice(currentName, descMatch.group(1)!.trim()));
-      currentName = null;
-    }
-  }
-  DebugLogger.log('[getAudioDevices] found ${devices.length - 1} sink(s)');
   return devices;
 }
 
