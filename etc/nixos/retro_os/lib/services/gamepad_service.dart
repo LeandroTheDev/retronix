@@ -5,6 +5,22 @@ import '../utils/debug_logger.dart';
 
 enum GamepadAction { up, down, left, right, confirm, back, start, select }
 
+// Best-effort guess from GamepadController.name — a free-text, platform-
+// dependant string, not a real hardware ID (see GamepadService docs).
+enum ControllerType { xbox, playstation, nintendo, generic }
+
+ControllerType controllerTypeFromName(String name) {
+  final lower = name.toLowerCase();
+  if (lower.contains('xbox')) return ControllerType.xbox;
+  if (lower.contains('playstation') || lower.contains('dualshock') || lower.contains('dualsense')) {
+    return ControllerType.playstation;
+  }
+  if (lower.contains('nintendo') || lower.contains('switch') || lower.contains('n64')) {
+    return ControllerType.nintendo;
+  }
+  return ControllerType.generic;
+}
+
 class GamepadService {
   GamepadService._();
   static final instance = GamepadService._();
@@ -19,18 +35,85 @@ class GamepadService {
   static const _repeatDelay = Duration(milliseconds: 400);
   static const _repeatInterval = Duration(milliseconds: 120);
 
+  // ── Player slots ─────────────────────────────────────────────────────────
+  // Slot index 0..3 = player 1..4. Assigned by connection order: the first
+  // controller detected keeps player 1 even if others come and go, and a
+  // freed slot (device unplugged) is handed to the next new controller.
+  // This is the mapping we'll eventually use to inject per-player controller
+  // config into RetroArch.
+  static const maxPlayers = 4;
+  static const _deviceScanInterval = Duration(seconds: 2);
+
+  final List<String?> _playerSlots = List.filled(maxPlayers, null);
+  final _slotsController = StreamController<List<String?>>.broadcast();
+  Stream<List<String?>> get playerSlots => _slotsController.stream;
+  List<String?> get currentPlayerSlots => List.unmodifiable(_playerSlots);
+
+  final Map<String, String> _controllerNames = {}; // id -> raw name
+
+  Timer? _deviceScanTimer;
+
+  int? playerNumberForId(String id) {
+    final index = _playerSlots.indexOf(id);
+    return index == -1 ? null : index + 1;
+  }
+
+  String? nameForId(String id) => _controllerNames[id];
+
+  ControllerType? typeForId(String id) {
+    final name = _controllerNames[id];
+    return name == null ? null : controllerTypeFromName(name);
+  }
+
   void init() {
     _subscription = Gamepads.events.listen(_handleEvent);
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+    _scanDevices();
+    _deviceScanTimer = Timer.periodic(_deviceScanInterval, (_) => _scanDevices());
   }
 
   void dispose() {
     for (final t in _repeatTimers.values) {
       t?.cancel();
     }
+    _deviceScanTimer?.cancel();
     _subscription?.cancel();
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
     _controller.close();
+    _slotsController.close();
+  }
+
+  Future<void> _scanDevices() async {
+    final controllers = await Gamepads.list();
+    DebugLogger.log('[GamepadService] Gamepads.list() -> ${controllers.length} controller(s)');
+    for (final c in controllers) {
+      _controllerNames[c.id] = c.name;
+      DebugLogger.log(
+        '[GamepadService]   id="${c.id}" name="${c.name}" guessedType=${controllerTypeFromName(c.name)}',
+      );
+    }
+
+    final connectedIds = controllers.map((c) => c.id).toSet();
+    var changed = false;
+
+    for (var i = 0; i < _playerSlots.length; i++) {
+      if (_playerSlots[i] != null && !connectedIds.contains(_playerSlots[i])) {
+        DebugLogger.log('[GamepadService] player ${i + 1} disconnected (${_playerSlots[i]})');
+        _playerSlots[i] = null;
+        changed = true;
+      }
+    }
+
+    for (final controller in controllers) {
+      if (_playerSlots.contains(controller.id)) continue;
+      final freeIndex = _playerSlots.indexOf(null);
+      if (freeIndex == -1) break; // all slots taken
+      _playerSlots[freeIndex] = controller.id;
+      changed = true;
+      DebugLogger.log('[GamepadService] player ${freeIndex + 1} assigned: ${controller.id} (${controller.name})');
+    }
+
+    if (changed) _slotsController.add(currentPlayerSlots);
   }
 
   bool _handleKeyEvent(KeyEvent event) {

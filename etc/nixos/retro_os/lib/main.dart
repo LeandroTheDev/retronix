@@ -3,6 +3,7 @@ import 'services/gamepad_service.dart';
 import 'pages/console_selector_page.dart';
 import 'utils/locale_service.dart';
 import 'utils/app_localizations.dart';
+import 'widgets/gamepad_status_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +48,12 @@ class _RetroOsAppState extends State<RetroOsApp> {
           ),
         ),
         home: const ConsoleSelectorPage(),
+        builder: (context, child) => Stack(
+          children: [
+            ?child,
+            const GamepadStatusOverlay(),
+          ],
+        ),
       ),
     );
   }
