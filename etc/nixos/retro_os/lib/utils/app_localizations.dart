@@ -81,6 +81,7 @@ class AppLocalizations {
   String get coreRetroArch           => 'RetroArch Core';
   String get coreFileNotFound        => _pick('File not found — games will not open', 'Arquivo não encontrado — os jogos não abrirão');
   String get restoreDefaults         => _pick('Restore Defaults', 'Restaurar padrões');
+  String get openRetroarch           => _pick('Open RetroArch', 'Abrir RetroArch');
 
   List<String> get resolutionLabels =>
       [_pick('Native (240p)', 'Nativo (240p)'), 'HD (720p)', 'Full HD (1080p)', '4K (2160p)'];

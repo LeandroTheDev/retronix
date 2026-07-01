@@ -37,9 +37,9 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
   String _corePath   = '';
   bool   _coreExists = true;
 
-  // One key per selectable row (0-6 = option rows, 7 = restore defaults),
+  // One key per selectable row (0-6 = option rows, 7 = restore defaults, 8 = open retroarch),
   // used to scroll the row into view as the gamepad selection moves.
-  final _rowKeys = List.generate(8, (_) => GlobalKey());
+  final _rowKeys = List.generate(9, (_) => GlobalKey());
 
   @override
   void initState() {
@@ -82,10 +82,10 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 7));
+        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 8));
         _scrollToSelected();
       case GamepadAction.down:
-        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 7));
+        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 8));
         _scrollToSelected();
       case GamepadAction.left:
         _cycleValue(-1);
@@ -93,6 +93,7 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
         _cycleValue(1);
       case GamepadAction.confirm:
         if (_selectedIndex == 7) _resetAll();
+        if (_selectedIndex == 8) _openRetroarch();
       case GamepadAction.back:
         Navigator.pop(context);
       default:
@@ -149,6 +150,32 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
       curve: Curves.easeOut,
       alignment: 0.5,
     );
+  }
+
+  Future<void> _openRetroarch() async {
+    try {
+      final process = await Process.start(
+        'retroarch',
+        ['--fullscreen'],
+        environment: {
+          ...Platform.environment,
+          'MESA_GL_VERSION_OVERRIDE': '3.3COMPAT',
+          'MESA_GLSL_VERSION_OVERRIDE': '330',
+        },
+      );
+      await process.exitCode;
+    } catch (e) {
+      DebugLogger.log('[Nintendo64SettingsPage] failed to launch retroarch: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString(), style: const TextStyle(color: Colors.white)),
+            backgroundColor: Colors.red[900],
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _resetAll() async {
@@ -269,6 +296,14 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
                       icon: Icons.restore,
                       label: l.restoreDefaults,
                       selected: _selectedIndex == 7,
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: _rowKeys[8],
+                    child: _ActionRow(
+                      icon: Icons.sports_esports,
+                      label: l.openRetroarch,
+                      selected: _selectedIndex == 8,
                     ),
                   ),
                 ],
