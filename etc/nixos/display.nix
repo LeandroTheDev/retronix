@@ -9,6 +9,7 @@ let
   retro_os_session = pkgs.writeShellScript "retro_os-session" ''
     export FONTCONFIG_FILE=/etc/fonts/fonts.conf
     ${pkgs.xrandr}/bin/xrandr --output HDMI-2 --mode 1920x1080 --rate 60 >> /tmp/retro_os.log 2>&1
+    ${pkgs.xorg.xset}/bin/xset s off -dpms
     ${pkgs.matchbox}/bin/matchbox-window-manager &
     exec ${retro_os}/bin/retro_os
   '';
