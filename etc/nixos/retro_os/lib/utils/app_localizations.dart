@@ -98,6 +98,7 @@ class AppLocalizations {
   String get aboutArchitecture   => _pick('CPU Architecture', 'Arquitetura da CPU');
   String get aboutDisplay        => _pick('Display', 'Tela');
   String get aboutOpenGl         => 'OpenGL Version';
+  String get aboutRenderer       => _pick('GPU Renderer', 'Renderizador GPU');
 
   // ── Game Open ─────────────────────────────────────────────────────────────
 

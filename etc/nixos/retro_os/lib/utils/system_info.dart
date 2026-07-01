@@ -199,3 +199,24 @@ Future<String> getOpenGlVersion() async {
     return _unknown;
   }
 }
+
+// e.g. "V3D 4.2" or "llvmpipe (LLVM 17.0.6, 128 bits)"
+Future<String> getOpenGlRenderer() async {
+  try {
+    final result = await Process.run(
+      'sh',
+      ['-c', "glxinfo 2>/dev/null | grep 'OpenGL renderer string'"],
+    );
+    final output = (result.stdout as String).trim();
+    if (output.isEmpty) {
+      DebugLogger.log('[system_info] getOpenGlRenderer: no output from glxinfo');
+      return _unknown;
+    }
+
+    final renderer = output.split(':').skip(1).join(':').trim();
+    return renderer.isNotEmpty ? renderer : _unknown;
+  } catch (e) {
+    DebugLogger.log('[system_info] getOpenGlRenderer failed: $e');
+    return _unknown;
+  }
+}

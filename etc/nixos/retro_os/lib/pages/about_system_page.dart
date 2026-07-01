@@ -19,6 +19,7 @@ class _AboutSystemPageState extends State<AboutSystemPage> {
   String _architecture = '';
   String _display = '';
   String _openGl = '';
+  String _renderer = '';
 
   @override
   void initState() {
@@ -38,12 +39,14 @@ class _AboutSystemPageState extends State<AboutSystemPage> {
     final architecture = await getCpuArchitecture();
     final display = await getDisplayMode();
     final openGl = await getOpenGlVersion();
+    final renderer = await getOpenGlRenderer();
     if (!mounted) return;
     setState(() {
       _device = device;
       _architecture = architecture;
       _display = display;
       _openGl = openGl;
+      _renderer = renderer;
       _loading = false;
     });
   }
@@ -77,6 +80,7 @@ class _AboutSystemPageState extends State<AboutSystemPage> {
                       _InfoRow(icon: Icons.memory, label: l.aboutArchitecture, value: _architecture),
                       _InfoRow(icon: Icons.desktop_windows, label: l.aboutDisplay, value: _display),
                       _InfoRow(icon: Icons.view_in_ar, label: l.aboutOpenGl, value: _openGl),
+                      _InfoRow(icon: Icons.videogame_asset, label: l.aboutRenderer, value: _renderer),
                     ],
                   ),
           ),
