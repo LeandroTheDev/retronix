@@ -15,6 +15,9 @@
     cores = 0; # All Cores per job
   };
 
+  # Keep CPU at full speed — prevents the throttle-to-375MHz slow motion in RetroArch
+  powerManagement.cpuFreqGovernor = "performance";
+
   # Use the extlinux boot loader. (NixOS wants to enable GRUB by default)
   boot.loader.grub.enable = false;
   # Enables the generation of /boot/extlinux/extlinux.conf
