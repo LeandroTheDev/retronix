@@ -41,6 +41,11 @@
     pulse.enable = true;
   };
 
+  # Start PipeWire eagerly on login instead of waiting for socket activation,
+  # so audio sinks are ready before the app queries them.
+  systemd.user.services.pipewire.wantedBy = [ "default.target" ];
+  systemd.user.services.pipewire-pulse.wantedBy = [ "default.target" ];
+
   # Open SSH
   services.openssh = {
     enable = true;
