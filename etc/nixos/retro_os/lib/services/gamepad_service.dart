@@ -34,7 +34,10 @@ class GamepadService {
   }
 
   bool _handleKeyEvent(KeyEvent event) {
-    if (event is! KeyDownEvent) return false;
+    // KeyRepeatEvent is what the platform sends while a key is held down
+    // (OS-level keyboard auto-repeat) — without it, holding a key only
+    // ever fires the initial press.
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
     DebugLogger.log('[GamepadService] key event: ${event.logicalKey}');
     final action = switch (event.logicalKey) {
       LogicalKeyboardKey.arrowUp => GamepadAction.up,
@@ -51,10 +54,28 @@ class GamepadService {
     return action != null;
   }
 
+  static const _repeatableActions = {
+    GamepadAction.up,
+    GamepadAction.down,
+    GamepadAction.left,
+    GamepadAction.right,
+  };
+
   void _handleEvent(GamepadEvent event) {
-    if (event.type == KeyType.button && event.value == 1.0) {
+    if (event.type == KeyType.button) {
       final action = _mapButton(event.key);
-      if (action != null) _controller.add(action);
+      if (action == null) return;
+      if (!_repeatableActions.contains(action)) {
+        if (event.value == 1.0) _controller.add(action);
+        return;
+      }
+      // D-pads reported as digital buttons (rather than a hat axis) need
+      // their own press/release-driven repeat, same as the analog case below.
+      if (event.value == 1.0) {
+        _startRepeat('btn_${event.key}', action);
+      } else {
+        _stopRepeat('btn_${event.key}');
+      }
     } else if (event.type == KeyType.analog) {
       _handleAnalog(event.key, event.value);
     }

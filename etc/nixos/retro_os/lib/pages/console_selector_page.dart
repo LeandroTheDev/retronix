@@ -4,13 +4,9 @@ import '../services/gamepad_service.dart';
 import 'dart:io';
 import '../utils/debug_logger.dart';
 import '../utils/devices.dart';
-import '../utils/dialogs.dart';
+import '../utils/app_menu.dart';
 import '../utils/app_localizations.dart';
 import 'nintendo64_games_page.dart';
-import 'system_settings_page.dart';
-import 'update_system_page.dart';
-import 'nintendo64_settings_page.dart';
-import 'shutdown_page.dart';
 
 class ConsoleSelectorPage extends StatefulWidget {
   const ConsoleSelectorPage({super.key});
@@ -53,11 +49,11 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
     DebugLogger.log('[ConsoleSelectorPage] _handleAction received: $action');
     if (ModalRoute.of(context)?.isCurrent != true) return;
     if (action == GamepadAction.back) {
-      _showExitDialog();
+      showShutdownConfirmDialog(context);
       return;
     }
     if (action == GamepadAction.start) {
-      _showSettingsDialog();
+      showAppSettingsDialog(context);
       return;
     }
     if (_consoles.isEmpty) return;
@@ -91,77 +87,6 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const Nintendo64GamesPage()),
-      );
-    }
-  }
-
-  void _showSettingsDialog() {
-    DebugLogger.log('[ConsoleSelectorPage] settings dialog opened');
-    final l = AppLocalizations.of(context);
-    showSettingsDialog(
-      context,
-      title: l.settingsDialogTitle,
-      options: [
-        SettingsOption(
-          label: l.settingsNintendo64,
-          icon: Icons.sports_esports,
-          onSelect: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const Nintendo64SettingsPage()),
-          ),
-        ),
-        SettingsOption(
-          label: l.systemSettingsTitle,
-          icon: Icons.settings,
-          onSelect: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const SystemSettingsPage()),
-          ),
-        ),
-        SettingsOption(
-          label: l.updateSystem,
-          icon: Icons.system_update_alt,
-          onSelect: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const UpdateSystemPage()),
-          ),
-        ),
-        SettingsOption(
-          label: l.aboutSystem,
-          icon: Icons.info_outline,
-          onSelect: () {},
-        ),
-        SettingsOption(
-          label: l.shutdown,
-          icon: Icons.power_settings_new,
-          onSelect: () {
-            Navigator.pop(context); // fecha o settings dialog antes
-            _showExitDialog();
-          },
-        ),
-      ],
-    );
-  }
-
-  Future<void> _showExitDialog() async {
-    DebugLogger.log('[ConsoleSelectorPage] exit dialog opened');
-    final l = AppLocalizations.of(context);
-
-    final confirmed = await showConfirmDialog(
-      context,
-      message: l.shutdownConfirm,
-      labelYes: l.yes,
-      labelNo: l.no,
-    );
-
-    DebugLogger.log('[ConsoleSelectorPage] exit dialog closed — confirmed: $confirmed');
-
-    if (!mounted) return;
-    if (confirmed) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const ShutdownPage()),
-        (_) => false,
       );
     }
   }

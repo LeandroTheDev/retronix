@@ -5,6 +5,7 @@ import '../services/gamepad_service.dart';
 import '../utils/debug_logger.dart';
 import '../utils/devices.dart';
 import '../utils/app_localizations.dart';
+import '../utils/app_menu.dart';
 import 'nintendo64_game_open.dart';
 
 class Nintendo64GamesPage extends StatefulWidget {
@@ -52,6 +53,10 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
     if (action == GamepadAction.back) {
       DebugLogger.log('[Nintendo64GamesPage] popping');
       Navigator.pop(context);
+      return;
+    }
+    if (action == GamepadAction.start) {
+      showAppSettingsDialog(context);
       return;
     }
     if (_games.isEmpty) return;

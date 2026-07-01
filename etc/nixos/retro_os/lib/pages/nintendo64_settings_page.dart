@@ -18,18 +18,28 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
   int _selectedIndex = 0;
   bool _loading = true;
 
-  final _resolutionOptions = const ['native', 'hd', 'fullhd', '4k'];
-  final _msaaOptions       = const ['0', '2', '4', '8'];
-  final _filterOptions     = const ['nearest', 'linear'];
-  final _frameDupesOptions = const ['false', 'true'];
+  final _resolutionOptions     = const ['native', 'hd', 'fullhd', '4k'];
+  final _msaaOptions           = const ['0', '2', '4', '8'];
+  final _filterOptions         = const ['nearest', 'linear'];
+  final _frameDupesOptions     = const ['false', 'true'];
+  final _aspectOptions         = const ['4:3', '16:9', '16:9 adjusted'];
+  final _overscanEnabledOptions = const ['false', 'true'];
+  final _overscanAmountOptions = const ['0', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50'];
 
-  int _resIdx        = 1;
-  int _msaaIdx       = 0;
-  int _filterIdx     = 1;
-  int _frameDupesIdx = 0;
+  int _resIdx             = 1;
+  int _msaaIdx            = 0;
+  int _filterIdx          = 1;
+  int _frameDupesIdx      = 0;
+  int _aspectIdx          = 0;
+  int _overscanEnabledIdx = 1;
+  int _overscanAmountIdx  = 0;
 
   String _corePath   = '';
   bool   _coreExists = true;
+
+  // One key per selectable row (0-6 = option rows, 7 = restore defaults),
+  // used to scroll the row into view as the gamepad selection moves.
+  final _rowKeys = List.generate(8, (_) => GlobalKey());
 
   @override
   void initState() {
@@ -45,20 +55,26 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
   }
 
   Future<void> _load() async {
-    final res        = await SettingsService.instance.n64Resolution();
-    final msaa       = await SettingsService.instance.n64Msaa();
-    final filter     = await SettingsService.instance.n64TextureFilter();
-    final frameDupes = await SettingsService.instance.n64FrameDupes();
-    final core       = await SettingsService.instance.n64CorePath();
+    final res              = await SettingsService.instance.n64Resolution();
+    final msaa             = await SettingsService.instance.n64Msaa();
+    final filter           = await SettingsService.instance.n64TextureFilter();
+    final frameDupes       = await SettingsService.instance.n64FrameDupes();
+    final aspect           = await SettingsService.instance.n64Aspect();
+    final overscanEnabled  = await SettingsService.instance.n64OverscanEnabled();
+    final overscanAmount   = await SettingsService.instance.n64OverscanAmount();
+    final core             = await SettingsService.instance.n64CorePath();
     if (!mounted) return;
     setState(() {
-      _resIdx        = _resolutionOptions.indexOf(res).clamp(0, _resolutionOptions.length - 1);
-      _msaaIdx       = _msaaOptions.indexOf(msaa).clamp(0, _msaaOptions.length - 1);
-      _filterIdx     = _filterOptions.indexOf(filter).clamp(0, _filterOptions.length - 1);
-      _frameDupesIdx = _frameDupesOptions.indexOf(frameDupes).clamp(0, _frameDupesOptions.length - 1);
-      _corePath      = core;
-      _coreExists    = File(core).existsSync();
-      _loading       = false;
+      _resIdx             = _resolutionOptions.indexOf(res).clamp(0, _resolutionOptions.length - 1);
+      _msaaIdx            = _msaaOptions.indexOf(msaa).clamp(0, _msaaOptions.length - 1);
+      _filterIdx          = _filterOptions.indexOf(filter).clamp(0, _filterOptions.length - 1);
+      _frameDupesIdx      = _frameDupesOptions.indexOf(frameDupes).clamp(0, _frameDupesOptions.length - 1);
+      _aspectIdx          = _aspectOptions.indexOf(aspect).clamp(0, _aspectOptions.length - 1);
+      _overscanEnabledIdx = _overscanEnabledOptions.indexOf(overscanEnabled).clamp(0, _overscanEnabledOptions.length - 1);
+      _overscanAmountIdx  = _overscanAmountOptions.indexOf(overscanAmount).clamp(0, _overscanAmountOptions.length - 1);
+      _corePath           = core;
+      _coreExists         = File(core).existsSync();
+      _loading            = false;
     });
   }
 
@@ -66,15 +82,17 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 4));
+        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 7));
+        _scrollToSelected();
       case GamepadAction.down:
-        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 4));
+        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 7));
+        _scrollToSelected();
       case GamepadAction.left:
         _cycleValue(-1);
       case GamepadAction.right:
         _cycleValue(1);
       case GamepadAction.confirm:
-        if (_selectedIndex == 4) _resetAll();
+        if (_selectedIndex == 7) _resetAll();
       case GamepadAction.back:
         Navigator.pop(context);
       default:
@@ -104,7 +122,33 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
         if (next == _frameDupesIdx) return;
         setState(() => _frameDupesIdx = next);
         SettingsService.instance.setN64FrameDupes(_frameDupesOptions[next]);
+      case 4:
+        final next = (_aspectIdx + dir).clamp(0, _aspectOptions.length - 1);
+        if (next == _aspectIdx) return;
+        setState(() => _aspectIdx = next);
+        SettingsService.instance.setN64Aspect(_aspectOptions[next]);
+      case 5:
+        final next = (_overscanEnabledIdx + dir).clamp(0, _overscanEnabledOptions.length - 1);
+        if (next == _overscanEnabledIdx) return;
+        setState(() => _overscanEnabledIdx = next);
+        SettingsService.instance.setN64OverscanEnabled(_overscanEnabledOptions[next]);
+      case 6:
+        final next = (_overscanAmountIdx + dir).clamp(0, _overscanAmountOptions.length - 1);
+        if (next == _overscanAmountIdx) return;
+        setState(() => _overscanAmountIdx = next);
+        SettingsService.instance.setN64OverscanAmount(_overscanAmountOptions[next]);
     }
+  }
+
+  void _scrollToSelected() {
+    final ctx = _rowKeys[_selectedIndex].currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      alignment: 0.5,
+    );
   }
 
   Future<void> _resetAll() async {
@@ -136,37 +180,82 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
             Expanded(
               child: ListView(
                 children: [
-                  _OptionRow(
-                    icon: Icons.tv,
-                    label: l.internalResolution,
-                    value: l.resolutionLabels[_resIdx],
-                    selected: _selectedIndex == 0,
-                    canLeft:  _resIdx > 0,
-                    canRight: _resIdx < _resolutionOptions.length - 1,
+                  KeyedSubtree(
+                    key: _rowKeys[0],
+                    child: _OptionRow(
+                      icon: Icons.tv,
+                      label: l.internalResolution,
+                      value: l.resolutionLabels[_resIdx],
+                      selected: _selectedIndex == 0,
+                      canLeft:  _resIdx > 0,
+                      canRight: _resIdx < _resolutionOptions.length - 1,
+                    ),
                   ),
-                  _OptionRow(
-                    icon: Icons.blur_on,
-                    label: l.antiAliasing,
-                    value: l.msaaLabels[_msaaIdx],
-                    selected: _selectedIndex == 1,
-                    canLeft:  _msaaIdx > 0,
-                    canRight: _msaaIdx < _msaaOptions.length - 1,
+                  KeyedSubtree(
+                    key: _rowKeys[1],
+                    child: _OptionRow(
+                      icon: Icons.blur_on,
+                      label: l.antiAliasing,
+                      value: l.msaaLabels[_msaaIdx],
+                      selected: _selectedIndex == 1,
+                      canLeft:  _msaaIdx > 0,
+                      canRight: _msaaIdx < _msaaOptions.length - 1,
+                    ),
                   ),
-                  _OptionRow(
-                    icon: Icons.texture,
-                    label: l.textureFilter,
-                    value: l.filterLabels[_filterIdx],
-                    selected: _selectedIndex == 2,
-                    canLeft:  _filterIdx > 0,
-                    canRight: _filterIdx < _filterOptions.length - 1,
+                  KeyedSubtree(
+                    key: _rowKeys[2],
+                    child: _OptionRow(
+                      icon: Icons.texture,
+                      label: l.textureFilter,
+                      value: l.filterLabels[_filterIdx],
+                      selected: _selectedIndex == 2,
+                      canLeft:  _filterIdx > 0,
+                      canRight: _filterIdx < _filterOptions.length - 1,
+                    ),
                   ),
-                  _OptionRow(
-                    icon: Icons.speed,
-                    label: l.frameDuplication,
-                    value: l.frameDupesLabels[_frameDupesIdx],
-                    selected: _selectedIndex == 3,
-                    canLeft:  _frameDupesIdx > 0,
-                    canRight: _frameDupesIdx < _frameDupesOptions.length - 1,
+                  KeyedSubtree(
+                    key: _rowKeys[3],
+                    child: _OptionRow(
+                      icon: Icons.speed,
+                      label: l.frameDuplication,
+                      value: l.frameDupesLabels[_frameDupesIdx],
+                      selected: _selectedIndex == 3,
+                      canLeft:  _frameDupesIdx > 0,
+                      canRight: _frameDupesIdx < _frameDupesOptions.length - 1,
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: _rowKeys[4],
+                    child: _OptionRow(
+                      icon: Icons.aspect_ratio,
+                      label: l.aspectRatio,
+                      value: l.aspectLabels[_aspectIdx],
+                      selected: _selectedIndex == 4,
+                      canLeft:  _aspectIdx > 0,
+                      canRight: _aspectIdx < _aspectOptions.length - 1,
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: _rowKeys[5],
+                    child: _OptionRow(
+                      icon: Icons.crop,
+                      label: l.overscanCrop,
+                      value: l.overscanEnabledLabels[_overscanEnabledIdx],
+                      selected: _selectedIndex == 5,
+                      canLeft:  _overscanEnabledIdx > 0,
+                      canRight: _overscanEnabledIdx < _overscanEnabledOptions.length - 1,
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: _rowKeys[6],
+                    child: _OptionRow(
+                      icon: Icons.crop_free,
+                      label: l.overscanAmount,
+                      value: '${_overscanAmountOptions[_overscanAmountIdx]}px',
+                      selected: _selectedIndex == 6,
+                      canLeft:  _overscanAmountIdx > 0,
+                      canRight: _overscanAmountIdx < _overscanAmountOptions.length - 1,
+                    ),
                   ),
                   _CoreInfoRow(
                     label: l.coreRetroArch,
@@ -174,10 +263,13 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
                     path: _corePath,
                     exists: _coreExists,
                   ),
-                  _ActionRow(
-                    icon: Icons.restore,
-                    label: l.restoreDefaults,
-                    selected: _selectedIndex == 4,
+                  KeyedSubtree(
+                    key: _rowKeys[7],
+                    child: _ActionRow(
+                      icon: Icons.restore,
+                      label: l.restoreDefaults,
+                      selected: _selectedIndex == 7,
+                    ),
                   ),
                 ],
               ),

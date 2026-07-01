@@ -73,6 +73,9 @@ class AppLocalizations {
   String get antiAliasing            => 'Anti-Aliasing (MSAA)';
   String get textureFilter           => _pick('Texture Filter', 'Filtro de Textura');
   String get frameDuplication        => 'Frame Duplication (30fps → 60Hz)';
+  String get aspectRatio             => _pick('Aspect Ratio', 'Proporção de Tela');
+  String get overscanCrop            => _pick('Overscan Crop', 'Corte de Overscan');
+  String get overscanAmount          => _pick('Overscan Amount', 'Quantidade de Overscan');
   String get coreRetroArch           => 'RetroArch Core';
   String get coreFileNotFound        => _pick('File not found — games will not open', 'Arquivo não encontrado — os jogos não abrirão');
   String get restoreDefaults         => _pick('Restore Defaults', 'Restaurar padrões');
@@ -82,6 +85,16 @@ class AppLocalizations {
   List<String> get msaaLabels       => [off, '2x', '4x', '8x'];
   List<String> get filterLabels     => [_pick('Nearest (pixelated)', 'Nearest (pixelado)'), _pick('Linear (smoothed)', 'Linear (suavizado)')];
   List<String> get frameDupesLabels => [off, on];
+  List<String> get aspectLabels     => ['4:3', '16:9', _pick('16:9 (adjusted)', '16:9 (ajustado)')];
+  List<String> get overscanEnabledLabels => [off, on];
+
+  // ── About System Page ─────────────────────────────────────────────────────
+
+  String get aboutSystemTitle    => _pick('ABOUT SYSTEM', 'SOBRE O SISTEMA');
+  String get aboutDevice         => _pick('Device', 'Dispositivo');
+  String get aboutArchitecture   => _pick('CPU Architecture', 'Arquitetura da CPU');
+  String get aboutDisplay        => _pick('Display', 'Tela');
+  String get aboutOpenGl         => 'OpenGL Version';
 
   // ── Game Open ─────────────────────────────────────────────────────────────
 

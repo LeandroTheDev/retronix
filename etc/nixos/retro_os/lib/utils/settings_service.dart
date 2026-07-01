@@ -130,6 +130,42 @@ class SettingsService {
     await _save();
   }
 
+  // n64_aspect: '4:3' | '16:9' | '16:9 adjusted'
+  Future<String> n64Aspect() async {
+    await _ensureLoaded();
+    return (_data['n64_aspect'] as String?) ?? '4:3';
+  }
+
+  Future<void> setN64Aspect(String value) async {
+    await _ensureLoaded();
+    _data['n64_aspect'] = value;
+    await _save();
+  }
+
+  // n64_overscan_enabled: 'false' | 'true' — core defaults to enabled
+  Future<String> n64OverscanEnabled() async {
+    await _ensureLoaded();
+    return (_data['n64_overscan_enabled'] as String?) ?? 'true';
+  }
+
+  Future<void> setN64OverscanEnabled(String value) async {
+    await _ensureLoaded();
+    _data['n64_overscan_enabled'] = value;
+    await _save();
+  }
+
+  // n64_overscan_amount: '0'..'50', applied to all four sides
+  Future<String> n64OverscanAmount() async {
+    await _ensureLoaded();
+    return (_data['n64_overscan_amount'] as String?) ?? '0';
+  }
+
+  Future<void> setN64OverscanAmount(String value) async {
+    await _ensureLoaded();
+    _data['n64_overscan_amount'] = value;
+    await _save();
+  }
+
   // ── Language ──────────────────────────────────────────────────────────────
 
   Future<String> language() async {
@@ -152,7 +188,10 @@ class SettingsService {
       ..remove('n64_resolution')
       ..remove('n64_msaa')
       ..remove('n64_texture_filter')
-      ..remove('n64_frame_dupes');
+      ..remove('n64_frame_dupes')
+      ..remove('n64_aspect')
+      ..remove('n64_overscan_enabled')
+      ..remove('n64_overscan_amount');
     await _save();
   }
 
@@ -169,12 +208,23 @@ class SettingsService {
     final frameDupes = await n64FrameDupes();
     final frameDupesValue = frameDupes == 'true' ? 'True' : 'False';
 
+    final aspect = await n64Aspect();
+    final overscanEnabled = await n64OverscanEnabled();
+    final overscanEnabledValue = overscanEnabled == 'true' ? 'Enabled' : 'Disabled';
+    final overscanAmount = await n64OverscanAmount();
+
     final content = [
-      'mupen64plus-169resolutions = "${res[0]}"',
-      'mupen64plus-43resolutions = "${res[1]}"',
-      'mupen64plus-MSAA = "$msaa"',
+      'mupen64plus-169screensize = "${res[0]}"',
+      'mupen64plus-43screensize = "${res[1]}"',
+      'mupen64plus-MultiSampling = "$msaa"',
       'mupen64plus-BilinearMode = "$bilinear"',
-      'mupen64plus-FrameDupes = "$frameDupesValue"',
+      'mupen64plus-FrameDuping = "$frameDupesValue"',
+      'mupen64plus-aspect = "$aspect"',
+      'mupen64plus-EnableOverscan = "$overscanEnabledValue"',
+      'mupen64plus-OverscanTop = "$overscanAmount"',
+      'mupen64plus-OverscanLeft = "$overscanAmount"',
+      'mupen64plus-OverscanRight = "$overscanAmount"',
+      'mupen64plus-OverscanBottom = "$overscanAmount"',
     ].join('\n');
 
     final file = File(_optFilePath());
