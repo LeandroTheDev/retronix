@@ -166,6 +166,30 @@ class SettingsService {
     await _save();
   }
 
+  // ── Screen resolution ────────────────────────────────────────────────────
+  // Plain text, not settings.json — display.nix's session script reads this
+  // directly (via sed) at boot, before Flutter is even running, so the
+  // resolution is already correct by the time retro_os starts.
+
+  String _displayModePath() {
+    if (Platform.isLinux) {
+      final xdgDataHome = Platform.environment['XDG_DATA_HOME'] ??
+          '${Platform.environment['HOME']}/.local/share';
+      return '$xdgDataHome/retro_os/display_mode';
+    } else if (Platform.isWindows) {
+      final appData = Platform.environment['APPDATA'] ??
+          '${Platform.environment['USERPROFILE']}\\AppData\\Roaming';
+      return '$appData\\retro_os\\display_mode';
+    }
+    return '${File(Platform.resolvedExecutable).parent.path}/display_mode';
+  }
+
+  Future<void> setSystemDisplayMode(String resolution, double rate) async {
+    final file = File(_displayModePath());
+    await file.parent.create(recursive: true);
+    await file.writeAsString('$resolution\n${rate.toStringAsFixed(2)}\n');
+  }
+
   // ── Language ──────────────────────────────────────────────────────────────
 
   Future<String> language() async {

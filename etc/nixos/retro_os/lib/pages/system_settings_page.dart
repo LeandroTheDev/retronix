@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/gamepad_service.dart';
 import '../utils/app_localizations.dart';
 import '../utils/locale_service.dart';
+import '../utils/settings_service.dart';
+import '../utils/system_info.dart';
 
 class SystemSettingsPage extends StatefulWidget {
   const SystemSettingsPage({super.key});
@@ -16,14 +18,18 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   int _selectedIndex = 0;
 
   final _langOptions = const ['en_us', 'pt_br'];
-
   int _langIdx = 0;
+
+  List<DisplayMode> _resolutionOptions = [];
+  int _resIdx = 0;
+  bool _loadingResolutions = true;
 
   @override
   void initState() {
     super.initState();
     _langIdx = _langOptions.indexOf(LocaleService.instance.locale).clamp(0, _langOptions.length - 1);
     _sub = GamepadService.instance.actions.listen(_handleAction);
+    _loadResolutions();
   }
 
   @override
@@ -32,13 +38,26 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     super.dispose();
   }
 
+  Future<void> _loadResolutions() async {
+    final options = await getAvailableDisplayModes();
+    final current = await getCurrentDisplayMode();
+    if (!mounted) return;
+    setState(() {
+      _resolutionOptions = options;
+      _resIdx = current == null
+          ? 0
+          : options.indexWhere((m) => m.resolution == current.resolution).clamp(0, options.length - 1);
+      _loadingResolutions = false;
+    });
+  }
+
   void _handleAction(GamepadAction action) {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 0));
+        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 1));
       case GamepadAction.down:
-        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 0));
+        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 1));
       case GamepadAction.left:
         _cycleValue(-1);
       case GamepadAction.right:
@@ -51,11 +70,20 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   }
 
   void _cycleValue(int dir) {
-    if (_selectedIndex == 0) {
-      final next = (_langIdx + dir).clamp(0, _langOptions.length - 1);
-      if (next == _langIdx) return;
-      setState(() => _langIdx = next);
-      LocaleService.instance.setLocale(_langOptions[next]);
+    switch (_selectedIndex) {
+      case 0:
+        final next = (_langIdx + dir).clamp(0, _langOptions.length - 1);
+        if (next == _langIdx) return;
+        setState(() => _langIdx = next);
+        LocaleService.instance.setLocale(_langOptions[next]);
+      case 1:
+        if (_loadingResolutions || _resolutionOptions.isEmpty) return;
+        final next = (_resIdx + dir).clamp(0, _resolutionOptions.length - 1);
+        if (next == _resIdx) return;
+        setState(() => _resIdx = next);
+        final mode = _resolutionOptions[next];
+        applyDisplayMode(mode);
+        SettingsService.instance.setSystemDisplayMode(mode.resolution, mode.rate);
     }
   }
 
@@ -63,6 +91,16 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final langLabels = [l.languageEnglish, l.languagePortuguese];
+
+    final String resolutionValue;
+    if (_loadingResolutions) {
+      resolutionValue = '...';
+    } else if (_resolutionOptions.isEmpty) {
+      resolutionValue = l.noResolutionsFound;
+    } else {
+      resolutionValue = _resolutionOptions[_resIdx].label;
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Column(
@@ -85,6 +123,14 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                   selected: _selectedIndex == 0,
                   canLeft:  _langIdx > 0,
                   canRight: _langIdx < _langOptions.length - 1,
+                ),
+                _OptionRow(
+                  icon: Icons.aspect_ratio,
+                  label: l.screenResolution,
+                  value: resolutionValue,
+                  selected: _selectedIndex == 1,
+                  canLeft:  !_loadingResolutions && _resIdx > 0,
+                  canRight: !_loadingResolutions && _resIdx < _resolutionOptions.length - 1,
                 ),
               ],
             ),

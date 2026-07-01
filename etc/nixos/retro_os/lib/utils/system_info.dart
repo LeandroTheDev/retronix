@@ -3,6 +3,15 @@ import 'debug_logger.dart';
 
 const _unknown = 'Unknown';
 
+class DisplayMode {
+  const DisplayMode(this.resolution, this.rate);
+
+  final String resolution; // e.g. "1920x1080"
+  final double rate;       // e.g. 60.0
+
+  String get label => '$resolution @ ${rate.round()}Hz';
+}
+
 // Raspberry Pi model string (falls back to hostname on non-Pi/dev machines)
 Future<String> getDeviceModel() async {
   try {
@@ -39,8 +48,28 @@ Future<String> getCpuArchitecture() async {
   }
 }
 
-// Current Xorg output mode, e.g. "1920x1080 @ 60Hz"
-Future<String> getDisplayMode() async {
+// Name of the first output xrandr reports as connected (e.g. "HDMI-1",
+// "HDMI-2") — whichever HDMI port is actually plugged in, not hardcoded.
+Future<String?> getConnectedOutput() async {
+  try {
+    final result = await Process.run(
+      'sh',
+      ['-c', "xrandr --query 2>/dev/null | grep ' connected' | cut -d' ' -f1 | head -n1"],
+    );
+    final output = (result.stdout as String).trim();
+    if (output.isEmpty) {
+      DebugLogger.log('[system_info] getConnectedOutput: no connected output found');
+      return null;
+    }
+    return output;
+  } catch (e) {
+    DebugLogger.log('[system_info] getConnectedOutput failed: $e');
+    return null;
+  }
+}
+
+// Currently active output mode, or null if it couldn't be determined/parsed.
+Future<DisplayMode?> getCurrentDisplayMode() async {
   try {
     final result = await Process.run(
       'sh',
@@ -48,24 +77,91 @@ Future<String> getDisplayMode() async {
     );
     final output = (result.stdout as String).trim();
     if (output.isEmpty) {
-      DebugLogger.log('[system_info] getDisplayMode: no active mode found in xrandr output');
-      return _unknown;
+      DebugLogger.log('[system_info] getCurrentDisplayMode: no active mode found in xrandr output');
+      return null;
     }
 
     final line = output.split('\n').first;
     final match = RegExp(r'(\d+x\d+)\s+([\d.]+)\*').firstMatch(line);
     if (match == null) {
-      DebugLogger.log('[system_info] getDisplayMode: failed to parse xrandr line: $line');
-      return _unknown;
+      DebugLogger.log('[system_info] getCurrentDisplayMode: failed to parse xrandr line: $line');
+      return null;
     }
 
-    final resolution = match.group(1)!;
     final rate = double.tryParse(match.group(2)!);
-    final hz = rate != null ? rate.round().toString() : match.group(2)!;
-    return '$resolution @ ${hz}Hz';
+    if (rate == null) return null;
+    return DisplayMode(match.group(1)!, rate);
   } catch (e) {
-    DebugLogger.log('[system_info] getDisplayMode failed: $e');
-    return _unknown;
+    DebugLogger.log('[system_info] getCurrentDisplayMode failed: $e');
+    return null;
+  }
+}
+
+// e.g. "1920x1080 @ 60Hz"
+Future<String> getDisplayMode() async {
+  final mode = await getCurrentDisplayMode();
+  return mode?.label ?? _unknown;
+}
+
+// Every resolution the display advertises via EDID, each paired with its
+// highest available refresh rate.
+Future<List<DisplayMode>> getAvailableDisplayModes() async {
+  try {
+    final connectedOutput = await getConnectedOutput();
+    if (connectedOutput == null) return [];
+
+    final result = await Process.run('sh', ['-c', 'xrandr --query 2>/dev/null']);
+    final lines = (result.stdout as String).split('\n');
+
+    final startIdx = lines.indexWhere((l) => l.startsWith('$connectedOutput connected'));
+    if (startIdx == -1) {
+      DebugLogger.log('[system_info] getAvailableDisplayModes: $connectedOutput not found in xrandr output');
+      return [];
+    }
+
+    final modes = <DisplayMode>[];
+    for (var i = startIdx + 1; i < lines.length; i++) {
+      final line = lines[i];
+      if (!line.startsWith('  ')) break; // next output section
+
+      final match = RegExp(r'^\s+(\d+x\d+)\s+(.+)$').firstMatch(line);
+      if (match == null) continue;
+
+      final rates = RegExp(r'[\d.]+')
+          .allMatches(match.group(2)!)
+          .map((m) => double.parse(m.group(0)!))
+          .toList();
+      if (rates.isEmpty) continue;
+
+      modes.add(DisplayMode(match.group(1)!, rates.reduce((a, b) => a > b ? a : b)));
+    }
+    return modes;
+  } catch (e) {
+    DebugLogger.log('[system_info] getAvailableDisplayModes failed: $e');
+    return [];
+  }
+}
+
+// Returns true on success.
+Future<bool> applyDisplayMode(DisplayMode mode) async {
+  try {
+    final connectedOutput = await getConnectedOutput();
+    if (connectedOutput == null) {
+      DebugLogger.log('[system_info] applyDisplayMode(${mode.label}): no connected output found');
+      return false;
+    }
+
+    final result = await Process.run('sh', [
+      '-c',
+      'xrandr --output $connectedOutput --mode ${mode.resolution} --rate ${mode.rate.toStringAsFixed(2)}',
+    ]);
+    if (result.exitCode != 0) {
+      DebugLogger.log('[system_info] applyDisplayMode(${mode.label}) failed: ${result.stderr}');
+    }
+    return result.exitCode == 0;
+  } catch (e) {
+    DebugLogger.log('[system_info] applyDisplayMode(${mode.label}) failed: $e');
+    return false;
   }
 }
 

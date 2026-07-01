@@ -3,12 +3,26 @@
 let
   retro_os = pkgs.callPackage ./retro-os.nix {};
 
-  # The monitor's EDID-preferred mode is 3840x2160@30, but we want 1080p60.
-  # NOTE: verify the output name with `xrandr --query` on first boot — RandR
-  # names connectors like "HDMI-2" rather than wlroots' "HDMI-A-2".
+  # Output name isn't hardcoded — detected below, since which HDMI port
+  # reports as connected depends on the cable/port actually in use.
+  #
+  # retro_os writes the user's chosen resolution to display_mode (line 1 =
+  # resolution, line 2 = rate) whenever they change it in System Settings, so
+  # it's applied here on every boot before the app even starts — no need for
+  # Flutter to re-apply it itself after launch. If the file doesn't exist yet
+  # (fresh install, never touched the setting), we don't call xrandr at all —
+  # Xorg's own EDID-preferred mode is the fallback.
   retro_os_session = pkgs.writeShellScript "retro_os-session" ''
     export FONTCONFIG_FILE=/etc/fonts/fonts.conf
-    ${pkgs.xrandr}/bin/xrandr --output HDMI-2 --mode 1920x1080 --rate 60 >> /tmp/retro_os.log 2>&1
+
+    DISPLAY_MODE_FILE="$HOME/.local/share/retro_os/display_mode"
+    if [ -f "$DISPLAY_MODE_FILE" ]; then
+      RESOLUTION=$(${pkgs.gnused}/bin/sed -n '1p' "$DISPLAY_MODE_FILE")
+      RATE=$(${pkgs.gnused}/bin/sed -n '2p' "$DISPLAY_MODE_FILE")
+      OUTPUT=$(${pkgs.xrandr}/bin/xrandr --query | ${pkgs.gnugrep}/bin/grep ' connected' | ${pkgs.coreutils}/bin/cut -d' ' -f1 | ${pkgs.coreutils}/bin/head -n1)
+      ${pkgs.xrandr}/bin/xrandr --output "$OUTPUT" --mode "$RESOLUTION" --rate "$RATE" >> /tmp/retro_os.log 2>&1
+    fi
+
     ${pkgs.xorg.xset}/bin/xset s off -dpms
     ${pkgs.matchbox}/bin/matchbox-window-manager &
     exec ${retro_os}/bin/retro_os

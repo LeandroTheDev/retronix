@@ -27,6 +27,8 @@ class AppLocalizations {
   // ── System Settings Page ─────────────────────────────────────────────────
 
   String get systemSettingsTitle => _pick('System Settings', 'Configurações do Sistema');
+  String get screenResolution    => _pick('Screen Resolution', 'Resolução da Tela');
+  String get noResolutionsFound  => _pick('No resolutions found', 'Nenhuma resolução encontrada');
 
   // ── Update System Page ────────────────────────────────────────────────────
 
