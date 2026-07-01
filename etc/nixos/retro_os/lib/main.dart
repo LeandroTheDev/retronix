@@ -40,6 +40,7 @@ class _RetroOsAppState extends State<RetroOsApp> {
       localizations: AppLocalizations(LocaleService.instance.locale),
       child: MaterialApp(
         title: 'RetroOS',
+        showPerformanceOverlay: true,
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(useMaterial3: false).copyWith(
           textTheme: ThemeData.dark(useMaterial3: false).textTheme.apply(fontFamily: 'PressStart'),
@@ -48,12 +49,7 @@ class _RetroOsAppState extends State<RetroOsApp> {
           ),
         ),
         home: const ConsoleSelectorPage(),
-        builder: (context, child) => Stack(
-          children: [
-            ?child,
-            const GamepadStatusOverlay(),
-          ],
-        ),
+        builder: (context, child) => Stack(children: [?child, const GamepadStatusOverlay()]),
       ),
     );
   }

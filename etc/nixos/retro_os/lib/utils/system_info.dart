@@ -25,6 +25,20 @@ Future<String> getDeviceModel() async {
     DebugLogger.log('[system_info] getDeviceModel: device-tree read failed: $e');
   }
 
+  // Desktop/laptop motherboard via DMI (x86 systems)
+  try {
+    final vendorFile = File('/sys/class/dmi/id/board_vendor');
+    final nameFile = File('/sys/class/dmi/id/board_name');
+    if (await vendorFile.exists() && await nameFile.exists()) {
+      final vendor = (await vendorFile.readAsString()).trim();
+      final name = (await nameFile.readAsString()).trim();
+      if (vendor.isNotEmpty && name.isNotEmpty) return '$vendor $name';
+      if (name.isNotEmpty) return name;
+    }
+  } catch (e) {
+    DebugLogger.log('[system_info] getDeviceModel: DMI read failed: $e');
+  }
+
   try {
     final hostname = await Process.run('sh', ['-c', 'hostname']);
     final result = (hostname.stdout as String).trim();
