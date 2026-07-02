@@ -13,12 +13,12 @@ pkgs.flutter.buildFlutterApplication {
 
   pubspecLock = lib.importJSON ./retro_os/pubspec.lock.json;
 
-  nativeBuildInputs = with pkgs; [ pkg-config ];
+  nativeBuildInputs = with pkgs; [ pkg-config makeWrapper ];
   buildInputs = with pkgs; [
     gtk3
     glib
     udev
-    # audioplayers (boot jingle) uses GStreamer on Linux for decoding/playback.
+    # audioplayers uses GStreamer on Linux for decoding/playback.
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base
     gst_all_1.gst-plugins-good
@@ -28,4 +28,16 @@ pkgs.flutter.buildFlutterApplication {
     # gstreamer-audio-1.0.pc requires orc-0.4 the same way.
     orc
   ];
+
+  # GStreamer discovers plugins via GST_PLUGIN_SYSTEM_PATH_1_0 at runtime —
+  # buildInputs alone is not enough because plugins live in the Nix store, not
+  # in the standard /usr/lib/gstreamer-1.0 that the scanner checks by default.
+  postFixup = with pkgs.gst_all_1; ''
+    wrapProgram $out/bin/retro_os \
+      --set GST_PLUGIN_SYSTEM_PATH_1_0 "${lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" [
+        gstreamer
+        gst-plugins-base
+        gst-plugins-good
+      ]}"
+  '';
 }

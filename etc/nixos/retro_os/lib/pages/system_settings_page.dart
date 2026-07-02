@@ -6,6 +6,7 @@ import '../utils/dialogs.dart';
 import '../utils/locale_service.dart';
 import '../utils/settings_service.dart';
 import '../utils/system_info.dart';
+import '../utils/sound.dart';
 import '../utils/debug_logger.dart';
 import 'restart_page.dart';
 
@@ -147,7 +148,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         final vol = int.parse(_volumeOptions[next]);
         setVolumeLevel(vol, _selectedDevice);
         SettingsService.instance.setSavedVolume(vol);
-        playVolumeBeep(_selectedDevice);
+        playSound('sounds/change-sound-effect-402322-freesounds-community.wav');
       case 3:
         if (_loadingAudio || _audioDevices.isEmpty) return;
         final next = (_audioIdx + dir).clamp(0, _audioDevices.length - 1);
@@ -155,7 +156,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         setState(() => _audioIdx = next);
         final device = _audioDevices[next];
         SettingsService.instance.setAudioDevice(device.name);
-        playBeep(device.name);
+        playSound('sounds/change2-sound-effect-188167-freesounds-community.wav');
         _loadVolume();
     }
   }
