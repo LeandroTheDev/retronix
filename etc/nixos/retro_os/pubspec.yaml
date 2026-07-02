@@ -36,6 +36,9 @@ dependencies:
   flutter_svg: ^2.0.0
   audioplayers: ^6.0.0
 
+dependency_overrides:
+  synchronized: 3.4.0+1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
