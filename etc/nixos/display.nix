@@ -40,6 +40,10 @@ let
     fi
 
     ${pkgs.xset}/bin/xset s off -dpms
+    # There's no real mouse on this device (gamepad-only) — idle 0 hides the
+    # cursor immediately instead of waiting for it to sit idle first, and
+    # since nothing ever moves it, it stays hidden for good.
+    ${pkgs.unclutter}/bin/unclutter -idle 0 -root &
     # -use_titlebar no: retro_os already starts undecorated+fullscreen, but
     # RetroArch maps its window in normal windowed mode before switching to
     # fullscreen a moment later — without this flag, matchbox briefly draws

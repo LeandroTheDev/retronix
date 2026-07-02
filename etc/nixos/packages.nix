@@ -20,5 +20,6 @@
     alsa-utils
     pulseaudio
     xdotool
+    unclutter
   ];
 }
