@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:gamepads/gamepads.dart';
 import '../utils/debug_logger.dart';
@@ -21,6 +22,25 @@ ControllerType controllerTypeFromName(String name) {
   return ControllerType.generic;
 }
 
+// Which original console a pad/adapter was built for. Unlike [ControllerType]
+// (brand, guessed from a free-text name), this is keyed off the USB
+// vendorId/productId — a real hardware identifier read from the OS (sysfs on
+// Linux) rather than a string that can come back empty or unreliable (see
+// the "Microntek USB Joystick" pad, whose reported name is blank at connect
+// time on some boots, but whose vendorId/productId are always present).
+enum KnownConsolePad { nintendo64 }
+
+// Add an entry here for every adapter/pad we've confirmed by hand — check
+// the "[GamepadService] controller ... identified" debug log for the
+// vendorId/productId of a new device, then verify it's actually the console
+// it claims to be before adding it.
+const _knownConsolePadsByVidPid = <(int, int), KnownConsolePad>{
+  (0x0079, 0x0006): KnownConsolePad.nintendo64, // "Microntek USB Joystick" N64 adapter
+};
+
+KnownConsolePad? knownConsolePadFromVidPid(int vendorId, int productId) =>
+    _knownConsolePadsByVidPid[(vendorId, productId)];
+
 class GamepadService {
   GamepadService._();
   static final instance = GamepadService._();
@@ -42,6 +62,9 @@ class GamepadService {
 
   static const _repeatDelay = Duration(milliseconds: 400);
   static const _repeatInterval = Duration(milliseconds: 120);
+
+  static const _connectSound = 'sounds/connect-sound-effect-3045-freesounds-community.wav';
+  final _connectSoundPlayer = AudioPlayer();
 
   // ── Player slots ─────────────────────────────────────────────────────────
   // Slot index 0..3 = player 1..4. Assigned by connection order: the first
@@ -74,6 +97,11 @@ class GamepadService {
   String? nameForId(String id) => _controllerNames[id];
 
   (int, int)? vendorProductForId(String id) => _controllerVendorProduct[id];
+
+  KnownConsolePad? knownConsolePadForId(String id) {
+    final vp = _controllerVendorProduct[id];
+    return vp == null ? null : knownConsolePadFromVidPid(vp.$1, vp.$2);
+  }
 
   ControllerType? typeForId(String id) {
     final name = _controllerNames[id];
@@ -117,6 +145,7 @@ class GamepadService {
     _slotsController.close();
     _buttonDownController.close();
     _buttonUpController.close();
+    _connectSoundPlayer.dispose();
   }
 
   Future<void> _scanDevices() async {
@@ -143,9 +172,18 @@ class GamepadService {
       _playerSlots[freeIndex] = controller.id;
       changed = true;
       DebugLogger.log('[GamepadService] player ${freeIndex + 1} assigned: ${controller.id} (${controller.name})');
+      _playConnectSound();
     }
 
     if (changed) _slotsController.add(currentPlayerSlots);
+  }
+
+  Future<void> _playConnectSound() async {
+    try {
+      await _connectSoundPlayer.play(AssetSource(_connectSound));
+    } catch (e) {
+      DebugLogger.log('[GamepadService] failed to play connect sound: $e');
+    }
   }
 
   GamepadAction? _keyAction(LogicalKeyboardKey key) => switch (key) {
@@ -197,6 +235,10 @@ class GamepadService {
       'identified: vendorId=$vendorId (0x${vendorId.toRadixString(16)}), '
       'productId=$productId (0x${productId.toRadixString(16)})',
     );
+    final knownPad = knownConsolePadFromVidPid(vendorId, productId);
+    if (knownPad != null) {
+      DebugLogger.log('[GamepadService] controller ${event.gamepadId} recognized as: $knownPad');
+    }
   }
 
   void _handleEvent(GamepadEvent event) {

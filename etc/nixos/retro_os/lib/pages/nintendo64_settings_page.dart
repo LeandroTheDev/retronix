@@ -5,6 +5,7 @@ import '../services/gamepad_service.dart';
 import '../utils/debug_logger.dart';
 import '../utils/settings_service.dart';
 import '../utils/app_localizations.dart';
+import '../utils/snackbar.dart';
 
 class Nintendo64SettingsPage extends StatefulWidget {
   const Nintendo64SettingsPage({super.key});
@@ -167,13 +168,7 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
     } catch (e) {
       DebugLogger.log('[Nintendo64SettingsPage] failed to launch retroarch: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString(), style: const TextStyle(color: Colors.white)),
-            backgroundColor: Colors.red[900],
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        showErrorSnackBar(context, e.toString());
       }
     }
   }
