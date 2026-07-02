@@ -84,6 +84,25 @@ in
   # nixpkgs revision (unlike gdm/sddm/lemurs) — it still lives under xserver.
   services.xserver.displayManager.lightdm.enable = true;
 
+  # Force HDMI output even when no display is detected at boot (TV off).
+  # Without this the RPi firmware disables HDMI entirely, and X11 comes up
+  # with no connected output — the screen never appears when the TV is later
+  # turned on. hdmi_drive=2 keeps HDMI mode (with audio) instead of DVI.
+  system.activationScripts.rpi-hdmi-force = ''
+    CFG=/boot/firmware/config.txt
+    [ -f "$CFG" ] || CFG=/boot/config.txt
+    [ -f "$CFG" ] || exit 0
+    grep -q 'hdmi_force_hotplug' "$CFG" || echo 'hdmi_force_hotplug=1' >> "$CFG"
+    grep -q 'hdmi_drive'         "$CFG" || echo 'hdmi_drive=2'         >> "$CFG"
+  '';
+
+  # Re-run xrandr --auto when the TV is hotplugged after boot (TV was off
+  # during boot). The modesetting driver fires a DRM change event on hotplug;
+  # xrandr --auto enables the newly-detected output at its preferred resolution.
+  services.udev.extraRules = ''
+    ACTION=="change", SUBSYSTEM=="drm", RUN+="${pkgs.bash}/bin/sh -c 'DISPLAY=:0 XAUTHORITY=/home/admin/.Xauthority ${pkgs.xrandr}/bin/xrandr --auto'"
+  '';
+
   # Audio
   security.rtkit.enable = true;
   services.pipewire = {
