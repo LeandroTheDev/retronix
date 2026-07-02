@@ -8,10 +8,12 @@ import '../pages/shutdown_page.dart';
 import '../pages/restart_page.dart';
 import 'app_localizations.dart';
 import 'dialogs.dart';
+import '../services/update_checker_service.dart';
 
 /// The Start-button settings menu — shared across every page so it can be
 /// opened from anywhere, not just the console selector.
 Future<void> showAppSettingsDialog(BuildContext context) {
+  UpdateCheckerService.instance.checkNow();
   final l = AppLocalizations.of(context);
   return showSettingsDialog(
     context,
@@ -36,6 +38,7 @@ Future<void> showAppSettingsDialog(BuildContext context) {
       SettingsOption(
         label: l.updateSystem,
         icon: Icons.system_update_alt,
+        hasNotification: UpdateCheckerService.instance.hasUpdates,
         onSelect: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const UpdateSystemPage()),

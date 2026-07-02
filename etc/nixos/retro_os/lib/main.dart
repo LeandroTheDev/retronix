@@ -7,10 +7,12 @@ import 'utils/app_localizations.dart';
 import 'utils/settings_service.dart';
 import 'utils/system_info.dart';
 import 'widgets/gamepad_status_overlay.dart';
+import 'services/update_checker_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GamepadService.instance.init();
+  UpdateCheckerService.instance.init();
   await LocaleService.instance.load();
   final savedVol = await SettingsService.instance.savedVolume();
   final savedDevice = await SettingsService.instance.audioDevice();

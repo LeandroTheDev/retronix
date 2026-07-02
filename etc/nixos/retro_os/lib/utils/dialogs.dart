@@ -1,13 +1,15 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import '../services/gamepad_service.dart';
 
 class SettingsOption {
-  const SettingsOption({required this.label, required this.icon, required this.onSelect});
+  const SettingsOption({required this.label, required this.icon, required this.onSelect, this.hasNotification});
 
   final String label;
   final IconData icon;
   final VoidCallback onSelect;
+  final ValueListenable<bool>? hasNotification;
 }
 
 Future<void> showSettingsDialog(
@@ -155,6 +157,20 @@ class _SettingsDialogState extends State<_SettingsDialog> {
                                 ),
                               ),
                             ),
+                            if (opt.hasNotification != null)
+                              ValueListenableBuilder<bool>(
+                                valueListenable: opt.hasNotification!,
+                                builder: (_, value, _) => value
+                                    ? Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.greenAccent,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(),
+                              ),
                           ],
                         ),
                       ),
