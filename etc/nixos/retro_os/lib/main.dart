@@ -14,7 +14,16 @@ void main() async {
   await LocaleService.instance.load();
   final savedVol = await SettingsService.instance.savedVolume();
   final savedDevice = await SettingsService.instance.audioDevice();
-  DebugLogger.log('[main] savedVolume=$savedVol — applying...');
+  DebugLogger.log('[main] savedVolume=$savedVol savedDevice=$savedDevice — applying...');
+  if (savedDevice.isNotEmpty) {
+    final devices = await getAudioDevices();
+    final exists = devices.any((d) => d.name == savedDevice);
+    if (exists) {
+      await setDefaultAudioDevice(savedDevice);
+    } else {
+      DebugLogger.log('[main] savedDevice=$savedDevice not found in sinks, skipping');
+    }
+  }
   await setVolumeLevel(savedVol, savedDevice);
   final readBack = await getVolumeLevel(savedDevice);
   DebugLogger.log('[main] volume after apply: readBack=$readBack');

@@ -233,6 +233,20 @@ Future<int> getVolumeLevel(String deviceName) async {
   return 50;
 }
 
+// Sets [deviceName] as the PipeWire default sink. Empty = no-op.
+Future<void> setDefaultAudioDevice(String deviceName) async {
+  if (deviceName.isEmpty) return;
+  try {
+    final result = await Process.run('sh', [
+      '-c',
+      "pactl set-default-sink '$deviceName'",
+    ]);
+    DebugLogger.log('[system_info] setDefaultAudioDevice($deviceName): exit=${result.exitCode}');
+  } catch (e) {
+    DebugLogger.log('[system_info] setDefaultAudioDevice($deviceName) exception: $e');
+  }
+}
+
 // Sets [deviceName]'s volume to [percent] (0–100) and unmutes it. Empty =
 // system default sink.
 Future<void> setVolumeLevel(int percent, String deviceName) async {

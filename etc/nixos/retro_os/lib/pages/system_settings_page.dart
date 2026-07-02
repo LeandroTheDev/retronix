@@ -156,6 +156,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         setState(() => _audioIdx = next);
         final device = _audioDevices[next];
         SettingsService.instance.setAudioDevice(device.name);
+        setDefaultAudioDevice(device.name);
         playSound('sounds/change2-sound-effect-188167-freesounds-community.wav');
         _loadVolume();
     }
