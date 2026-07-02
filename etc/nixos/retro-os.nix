@@ -22,5 +22,8 @@ pkgs.flutter.buildFlutterApplication {
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base
     gst_all_1.gst-plugins-good
+    # gstreamer-1.0.pc pulls in libunwind (Requires.private) — without it in
+    # buildInputs, pkg-config can't resolve gstreamer-1.0 in the sandbox.
+    libunwind
   ];
 }
