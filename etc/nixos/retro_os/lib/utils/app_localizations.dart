@@ -49,6 +49,10 @@ class AppLocalizations {
   String get updateStepCopyNew    => _pick('Applying new configuration', 'Aplicando nova configuração');
   String get updateStepRebuild    => _pick('Rebuilding system (nixos-rebuild)', 'Recompilando sistema (nixos-rebuild)');
 
+  // ── Splash Page ───────────────────────────────────────────────────────────
+
+  String get initializingSystem => _pick('INITIALIZING SYSTEM', 'INICIALIZANDO SISTEMA');
+
   // ── Console Selector ──────────────────────────────────────────────────────
 
   String get selectConsole  => _pick('SELECT CONSOLE', 'SELECIONAR CONSOLE');

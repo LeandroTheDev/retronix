@@ -402,9 +402,9 @@ class _CoreInfoRow extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 80, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
       decoration: BoxDecoration(
-        color: exists ? Colors.white10 : Colors.red.withOpacity(0.15),
+        color: exists ? Colors.white10 : Colors.red.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
-        border: exists ? null : Border.all(color: Colors.red.withOpacity(0.6)),
+        border: exists ? null : Border.all(color: Colors.red.withValues(alpha: 0.6)),
       ),
       child: Row(
         children: [
@@ -425,7 +425,7 @@ class _CoreInfoRow extends StatelessWidget {
                 Text(
                   path,
                   style: TextStyle(
-                    color: exists ? Colors.white38 : Colors.red.withOpacity(0.7),
+                    color: exists ? Colors.white38 : Colors.red.withValues(alpha: 0.7),
                     fontSize: 13,
                   ),
                   overflow: TextOverflow.ellipsis,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'services/gamepad_service.dart';
-import 'pages/console_selector_page.dart';
+import 'pages/splash_page.dart';
 import 'utils/locale_service.dart';
 import 'utils/app_localizations.dart';
 import 'utils/settings_service.dart';
@@ -52,7 +52,7 @@ class _RetroOsAppState extends State<RetroOsApp> {
             contentTextStyle: TextStyle(fontFamily: 'PressStart', color: Colors.white),
           ),
         ),
-        home: const ConsoleSelectorPage(),
+        home: const SplashPage(),
         builder: (context, child) => Stack(children: [?child, const GamepadStatusOverlay()]),
       ),
     );

@@ -18,5 +18,9 @@ pkgs.flutter.buildFlutterApplication {
     gtk3
     glib
     udev
+    # audioplayers (boot jingle) uses GStreamer on Linux for decoding/playback.
+    gst_all_1.gstreamer
+    gst_all_1.gst-plugins-base
+    gst_all_1.gst-plugins-good
   ];
 }
