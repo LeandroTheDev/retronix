@@ -5,8 +5,10 @@ import '../services/gamepad_service.dart';
 import '../utils/debug_logger.dart';
 import '../utils/devices.dart';
 import '../utils/settings_service.dart';
+import '../utils/system_info.dart';
 import '../utils/app_localizations.dart';
 import '../utils/locale_service.dart';
+import 'game_overlay_page.dart';
 
 class Nintendo64GameOpen extends StatefulWidget {
   const Nintendo64GameOpen({super.key, required this.gameName});
@@ -82,12 +84,17 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       );
 
       final exitSubs = _watchExitHold(process);
+      final overlayCombo = GamepadService.instance.watchCombo(
+        {GamepadAction.l, GamepadAction.r},
+        () => _showOverlay(process),
+      );
 
       final exitCode = await process.exitCode;
       for (final s in exitSubs) {
         s.cancel();
       }
       _exitHoldTimer?.cancel();
+      overlayCombo.cancel();
       DebugLogger.log('[Nintendo64GameOpen] retroarch exited with code: $exitCode');
 
       if (!mounted) return;
@@ -120,6 +127,25 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       if (action == GamepadAction.start) _exitHoldTimer?.cancel();
     });
     return [downSub, upSub];
+  }
+
+  // L+R brings retro_os back to the front (matchbox has no alt-tab, so this
+  // has to be driven manually) and shows a placeholder overlay on top of the
+  // — still running, now unfocused — RetroArch window. RetroArch's own
+  // pause_nonactive setting takes care of pausing/resuming automatically.
+  bool _overlayOpen = false;
+
+  Future<void> _showOverlay(Process retroarchProcess) async {
+    if (_overlayOpen || !mounted) return;
+    _overlayOpen = true;
+    DebugLogger.log('[Nintendo64GameOpen] L+R pressed — showing overlay');
+    await focusWindowByPid(pid);
+    if (mounted) {
+      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GameOverlayPage()));
+    }
+    DebugLogger.log('[Nintendo64GameOpen] overlay closed — refocusing retroarch');
+    await focusWindowByPid(retroarchProcess.pid);
+    _overlayOpen = false;
   }
 
   @override

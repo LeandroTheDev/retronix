@@ -106,6 +106,7 @@ class AppLocalizations {
   // ── Game Open ─────────────────────────────────────────────────────────────
 
   String get holdStartToExit => _pick('Hold Start for 5 seconds to exit', 'Segure Start por 5 segundos para sair');
+  String get pressLrToContinue => _pick('Press L+R to continue', 'Aperte L+R para continuar');
 
   String openingGame(String name)      => _pick('Opening $name', 'Abrindo $name');
   String romNotFound(String name)      => _pick('ROM not found for: $name', 'ROM não encontrada para: $name');

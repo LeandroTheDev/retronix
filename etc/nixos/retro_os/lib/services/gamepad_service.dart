@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:gamepads/gamepads.dart';
 import '../utils/debug_logger.dart';
 
-enum GamepadAction { up, down, left, right, confirm, back, start, select }
+enum GamepadAction { up, down, left, right, confirm, back, start, select, l, r }
 
 // Best-effort guess from GamepadController.name — a free-text, platform-
 // dependant string, not a real hardware ID (see GamepadService docs).
@@ -73,6 +73,25 @@ class GamepadService {
     return name == null ? null : controllerTypeFromName(name);
   }
 
+  // Fires [onTrigger] once when every action in [combo] has been pressed
+  // within [window] of each other (e.g. L+R to toggle the in-game overlay).
+  StreamSubscription<GamepadAction> watchCombo(
+    Set<GamepadAction> combo,
+    void Function() onTrigger, {
+    Duration window = const Duration(milliseconds: 400),
+  }) {
+    final recent = <GamepadAction>{};
+    return actions.listen((action) {
+      if (!combo.contains(action)) return;
+      recent.add(action);
+      Future.delayed(window, () => recent.remove(action));
+      if (combo.every(recent.contains)) {
+        recent.clear();
+        onTrigger();
+      }
+    });
+  }
+
   void init() {
     _subscription = Gamepads.events.listen(_handleEvent);
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
@@ -131,6 +150,8 @@ class GamepadService {
     LogicalKeyboardKey.escape || LogicalKeyboardKey.backspace => GamepadAction.back,
     LogicalKeyboardKey.f1 => GamepadAction.start,
     LogicalKeyboardKey.f2 => GamepadAction.select,
+    LogicalKeyboardKey.f3 => GamepadAction.l,
+    LogicalKeyboardKey.f4 => GamepadAction.r,
     _ => null,
   };
 
@@ -158,7 +179,13 @@ class GamepadService {
   void _handleEvent(GamepadEvent event) {
     if (event.type == KeyType.button) {
       final action = _mapButton(event.key);
-      if (action == null) return;
+      if (action == null) {
+        // Helps identify the raw key string for buttons we don't map yet
+        // (e.g. shoulder buttons on an untested controller) — check this log
+        // while pressing the button in question, then add it to _mapButton.
+        if (event.value == 1.0) DebugLogger.log('[GamepadService] unmapped button: ${event.key}');
+        return;
+      }
       if (event.value == 1.0) {
         _buttonDownController.add(action);
       } else if (event.value == 0.0) {
@@ -186,6 +213,12 @@ class GamepadService {
       'b' || 'button_1' || '4' => GamepadAction.back,
       'start' || 'button_9' || '9' => GamepadAction.start,
       'select' || 'button_8' || '8' => GamepadAction.select,
+      // Linux joydev names shoulder buttons tl/tr (top-left/top-right); other
+      // backends call them l1/r1 or left_shoulder/right_shoulder. Unverified
+      // on the "Microntek USB Joystick" pad — check the unmapped-button log
+      // above if this doesn't trigger and add its raw key string here.
+      'tl' || 'l1' || 'left_shoulder' => GamepadAction.l,
+      'tr' || 'r1' || 'right_shoulder' => GamepadAction.r,
       'dpad_up' => GamepadAction.up,
       'dpad_down' => GamepadAction.down,
       'dpad_left' => GamepadAction.left,

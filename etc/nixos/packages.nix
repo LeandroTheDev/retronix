@@ -19,5 +19,6 @@
     mesa-demos
     alsa-utils
     pulseaudio
+    xdotool
   ];
 }

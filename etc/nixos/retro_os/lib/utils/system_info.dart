@@ -295,6 +295,21 @@ Future<void> setVolumeLevel(int percent) async {
   DebugLogger.log('[system_info] setVolumeLevel: no working amixer control found');
 }
 
+// Raises and focuses the X11 window owned by [targetPid] — used to switch
+// between retro_os and RetroArch (matchbox auto-raises new windows on map,
+// but has no alt-tab, so anything after that needs to be driven manually).
+// Silently no-ops if xdotool can't find a window for that pid.
+Future<void> focusWindowByPid(int targetPid) async {
+  try {
+    final result = await Process.run('xdotool', ['search', '--pid', '$targetPid', 'windowactivate']);
+    if (result.exitCode != 0) {
+      DebugLogger.log('[system_info] focusWindowByPid($targetPid) failed: ${result.stderr}');
+    }
+  } catch (e) {
+    DebugLogger.log('[system_info] focusWindowByPid($targetPid) failed: $e');
+  }
+}
+
 // e.g. "3.1 Mesa 24.0.0" — via glxinfo, requires the glxinfo package
 Future<String> getOpenGlVersion() async {
   try {
