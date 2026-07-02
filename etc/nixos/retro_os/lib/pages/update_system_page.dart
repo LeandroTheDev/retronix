@@ -41,7 +41,7 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
       label: (l) => l.updateStepCopyNew,
       command: 'sudo cp -r $_tmpDir/etc/nixos /etc/nixos && rm -rf $_tmpDir',
     ),
-    _Step(label: (l) => l.updateStepRebuild, command: 'sudo nixos-rebuild switch'),
+    _Step(label: (l) => l.updateStepRebuild, command: 'sudo nixos-rebuild switch -L'),
   ];
 
   late List<_StepStatus> _stepStatuses =

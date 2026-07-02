@@ -39,8 +39,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     _langIdx = _langOptions.indexOf(LocaleService.instance.locale).clamp(0, _langOptions.length - 1);
     _sub = GamepadService.instance.actions.listen(_handleAction);
     _loadResolutions();
-    _loadVolume();
-    _loadAudioDevices();
+    _loadAudioDevices().then((_) => _loadVolume());
   }
 
   @override
@@ -62,8 +61,10 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     DebugLogger.log('[SystemSettingsPage] audio devices: ${devices.map((d) => d.name).toList()}');
   }
 
+  String get _selectedDevice => _audioDevices.isNotEmpty ? _audioDevices[_audioIdx].name : '';
+
   Future<void> _loadVolume() async {
-    final vol = await getVolumeLevel();
+    final vol = await getVolumeLevel(_selectedDevice);
     if (!mounted) return;
     setState(() {
       final rounded = (vol / 10).round() * 10;
@@ -124,9 +125,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         if (next == _volumeIdx) return;
         setState(() => _volumeIdx = next);
         final vol = int.parse(_volumeOptions[next]);
-        setVolumeLevel(vol);
+        setVolumeLevel(vol, _selectedDevice);
         SettingsService.instance.setSavedVolume(vol);
-        playVolumeBeep(_audioDevices.isNotEmpty ? _audioDevices[_audioIdx].name : '');
+        playVolumeBeep(_selectedDevice);
       case 3:
         if (_loadingAudio || _audioDevices.isEmpty) return;
         final next = (_audioIdx + dir).clamp(0, _audioDevices.length - 1);
@@ -135,6 +136,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         final device = _audioDevices[next];
         SettingsService.instance.setAudioDevice(device.name);
         playBeep(device.name);
+        _loadVolume();
     }
   }
 

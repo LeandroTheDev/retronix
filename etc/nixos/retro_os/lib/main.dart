@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'services/gamepad_service.dart';
 import 'pages/splash_page.dart';
@@ -13,13 +12,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GamepadService.instance.init();
   await LocaleService.instance.load();
-  // Wait for PipeWire/ALSA bridge to be ready before applying volume.
-  DebugLogger.log('[main] waiting 1s for PipeWire ALSA bridge...');
-  await Future.delayed(const Duration(seconds: 1));
   final savedVol = await SettingsService.instance.savedVolume();
+  final savedDevice = await SettingsService.instance.audioDevice();
   DebugLogger.log('[main] savedVolume=$savedVol — applying...');
-  await setVolumeLevel(savedVol);
-  final readBack = await getVolumeLevel();
+  await setVolumeLevel(savedVol, savedDevice);
+  final readBack = await getVolumeLevel(savedDevice);
   DebugLogger.log('[main] volume after apply: readBack=$readBack');
   runApp(const RetroOsApp());
 }

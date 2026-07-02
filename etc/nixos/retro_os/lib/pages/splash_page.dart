@@ -49,8 +49,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
 
   Future<void> _playBootSound() async {
     try {
-      DebugLogger.log('[splash] waiting 1s before playing boot sound...');
-      await Future.delayed(const Duration(seconds: 1));
       DebugLogger.log('[splash] starting boot sound playback');
       _soundCompleteSub = _player.onPlayerComplete.listen((_) => _goToConsoleSelector());
       await _player.play(AssetSource(_bootSound));

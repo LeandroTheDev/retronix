@@ -261,39 +261,42 @@ Future<List<AudioDevice>> getAudioDevices() async {
   return devices;
 }
 
-// Returns the current master volume as a percentage (0–100), trying 'Master'
-// then 'PCM' as fallback. Returns 50 if neither control is found.
-Future<int> getVolumeLevel() async {
-  for (final control in ['Master', 'PCM']) {
-    try {
-      final result = await Process.run('sh', [
-        '-c',
-        "amixer get '$control' 2>/dev/null | grep -oP '(?<=\\[)\\d+(?=%\\])' | head -1",
-      ]);
-      final value = int.tryParse((result.stdout as String).trim());
-      if (value != null) return value;
-    } catch (e) {
-      DebugLogger.log('[system_info] getVolumeLevel($control) failed: $e');
-    }
+// Returns [deviceName]'s volume as a percentage (0–100). Empty = system
+// default sink (matching the AudioDevice/playBeep convention). Returns 50 if
+// it can't be determined.
+//
+// Uses pactl (PipeWire's ALSA mixer controls are owned by WirePlumber, which
+// re-syncs them to its own remembered volume the instant something else sets
+// them via amixer — reading the value back right after would just show
+// whatever WirePlumber reverted it to, not what was requested).
+Future<int> getVolumeLevel(String deviceName) async {
+  final sink = deviceName.isEmpty ? '@DEFAULT_SINK@' : deviceName;
+  try {
+    final result = await Process.run('sh', [
+      '-c',
+      "pactl get-sink-volume '$sink' 2>/dev/null | grep -oP '\\d+(?=%)' | head -1",
+    ]);
+    final value = int.tryParse((result.stdout as String).trim());
+    if (value != null) return value;
+  } catch (e) {
+    DebugLogger.log('[system_info] getVolumeLevel($sink) failed: $e');
   }
   return 50;
 }
 
-// Sets the master volume to [percent] (0–100), trying 'Master' then 'PCM'.
-Future<void> setVolumeLevel(int percent) async {
-  for (final control in ['Master', 'PCM']) {
-    try {
-      final result = await Process.run('sh', [
-        '-c',
-        "amixer set '$control' $percent%",
-      ]);
-      DebugLogger.log('[system_info] setVolumeLevel($control, $percent%): exit=${result.exitCode} stdout="${(result.stdout as String).trim()}" stderr="${(result.stderr as String).trim()}"');
-      if (result.exitCode == 0) return;
-    } catch (e) {
-      DebugLogger.log('[system_info] setVolumeLevel($control) exception: $e');
-    }
+// Sets [deviceName]'s volume to [percent] (0–100) and unmutes it. Empty =
+// system default sink.
+Future<void> setVolumeLevel(int percent, String deviceName) async {
+  final sink = deviceName.isEmpty ? '@DEFAULT_SINK@' : deviceName;
+  try {
+    final result = await Process.run('sh', [
+      '-c',
+      "pactl set-sink-mute '$sink' 0 && pactl set-sink-volume '$sink' $percent%",
+    ]);
+    DebugLogger.log('[system_info] setVolumeLevel($sink, $percent%): exit=${result.exitCode} stdout="${(result.stdout as String).trim()}" stderr="${(result.stderr as String).trim()}"');
+  } catch (e) {
+    DebugLogger.log('[system_info] setVolumeLevel($sink) exception: $e');
   }
-  DebugLogger.log('[system_info] setVolumeLevel: no working amixer control found');
 }
 
 // Raises and focuses the X11 window owned by [targetPid] — used to switch
