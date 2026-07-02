@@ -32,6 +32,7 @@ class _GamepadStatusOverlayState extends State<GamepadStatusOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = MediaQuery.sizeOf(context).height * 0.05;
     return Positioned(
       top: 16,
       left: 16,
@@ -43,7 +44,7 @@ class _GamepadStatusOverlayState extends State<GamepadStatusOverlay> {
               padding: const EdgeInsets.only(right: 8),
               child: Icon(
                 Icons.sports_esports,
-                size: 20,
+                size: iconSize,
                 color: connected ? Colors.greenAccent : Colors.white24,
               ),
             );
