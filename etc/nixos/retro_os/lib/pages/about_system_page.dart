@@ -13,7 +13,10 @@ class AboutSystemPage extends StatefulWidget {
 
 class _AboutSystemPageState extends State<AboutSystemPage> {
   late final StreamSubscription<GamepadAction> _sub;
+  final _scrollController = ScrollController();
   bool _loading = true;
+
+  static const _scrollStep = 80.0;
 
   String _device = '';
   String _architecture = '';
@@ -31,6 +34,7 @@ class _AboutSystemPageState extends State<AboutSystemPage> {
   @override
   void dispose() {
     _sub.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -53,7 +57,27 @@ class _AboutSystemPageState extends State<AboutSystemPage> {
 
   void _handleAction(GamepadAction action) {
     if (ModalRoute.of(context)?.isCurrent != true) return;
-    if (action == GamepadAction.back) Navigator.pop(context);
+    switch (action) {
+      case GamepadAction.back:
+        Navigator.pop(context);
+      case GamepadAction.up:
+        _scrollBy(-_scrollStep);
+      case GamepadAction.down:
+        _scrollBy(_scrollStep);
+      default:
+        break;
+    }
+  }
+
+  void _scrollBy(double delta) {
+    if (!_scrollController.hasClients) return;
+    final offset = (_scrollController.offset + delta)
+        .clamp(0.0, _scrollController.position.maxScrollExtent);
+    _scrollController.animateTo(
+      offset,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+    );
   }
 
   @override
@@ -75,6 +99,7 @@ class _AboutSystemPageState extends State<AboutSystemPage> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator(color: Colors.white))
                 : ListView(
+                    controller: _scrollController,
                     children: [
                       _InfoRow(icon: Icons.developer_board, label: l.aboutDevice, value: _device),
                       _InfoRow(icon: Icons.memory, label: l.aboutArchitecture, value: _architecture),
