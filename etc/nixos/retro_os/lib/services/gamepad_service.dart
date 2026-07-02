@@ -59,6 +59,11 @@ class GamepadService {
 
   final Map<String, String> _controllerNames = {}; // id -> raw name
 
+  // id -> (vendorId, productId), USB IDs read straight from the OS (sysfs on
+  // Linux) by the gamepads plugin. Only populated once the first event from
+  // that controller arrives — Gamepads.list() doesn't expose these.
+  final Map<String, (int, int)> _controllerVendorProduct = {};
+
   Timer? _deviceScanTimer;
 
   int? playerNumberForId(String id) {
@@ -67,6 +72,8 @@ class GamepadService {
   }
 
   String? nameForId(String id) => _controllerNames[id];
+
+  (int, int)? vendorProductForId(String id) => _controllerVendorProduct[id];
 
   ControllerType? typeForId(String id) {
     final name = _controllerNames[id];
@@ -176,14 +183,36 @@ class GamepadService {
 
   static const _repeatableActions = {GamepadAction.up, GamepadAction.down, GamepadAction.left, GamepadAction.right};
 
+  // Captures vendorId/productId from the first event of each controller
+  // (Gamepads.list() doesn't expose these — only available per-event, and
+  // only on platforms whose native plugin reads them, e.g. Linux via sysfs).
+  void _recordVendorProduct(GamepadEvent event) {
+    if (_controllerVendorProduct.containsKey(event.gamepadId)) return;
+    final vendorId = event.vendorId;
+    final productId = event.productId;
+    if (vendorId == null || productId == null) return;
+    _controllerVendorProduct[event.gamepadId] = (vendorId, productId);
+    DebugLogger.log(
+      '[GamepadService] controller ${event.gamepadId} (${_controllerNames[event.gamepadId]}) '
+      'identified: vendorId=$vendorId (0x${vendorId.toRadixString(16)}), '
+      'productId=$productId (0x${productId.toRadixString(16)})',
+    );
+  }
+
   void _handleEvent(GamepadEvent event) {
+    _recordVendorProduct(event);
     if (event.type == KeyType.button) {
       final action = _mapButton(event.key);
       if (action == null) {
         // Helps identify the raw key string for buttons we don't map yet
         // (e.g. shoulder buttons on an untested controller) — check this log
         // while pressing the button in question, then add it to _mapButton.
-        if (event.value == 1.0) DebugLogger.log('[GamepadService] unmapped button: ${event.key}');
+        if (event.value == 1.0) {
+          DebugLogger.log(
+            '[GamepadService] unmapped button: ${event.key} '
+            '(gamepad: ${event.gamepadId}, vendorId: ${event.vendorId}, productId: ${event.productId})',
+          );
+        }
         return;
       }
       if (event.value == 1.0) {
