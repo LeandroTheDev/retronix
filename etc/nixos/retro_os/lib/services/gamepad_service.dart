@@ -214,11 +214,12 @@ class GamepadService {
       'start' || 'button_9' || '9' => GamepadAction.start,
       'select' || 'button_8' || '8' => GamepadAction.select,
       // Linux joydev names shoulder buttons tl/tr (top-left/top-right); other
-      // backends call them l1/r1 or left_shoulder/right_shoulder. Unverified
-      // on the "Microntek USB Joystick" pad — check the unmapped-button log
-      // above if this doesn't trigger and add its raw key string here.
-      'tl' || 'l1' || 'left_shoulder' => GamepadAction.l,
-      'tr' || 'r1' || 'right_shoulder' => GamepadAction.r,
+      // backends call them l1/r1 or left_shoulder/right_shoulder. On the
+      // "Microntek USB Joystick" pad they come through as raw numeric codes
+      // instead (following the same sequential numbering as button_4/5/8/9
+      // above), confirmed via the unmapped-button log.
+      'tl' || 'l1' || 'left_shoulder' || '6' => GamepadAction.l,
+      'tr' || 'r1' || 'right_shoulder' || '7' => GamepadAction.r,
       'dpad_up' => GamepadAction.up,
       'dpad_down' => GamepadAction.down,
       'dpad_left' => GamepadAction.left,
