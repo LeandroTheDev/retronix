@@ -85,10 +85,8 @@ class GamepadService {
 
   Future<void> _scanDevices() async {
     final controllers = await Gamepads.list();
-    DebugLogger.log('[GamepadService] Gamepads.list() -> ${controllers.length} controller(s)');
     for (final c in controllers) {
       _controllerNames[c.id] = c.name;
-      DebugLogger.log('[GamepadService]   id="${c.id}" name="${c.name}" guessedType=${controllerTypeFromName(c.name)}');
     }
 
     final connectedIds = controllers.map((c) => c.id).toSet();
