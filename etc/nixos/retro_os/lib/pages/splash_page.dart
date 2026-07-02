@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import '../utils/app_localizations.dart';
+import '../utils/debug_logger.dart';
 import '../widgets/snowflake_logo.dart';
 import 'console_selector_page.dart';
 
@@ -48,12 +49,17 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
 
   Future<void> _playBootSound() async {
     try {
+      DebugLogger.log('[splash] waiting 1s before playing boot sound...');
+      await Future.delayed(const Duration(seconds: 1));
+      DebugLogger.log('[splash] starting boot sound playback');
       _soundCompleteSub = _player.onPlayerComplete.listen((_) => _goToConsoleSelector());
       await _player.play(AssetSource(_bootSound));
+      DebugLogger.log('[splash] audioplayers.play() returned — waiting for onPlayerComplete');
       // Safety net in case the audio backend never fires onPlayerComplete
       // (e.g. missing driver on the device) — don't strand the boot screen.
       _safetyTimer = Timer(_maxHold, _goToConsoleSelector);
-    } catch (_) {
+    } catch (e) {
+      DebugLogger.log('[splash] _playBootSound exception: $e');
       Future.delayed(_fallbackHold, _goToConsoleSelector);
     }
   }

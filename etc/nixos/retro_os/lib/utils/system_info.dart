@@ -285,11 +285,12 @@ Future<void> setVolumeLevel(int percent) async {
     try {
       final result = await Process.run('sh', [
         '-c',
-        "amixer set '$control' $percent% 2>/dev/null",
+        "amixer set '$control' $percent%",
       ]);
+      DebugLogger.log('[system_info] setVolumeLevel($control, $percent%): exit=${result.exitCode} stdout="${(result.stdout as String).trim()}" stderr="${(result.stderr as String).trim()}"');
       if (result.exitCode == 0) return;
     } catch (e) {
-      DebugLogger.log('[system_info] setVolumeLevel($control) failed: $e');
+      DebugLogger.log('[system_info] setVolumeLevel($control) exception: $e');
     }
   }
   DebugLogger.log('[system_info] setVolumeLevel: no working amixer control found');

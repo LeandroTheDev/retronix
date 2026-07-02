@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'services/gamepad_service.dart';
 import 'pages/splash_page.dart';
+import 'utils/debug_logger.dart';
 import 'utils/locale_service.dart';
 import 'utils/app_localizations.dart';
 import 'utils/settings_service.dart';
@@ -11,9 +13,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GamepadService.instance.init();
   await LocaleService.instance.load();
-  // ALSA/PipeWire reset the hardware mixer to its power-on default (often
-  // 0%) on every boot — re-apply the user's last chosen volume ourselves.
-  await setVolumeLevel(await SettingsService.instance.savedVolume());
+  // Wait for PipeWire/ALSA bridge to be ready before applying volume.
+  DebugLogger.log('[main] waiting 1s for PipeWire ALSA bridge...');
+  await Future.delayed(const Duration(seconds: 1));
+  final savedVol = await SettingsService.instance.savedVolume();
+  DebugLogger.log('[main] savedVolume=$savedVol — applying...');
+  await setVolumeLevel(savedVol);
+  final readBack = await getVolumeLevel();
+  DebugLogger.log('[main] volume after apply: readBack=$readBack');
   runApp(const RetroOsApp());
 }
 
