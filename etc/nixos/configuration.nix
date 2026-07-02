@@ -46,6 +46,15 @@
   systemd.user.services.pipewire.wantedBy = [ "default.target" ];
   systemd.user.services.pipewire-pulse.wantedBy = [ "default.target" ];
 
+  # Bluetooth — needed for wireless controllers (e.g. Xbox Series S/X pads).
+  hardware.bluetooth.enable = true;
+
+  # xpadneo gives full Xbox One/Series controller support over Bluetooth
+  # (correct button mapping, rumble, trigger deadzones) instead of relying
+  # on the generic HID gamepad quirks the kernel falls back to otherwise.
+  boot.extraModulePackages = [ config.boot.kernelPackages.xpadneo ];
+  boot.kernelModules = [ "xpadneo" ];
+
   # Open SSH
   services.openssh = {
     enable = true;
