@@ -34,7 +34,7 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
   final _outputLines = <String>[];
   Process? _process;
 
-  static final _steps = [_Step(label: (l) => l.updateStepCleanTmp, command: 'rm -rf $_tmpDir'), _Step(label: (l) => l.updateStepClone, command: 'git clone $_repoUrl $_tmpDir'), _Step(label: (l) => l.updateStepRemoveOld, command: 'sudo rm -rf /etc/nixos'), _Step(label: (l) => l.updateStepCopyNew, command: 'sudo cp -r $_tmpDir/etc/nixos /etc/nixos && rm -rf $_tmpDir'), _Step(label: (l) => l.updateStepRebuild, command: 'sudo nixos-rebuild switch')];
+  static final _steps = [_Step(label: (l) => l.updateStepCleanTmp, command: 'rm -rf $_tmpDir'), _Step(label: (l) => l.updateStepClone, command: 'git clone $_repoUrl $_tmpDir'), _Step(label: (l) => l.updateStepRemoveOld, command: 'sudo rm -rf /etc/nixos'), _Step(label: (l) => l.updateStepCopyNew, command: 'sudo cp -r $_tmpDir/etc/nixos /etc/nixos && rm -rf $_tmpDir'), _Step(label: (l) => l.updateStepRebuild, command: 'sudo nixos-rebuild boot')];
 
   late List<_StepStatus> _stepStatuses = List.filled(_steps.length, _StepStatus.pending);
 
