@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:gamepads/gamepads.dart';
 import '../utils/debug_logger.dart';
+import '../utils/sound.dart';
 
 enum GamepadAction { up, down, left, right, confirm, back, start, select, l, r }
 
@@ -64,7 +64,6 @@ class GamepadService {
   static const _repeatInterval = Duration(milliseconds: 120);
 
   static const _connectSound = 'sounds/connect-sound-effect-3045-freesounds-community.wav';
-  final _connectSoundPlayer = AudioPlayer();
 
   // ── Player slots ─────────────────────────────────────────────────────────
   // Slot index 0..3 = player 1..4. Assigned by connection order: the first
@@ -145,7 +144,6 @@ class GamepadService {
     _slotsController.close();
     _buttonDownController.close();
     _buttonUpController.close();
-    _connectSoundPlayer.dispose();
   }
 
   Future<void> _scanDevices() async {
@@ -172,18 +170,10 @@ class GamepadService {
       _playerSlots[freeIndex] = controller.id;
       changed = true;
       DebugLogger.log('[GamepadService] player ${freeIndex + 1} assigned: ${controller.id} (${controller.name})');
-      _playConnectSound();
+      playSound(_connectSound);
     }
 
     if (changed) _slotsController.add(currentPlayerSlots);
-  }
-
-  Future<void> _playConnectSound() async {
-    try {
-      await _connectSoundPlayer.play(AssetSource(_connectSound));
-    } catch (e) {
-      DebugLogger.log('[GamepadService] failed to play connect sound: $e');
-    }
   }
 
   GamepadAction? _keyAction(LogicalKeyboardKey key) => switch (key) {

@@ -145,12 +145,14 @@ class _SettingsDialogState extends State<_SettingsDialog> {
                           children: [
                             Icon(opt.icon, color: selected ? Colors.black : Colors.white70, size: 22),
                             const SizedBox(width: 16),
-                            Text(
-                              opt.label,
-                              style: TextStyle(
-                                color: selected ? Colors.black : Colors.white,
-                                fontSize: 18,
-                                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                            Expanded(
+                              child: Text(
+                                opt.label,
+                                style: TextStyle(
+                                  color: selected ? Colors.black : Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                                ),
                               ),
                             ),
                           ],
