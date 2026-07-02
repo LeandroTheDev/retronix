@@ -25,5 +25,7 @@ pkgs.flutter.buildFlutterApplication {
     # gstreamer-1.0.pc pulls in libunwind (Requires.private) — without it in
     # buildInputs, pkg-config can't resolve gstreamer-1.0 in the sandbox.
     libunwind
+    # gstreamer-audio-1.0.pc requires orc-0.4 the same way.
+    orc
   ];
 }
