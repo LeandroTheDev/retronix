@@ -211,6 +211,22 @@ class SettingsService {
     await _save();
   }
 
+  // ── Volume ────────────────────────────────────────────────────────────────
+  // ALSA/PipeWire don't persist the hardware mixer level across reboots, so
+  // we save the user's last choice ourselves and re-apply it at startup
+  // (see main.dart) — same approach as the display mode below.
+
+  Future<int> savedVolume() async {
+    await _ensureLoaded();
+    return (_data['volume'] as int?) ?? 70;
+  }
+
+  Future<void> setSavedVolume(int value) async {
+    await _ensureLoaded();
+    _data['volume'] = value;
+    await _save();
+  }
+
   // ── Language ──────────────────────────────────────────────────────────────
 
   Future<String> language() async {

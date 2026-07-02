@@ -3,12 +3,17 @@ import 'services/gamepad_service.dart';
 import 'pages/console_selector_page.dart';
 import 'utils/locale_service.dart';
 import 'utils/app_localizations.dart';
+import 'utils/settings_service.dart';
+import 'utils/system_info.dart';
 import 'widgets/gamepad_status_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GamepadService.instance.init();
   await LocaleService.instance.load();
+  // ALSA/PipeWire reset the hardware mixer to its power-on default (often
+  // 0%) on every boot — re-apply the user's last chosen volume ourselves.
+  await setVolumeLevel(await SettingsService.instance.savedVolume());
   runApp(const RetroOsApp());
 }
 

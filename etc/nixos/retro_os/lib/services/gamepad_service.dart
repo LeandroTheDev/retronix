@@ -28,6 +28,14 @@ class GamepadService {
   final _controller = StreamController<GamepadAction>.broadcast();
   Stream<GamepadAction> get actions => _controller.stream;
 
+  // Raw press/release events (unlike [actions], these fire exactly once per
+  // physical press and once per release, with no auto-repeat) — needed for
+  // hold-to-confirm gestures like exiting a game.
+  final _buttonDownController = StreamController<GamepadAction>.broadcast();
+  final _buttonUpController = StreamController<GamepadAction>.broadcast();
+  Stream<GamepadAction> get buttonDown => _buttonDownController.stream;
+  Stream<GamepadAction> get buttonUp => _buttonUpController.stream;
+
   StreamSubscription? _subscription;
   final Map<String, double> _analogState = {};
   final Map<String, Timer?> _repeatTimers = {};
@@ -81,6 +89,8 @@ class GamepadService {
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
     _controller.close();
     _slotsController.close();
+    _buttonDownController.close();
+    _buttonUpController.close();
   }
 
   Future<void> _scanDevices() async {
@@ -112,24 +122,34 @@ class GamepadService {
     if (changed) _slotsController.add(currentPlayerSlots);
   }
 
+  GamepadAction? _keyAction(LogicalKeyboardKey key) => switch (key) {
+    LogicalKeyboardKey.arrowUp => GamepadAction.up,
+    LogicalKeyboardKey.arrowDown => GamepadAction.down,
+    LogicalKeyboardKey.arrowLeft => GamepadAction.left,
+    LogicalKeyboardKey.arrowRight => GamepadAction.right,
+    LogicalKeyboardKey.enter || LogicalKeyboardKey.numpadEnter => GamepadAction.confirm,
+    LogicalKeyboardKey.escape || LogicalKeyboardKey.backspace => GamepadAction.back,
+    LogicalKeyboardKey.f1 => GamepadAction.start,
+    LogicalKeyboardKey.f2 => GamepadAction.select,
+    _ => null,
+  };
+
   bool _handleKeyEvent(KeyEvent event) {
+    if (event is KeyUpEvent) {
+      final action = _keyAction(event.logicalKey);
+      if (action != null) _buttonUpController.add(action);
+      return action != null;
+    }
     // KeyRepeatEvent is what the platform sends while a key is held down
     // (OS-level keyboard auto-repeat) — without it, holding a key only
     // ever fires the initial press.
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
     DebugLogger.log('[GamepadService] key event: ${event.logicalKey}');
-    final action = switch (event.logicalKey) {
-      LogicalKeyboardKey.arrowUp => GamepadAction.up,
-      LogicalKeyboardKey.arrowDown => GamepadAction.down,
-      LogicalKeyboardKey.arrowLeft => GamepadAction.left,
-      LogicalKeyboardKey.arrowRight => GamepadAction.right,
-      LogicalKeyboardKey.enter || LogicalKeyboardKey.numpadEnter => GamepadAction.confirm,
-      LogicalKeyboardKey.escape || LogicalKeyboardKey.backspace => GamepadAction.back,
-      LogicalKeyboardKey.f1 => GamepadAction.start,
-      LogicalKeyboardKey.f2 => GamepadAction.select,
-      _ => null,
-    };
-    if (action != null) _controller.add(action);
+    final action = _keyAction(event.logicalKey);
+    if (action != null) {
+      _controller.add(action);
+      if (event is KeyDownEvent) _buttonDownController.add(action);
+    }
     return action != null;
   }
 
@@ -139,6 +159,11 @@ class GamepadService {
     if (event.type == KeyType.button) {
       final action = _mapButton(event.key);
       if (action == null) return;
+      if (event.value == 1.0) {
+        _buttonDownController.add(action);
+      } else if (event.value == 0.0) {
+        _buttonUpController.add(action);
+      }
       if (!_repeatableActions.contains(action)) {
         if (event.value == 1.0) _controller.add(action);
         return;

@@ -125,6 +125,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         setState(() => _volumeIdx = next);
         final vol = int.parse(_volumeOptions[next]);
         setVolumeLevel(vol);
+        SettingsService.instance.setSavedVolume(vol);
         playVolumeBeep(_audioDevices.isNotEmpty ? _audioDevices[_audioIdx].name : '');
       case 3:
         if (_loadingAudio || _audioDevices.isEmpty) return;

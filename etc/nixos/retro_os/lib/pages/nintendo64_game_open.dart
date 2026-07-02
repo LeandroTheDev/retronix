@@ -81,10 +81,13 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
         (line) => onRetroarchLine(line, 'stderr'),
       );
 
-      final sub = _watchExitCombo(process);
+      final exitSubs = _watchExitHold(process);
 
       final exitCode = await process.exitCode;
-      sub.cancel();
+      for (final s in exitSubs) {
+        s.cancel();
+      }
+      _exitHoldTimer?.cancel();
       DebugLogger.log('[Nintendo64GameOpen] retroarch exited with code: $exitCode');
 
       if (!mounted) return;
@@ -100,22 +103,23 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
     }
   }
 
-  // Listens for Start + Select within 600ms to kill the process.
-  StreamSubscription<GamepadAction> _watchExitCombo(Process process) {
-    final recent = <GamepadAction>{};
+  // Holding Start for 5s kills the process — Select isn't required since some
+  // controllers don't have one.
+  Timer? _exitHoldTimer;
 
-    return GamepadService.instance.actions.listen((action) {
-      if (action != GamepadAction.start && action != GamepadAction.select) return;
-
-      recent.add(action);
-      Future.delayed(const Duration(milliseconds: 600), () => recent.remove(action));
-
-      if (recent.contains(GamepadAction.start) &&
-          recent.contains(GamepadAction.select)) {
-        DebugLogger.log('[Nintendo64GameOpen] exit combo detected — killing retroarch');
+  List<StreamSubscription<GamepadAction>> _watchExitHold(Process process) {
+    final downSub = GamepadService.instance.buttonDown.listen((action) {
+      if (action != GamepadAction.start) return;
+      _exitHoldTimer?.cancel();
+      _exitHoldTimer = Timer(const Duration(seconds: 5), () {
+        DebugLogger.log('[Nintendo64GameOpen] start held 5s — killing retroarch');
         process.kill();
-      }
+      });
     });
+    final upSub = GamepadService.instance.buttonUp.listen((action) {
+      if (action == GamepadAction.start) _exitHoldTimer?.cancel();
+    });
+    return [downSub, upSub];
   }
 
   @override
@@ -151,7 +155,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
             ),
             const SizedBox(height: 16),
             Text(
-              l.startSelectToExit,
+              l.holdStartToExit,
               style: const TextStyle(color: Colors.white24, fontSize: 13),
             ),
           ],
