@@ -40,7 +40,11 @@ let
     fi
 
     ${pkgs.xset}/bin/xset s off -dpms
-    ${pkgs.matchbox}/bin/matchbox-window-manager &
+    # -use_titlebar no: retro_os already starts undecorated+fullscreen, but
+    # RetroArch maps its window in normal windowed mode before switching to
+    # fullscreen a moment later — without this flag, matchbox briefly draws
+    # a titlebar on it during that gap.
+    ${pkgs.matchbox}/bin/matchbox-window-manager -use_titlebar no &
     exec ${retro_os}/bin/retro_os
   '';
 in
