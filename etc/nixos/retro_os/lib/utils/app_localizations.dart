@@ -109,6 +109,22 @@ class AppLocalizations {
   String get aboutOpenGl         => 'OpenGL Version';
   String get aboutRenderer       => _pick('GPU Renderer', 'Renderizador GPU');
 
+  // ── Bluetooth Page ────────────────────────────────────────────────────────
+
+  String get bluetooth               => 'Bluetooth';
+  String get bluetoothTitle          => _pick('BLUETOOTH', 'BLUETOOTH');
+  String get bluetoothScanning       => _pick('Scanning for devices...', 'Procurando dispositivos...');
+  String get bluetoothNoDevicesFound => _pick('No devices found yet', 'Nenhum dispositivo encontrado ainda');
+  String get bluetoothConnected      => _pick('Connected', 'Conectado');
+  String get bluetoothPaired         => _pick('Paired', 'Pareado');
+  String get bluetoothConnecting     => _pick('Connecting...', 'Conectando...');
+  String get bluetoothDisconnecting  => _pick('Disconnecting...', 'Desconectando...');
+
+  String bluetoothConnectFailed(String name) =>
+      _pick('Failed to connect to $name', 'Falha ao conectar a $name');
+  String bluetoothDisconnectFailed(String name) =>
+      _pick('Failed to disconnect from $name', 'Falha ao desconectar de $name');
+
   // ── Game Open ─────────────────────────────────────────────────────────────
 
   String get holdStartToExit => _pick('Hold Start for 5 seconds to exit', 'Segure Start por 5 segundos para sair');

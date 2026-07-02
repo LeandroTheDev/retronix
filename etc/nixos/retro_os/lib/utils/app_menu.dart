@@ -3,6 +3,7 @@ import '../pages/nintendo64_settings_page.dart';
 import '../pages/system_settings_page.dart';
 import '../pages/update_system_page.dart';
 import '../pages/about_system_page.dart';
+import '../pages/bluetooth_page.dart';
 import '../pages/shutdown_page.dart';
 import 'app_localizations.dart';
 import 'dialogs.dart';
@@ -45,6 +46,14 @@ Future<void> showAppSettingsDialog(BuildContext context) {
         onSelect: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const AboutSystemPage()),
+        ),
+      ),
+      SettingsOption(
+        label: l.bluetooth,
+        icon: Icons.bluetooth,
+        onSelect: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const BluetoothPage()),
         ),
       ),
       SettingsOption(

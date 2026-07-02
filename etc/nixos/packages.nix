@@ -21,5 +21,6 @@
     pulseaudio
     xdotool
     unclutter
+    bluez
   ];
 }
