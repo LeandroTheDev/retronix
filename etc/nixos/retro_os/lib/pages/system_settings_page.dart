@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/gamepad_service.dart';
 import '../utils/app_localizations.dart';
-import '../utils/dialogs.dart';
 import '../utils/locale_service.dart';
 import '../utils/settings_service.dart';
 import '../utils/system_info.dart';
@@ -81,9 +80,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     if (!mounted) return;
     setState(() {
       _resolutionOptions = options;
-      _resIdx = current == null
-          ? 0
-          : options.indexWhere((m) => m.resolution == current.resolution).clamp(0, options.length - 1);
+      _resIdx = current == null ? 0 : options.indexWhere((m) => m.resolution == current.resolution).clamp(0, options.length - 1);
       _loadingResolutions = false;
     });
   }
@@ -162,8 +159,8 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     final String audioValue = _loadingAudio
         ? '...'
         : _audioDevices.isEmpty
-            ? '—'
-            : _audioDevices[_audioIdx].label;
+        ? '—'
+        : _audioDevices[_audioIdx].label;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -172,46 +169,15 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 80),
-            child: Text(
-              l.systemSettingsTitle,
-              style: const TextStyle(color: Colors.white54, fontSize: 16, letterSpacing: 2),
-            ),
+            child: Text(l.systemSettingsTitle, style: const TextStyle(color: Colors.white54, fontSize: 16, letterSpacing: 2)),
           ),
           Expanded(
             child: ListView(
               children: [
-                _OptionRow(
-                  icon: Icons.language,
-                  label: l.language,
-                  value: langLabels[_langIdx],
-                  selected: _selectedIndex == 0,
-                  canLeft:  _langIdx > 0,
-                  canRight: _langIdx < _langOptions.length - 1,
-                ),
-                _OptionRow(
-                  icon: Icons.aspect_ratio,
-                  label: l.screenResolution,
-                  value: resolutionValue,
-                  selected: _selectedIndex == 1,
-                  canLeft:  !_loadingResolutions && _resIdx > 0,
-                  canRight: !_loadingResolutions && _resIdx < _resolutionOptions.length - 1,
-                ),
-                _OptionRow(
-                  icon: Icons.volume_up,
-                  label: l.volume,
-                  value: volumeValue,
-                  selected: _selectedIndex == 2,
-                  canLeft:  !_loadingVolume && _volumeIdx > 0,
-                  canRight: !_loadingVolume && _volumeIdx < _volumeOptions.length - 1,
-                ),
-                _OptionRow(
-                  icon: Icons.speaker,
-                  label: l.audioDevice,
-                  value: audioValue,
-                  selected: _selectedIndex == 3,
-                  canLeft:  !_loadingAudio && _audioIdx > 0,
-                  canRight: !_loadingAudio && _audioIdx < _audioDevices.length - 1,
-                ),
+                _OptionRow(icon: Icons.language, label: l.language, value: langLabels[_langIdx], selected: _selectedIndex == 0, canLeft: _langIdx > 0, canRight: _langIdx < _langOptions.length - 1),
+                _OptionRow(icon: Icons.aspect_ratio, label: l.screenResolution, value: resolutionValue, selected: _selectedIndex == 1, canLeft: !_loadingResolutions && _resIdx > 0, canRight: !_loadingResolutions && _resIdx < _resolutionOptions.length - 1),
+                _OptionRow(icon: Icons.volume_up, label: l.volume, value: volumeValue, selected: _selectedIndex == 2, canLeft: !_loadingVolume && _volumeIdx > 0, canRight: !_loadingVolume && _volumeIdx < _volumeOptions.length - 1),
+                _OptionRow(icon: Icons.speaker, label: l.audioDevice, value: audioValue, selected: _selectedIndex == 3, canLeft: !_loadingAudio && _audioIdx > 0, canRight: !_loadingAudio && _audioIdx < _audioDevices.length - 1),
               ],
             ),
           ),
@@ -222,14 +188,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
 }
 
 class _OptionRow extends StatelessWidget {
-  const _OptionRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.selected,
-    required this.canLeft,
-    required this.canRight,
-  });
+  const _OptionRow({required this.icon, required this.label, required this.value, required this.selected, required this.canLeft, required this.canRight});
 
   final IconData icon;
   final String label;
@@ -247,10 +206,7 @@ class _OptionRow extends StatelessWidget {
       duration: const Duration(milliseconds: 120),
       margin: const EdgeInsets.symmetric(horizontal: 80, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-      decoration: BoxDecoration(
-        color: selected ? Colors.white : Colors.white10,
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(color: selected ? Colors.white : Colors.white10, borderRadius: BorderRadius.circular(8)),
       child: Row(
         children: [
           Icon(icon, color: selected ? Colors.black : Colors.white54, size: 22),
@@ -259,17 +215,10 @@ class _OptionRow extends StatelessWidget {
             flex: 3,
             child: Text(
               label,
-              style: TextStyle(
-                color: fg,
-                fontSize: 18,
-                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-              ),
+              style: TextStyle(color: fg, fontSize: 18, fontWeight: selected ? FontWeight.bold : FontWeight.normal),
             ),
           ),
-          if (selected) ...[
-            Icon(Icons.chevron_left, color: canLeft ? fg : fgDim, size: 20),
-            const SizedBox(width: 8),
-          ],
+          if (selected) ...[Icon(Icons.chevron_left, color: canLeft ? fg : fgDim, size: 20), const SizedBox(width: 8)],
           Expanded(
             flex: 2,
             child: Text(
@@ -278,20 +227,12 @@ class _OptionRow extends StatelessWidget {
               softWrap: true,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: selected ? Colors.black : Colors.white60,
-                fontSize: 16,
-                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-              ),
+              style: TextStyle(color: selected ? Colors.black : Colors.white60, fontSize: 16, fontWeight: selected ? FontWeight.bold : FontWeight.normal),
             ),
           ),
-          if (selected) ...[
-            const SizedBox(width: 8),
-            Icon(Icons.chevron_right, color: canRight ? fg : fgDim, size: 20),
-          ],
+          if (selected) ...[const SizedBox(width: 8), Icon(Icons.chevron_right, color: canRight ? fg : fgDim, size: 20)],
         ],
       ),
     );
   }
 }
-

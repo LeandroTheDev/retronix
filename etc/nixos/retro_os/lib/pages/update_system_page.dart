@@ -9,6 +9,7 @@ import '../utils/dialogs.dart';
 import '../utils/locale_service.dart';
 
 enum _UpdateState { idle, running, success, error }
+
 enum _StepStatus { pending, running, success, error }
 
 class _Step {
@@ -33,19 +34,9 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
   final _outputLines = <String>[];
   Process? _process;
 
-  static final _steps = [
-    _Step(label: (l) => l.updateStepCleanTmp, command: 'rm -rf $_tmpDir'),
-    _Step(label: (l) => l.updateStepClone, command: 'git clone $_repoUrl $_tmpDir'),
-    _Step(label: (l) => l.updateStepRemoveOld, command: 'sudo rm -rf /etc/nixos'),
-    _Step(
-      label: (l) => l.updateStepCopyNew,
-      command: 'sudo cp -r $_tmpDir/etc/nixos /etc/nixos && rm -rf $_tmpDir',
-    ),
-    _Step(label: (l) => l.updateStepRebuild, command: 'sudo nixos-rebuild switch -L'),
-  ];
+  static final _steps = [_Step(label: (l) => l.updateStepCleanTmp, command: 'rm -rf $_tmpDir'), _Step(label: (l) => l.updateStepClone, command: 'git clone $_repoUrl $_tmpDir'), _Step(label: (l) => l.updateStepRemoveOld, command: 'sudo rm -rf /etc/nixos'), _Step(label: (l) => l.updateStepCopyNew, command: 'sudo cp -r $_tmpDir/etc/nixos /etc/nixos && rm -rf $_tmpDir'), _Step(label: (l) => l.updateStepRebuild, command: 'sudo nixos-rebuild switch')];
 
-  late List<_StepStatus> _stepStatuses =
-      List.filled(_steps.length, _StepStatus.pending);
+  late List<_StepStatus> _stepStatuses = List.filled(_steps.length, _StepStatus.pending);
 
   @override
   void initState() {
@@ -75,7 +66,7 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
   }
 
   static const _repoUrl = 'https://github.com/LeandroTheDev/retronix';
-  static const _tmpDir  = '/tmp/retronix_update';
+  static const _tmpDir = '/tmp/retronix_update';
 
   Future<void> _startUpdate() async {
     DebugLogger.log('[UpdateSystemPage] starting update from $_repoUrl');
@@ -128,12 +119,7 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
     if (!mounted) return;
     setState(() => _state = _UpdateState.success);
     _scrollToBottom();
-    final reboot = await showConfirmDialog(
-      context,
-      message: l.updateRebootQuestion,
-      labelYes: l.yes,
-      labelNo: l.no,
-    );
+    final reboot = await showConfirmDialog(context, message: l.updateRebootQuestion, labelYes: l.yes, labelNo: l.no);
     if (!mounted) return;
     if (reboot) {
       DebugLogger.log('[UpdateSystemPage] rebooting system');
@@ -146,15 +132,9 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
   Future<int> _runStep(String command) async {
     _process = await Process.start('sh', ['-c', command]);
 
-    _process!.stdout
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .listen(_appendLine);
+    _process!.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen(_appendLine);
 
-    _process!.stderr
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .listen(_appendLine);
+    _process!.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen(_appendLine);
 
     return _process!.exitCode;
   }
@@ -168,11 +148,7 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 100),
-          curve: Curves.easeOut,
-        );
+        _scrollController.animateTo(_scrollController.position.maxScrollExtent, duration: const Duration(milliseconds: 100), curve: Curves.easeOut);
       }
     });
   }
@@ -187,16 +163,10 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 80),
-            child: Text(
-              l.updateTitle,
-              style: const TextStyle(color: Colors.white54, fontSize: 16, letterSpacing: 2),
-            ),
+            child: Text(l.updateTitle, style: const TextStyle(color: Colors.white54, fontSize: 16, letterSpacing: 2)),
           ),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 80),
-              child: _buildBody(l),
-            ),
+            child: Padding(padding: const EdgeInsets.symmetric(horizontal: 80), child: _buildBody(l)),
           ),
           _buildFooter(l),
         ],
@@ -233,21 +203,13 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(8),
-            ),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(8)),
             child: ListView.builder(
               controller: _scrollController,
               itemCount: _outputLines.length,
               itemBuilder: (_, i) => Text(
                 _outputLines[i],
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                  height: 1.5,
-                ),
+                style: const TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'Montserrat', height: 1.5),
               ),
             ),
           ),
@@ -259,10 +221,7 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
   Widget _buildFooter(AppLocalizations l) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 24),
-      child: Text(
-        l.updateBackHint,
-        style: const TextStyle(color: Colors.white24, fontSize: 13),
-      ),
+      child: Text(l.updateBackHint, style: const TextStyle(color: Colors.white24, fontSize: 13)),
     );
   }
 }
@@ -278,9 +237,7 @@ class _StepList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (var i = 0; i < steps.length; i++) _StepRow(step: steps[i], status: statuses[i], l: l),
-      ],
+      children: [for (var i = 0; i < steps.length; i++) _StepRow(step: steps[i], status: statuses[i], l: l)],
     );
   }
 }
@@ -301,11 +258,7 @@ class _StepRow extends StatelessWidget {
         icon = const Icon(Icons.radio_button_unchecked, color: Colors.white24, size: 16);
         textColor = Colors.white38;
       case _StepStatus.running:
-        icon = const SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
-        );
+        icon = const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue));
         textColor = Colors.white;
       case _StepStatus.success:
         icon = const Icon(Icons.check_circle, color: Colors.green, size: 18);
@@ -339,8 +292,8 @@ class _StatusBadge extends StatelessWidget {
     final (icon, color, label) = switch (state) {
       _UpdateState.running => (Icons.sync, Colors.blue, l.updateRunning),
       _UpdateState.success => (Icons.check_circle_outline, Colors.green, l.updateSuccess),
-      _UpdateState.error   => (Icons.error_outline, Colors.red, l.updateError),
-      _UpdateState.idle    => (Icons.info_outline, Colors.white54, ''),
+      _UpdateState.error => (Icons.error_outline, Colors.red, l.updateError),
+      _UpdateState.idle => (Icons.info_outline, Colors.white54, ''),
     };
 
     return Row(

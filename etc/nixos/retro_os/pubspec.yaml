@@ -71,6 +71,9 @@ flutter:
     - family: PressStart
       fonts:
         - asset: assets/fonts/PressStart-Regular.ttf
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat-VariableFont_wght.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
