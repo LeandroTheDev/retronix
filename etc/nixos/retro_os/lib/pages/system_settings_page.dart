@@ -8,7 +8,6 @@ import '../utils/settings_service.dart';
 import '../utils/system_info.dart';
 import '../utils/sound.dart';
 import '../utils/debug_logger.dart';
-import 'restart_page.dart';
 
 class SystemSettingsPage extends StatefulWidget {
   const SystemSettingsPage({super.key});
@@ -93,36 +92,19 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 4));
+        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 3));
       case GamepadAction.down:
-        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 4));
+        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 3));
       case GamepadAction.left:
         _cycleValue(-1);
       case GamepadAction.right:
         _cycleValue(1);
       case GamepadAction.confirm:
-        if (_selectedIndex == 4) _confirmRestart();
       case GamepadAction.back:
         Navigator.pop(context);
       default:
         break;
     }
-  }
-
-  Future<void> _confirmRestart() async {
-    final l = AppLocalizations.of(context);
-    final confirmed = await showConfirmDialog(
-      context,
-      message: l.restartConfirm,
-      labelYes: l.yes,
-      labelNo: l.no,
-    );
-    if (!mounted || !confirmed) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const RestartPage()),
-      (_) => false,
-    );
   }
 
   void _cycleValue(int dir) {
@@ -230,11 +212,6 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                   canLeft:  !_loadingAudio && _audioIdx > 0,
                   canRight: !_loadingAudio && _audioIdx < _audioDevices.length - 1,
                 ),
-                _ActionRow(
-                  icon: Icons.restart_alt,
-                  label: l.restartSystem,
-                  selected: _selectedIndex == 4,
-                ),
               ],
             ),
           ),
@@ -318,41 +295,3 @@ class _OptionRow extends StatelessWidget {
   }
 }
 
-class _ActionRow extends StatelessWidget {
-  const _ActionRow({
-    required this.icon,
-    required this.label,
-    required this.selected,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
-      margin: const EdgeInsets.symmetric(horizontal: 80, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-      decoration: BoxDecoration(
-        color: selected ? Colors.white : Colors.white10,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: selected ? Colors.black : Colors.white54, size: 22),
-          const SizedBox(width: 20),
-          Text(
-            label,
-            style: TextStyle(
-              color: selected ? Colors.black : Colors.white,
-              fontSize: 18,
-              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

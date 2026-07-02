@@ -5,6 +5,7 @@ import '../pages/update_system_page.dart';
 import '../pages/about_system_page.dart';
 import '../pages/bluetooth_page.dart';
 import '../pages/shutdown_page.dart';
+import '../pages/restart_page.dart';
 import 'app_localizations.dart';
 import 'dialogs.dart';
 
@@ -57,6 +58,14 @@ Future<void> showAppSettingsDialog(BuildContext context) {
         ),
       ),
       SettingsOption(
+        label: l.restartSystem,
+        icon: Icons.restart_alt,
+        onSelect: () {
+          Navigator.pop(context);
+          showRestartConfirmDialog(context);
+        },
+      ),
+      SettingsOption(
         label: l.shutdown,
         icon: Icons.power_settings_new,
         onSelect: () {
@@ -66,6 +75,25 @@ Future<void> showAppSettingsDialog(BuildContext context) {
       ),
     ],
   );
+}
+
+Future<void> showRestartConfirmDialog(BuildContext context) async {
+  final l = AppLocalizations.of(context);
+  final confirmed = await showConfirmDialog(
+    context,
+    message: l.restartConfirm,
+    labelYes: l.yes,
+    labelNo: l.no,
+  );
+
+  if (!context.mounted) return;
+  if (confirmed) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const RestartPage()),
+      (_) => false,
+    );
+  }
 }
 
 Future<void> showShutdownConfirmDialog(BuildContext context) async {

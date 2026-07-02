@@ -24,7 +24,7 @@
   boot.loader.generic-extlinux-compatible.enable = true;
 
   # Increase CMA pool so the GPU (DRM/KMS) can allocate framebuffers
-  boot.kernelParams = [ "cma=256M" ];
+  #boot.kernelParams = [ "cma=256M" ];
 
   networking.hostName = "retronix";
   networking.networkmanager.enable = true;

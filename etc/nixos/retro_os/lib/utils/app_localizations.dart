@@ -143,6 +143,11 @@ class AppLocalizations {
   // ── Restart Page ──────────────────────────────────────────────────────────
 
   String get restarting => _pick('Restarting System...', 'Reiniciando Sistema...');
+
+  // ── Gamepad ───────────────────────────────────────────────────────────────
+
+  String controllerConnected(int player, String name) =>
+      _pick('Player $player connected: $name', 'Jogador $player conectado: $name');
 }
 
 class AppLocalizationsScope extends InheritedWidget {

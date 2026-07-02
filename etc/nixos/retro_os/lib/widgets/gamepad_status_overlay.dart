@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/gamepad_service.dart';
+import '../utils/app_localizations.dart';
 
 /// Persistent top-left indicator showing which of the 4 player slots
 /// currently have a gamepad assigned. Meant to be layered on top of every
@@ -20,7 +21,18 @@ class _GamepadStatusOverlayState extends State<GamepadStatusOverlay> {
   void initState() {
     super.initState();
     _sub = GamepadService.instance.playerSlots.listen((slots) {
-      if (mounted) setState(() => _slots = slots);
+      if (!mounted) return;
+      final l = AppLocalizations.of(context);
+      for (var i = 0; i < slots.length; i++) {
+        final newId = slots[i];
+        if (newId != null && _slots[i] == null) {
+          final name = GamepadService.instance.nameForId(newId) ?? 'Controller';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l.controllerConnected(i + 1, name))),
+          );
+        }
+      }
+      setState(() => _slots = slots);
     });
   }
 
