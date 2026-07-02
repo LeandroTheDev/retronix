@@ -51,7 +51,7 @@ class AppLocalizations {
 
   // ── Splash Page ───────────────────────────────────────────────────────────
 
-  String get initializingSystem => _pick('INITIALIZING SYSTEM', 'INICIALIZANDO SISTEMA');
+  String get welcomeSystem => _pick('Welcome', 'Bem Vindo');
 
   // ── Console Selector ──────────────────────────────────────────────────────
 

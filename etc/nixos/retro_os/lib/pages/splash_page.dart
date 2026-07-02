@@ -104,15 +104,8 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    l.initializingSystem,
+                    l.welcomeSystem,
                     style: const TextStyle(color: Colors.white54, fontSize: 14, letterSpacing: 4),
-                  ),
-                  FadeTransition(
-                    opacity: _cursorBlink,
-                    child: const Text(
-                      '_',
-                      style: TextStyle(color: Colors.white54, fontSize: 14, letterSpacing: 4),
-                    ),
                   ),
                 ],
               ),
