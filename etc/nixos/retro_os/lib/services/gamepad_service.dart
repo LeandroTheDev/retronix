@@ -28,7 +28,7 @@ ControllerType controllerTypeFromName(String name) {
 // Linux) rather than a string that can come back empty or unreliable (see
 // the "Microntek USB Joystick" pad, whose reported name is blank at connect
 // time on some boots, but whose vendorId/productId are always present).
-enum KnownConsolePad { nintendo64 }
+enum KnownConsolePad { nintendo64, xbox360 }
 
 // Add an entry here for every adapter/pad we've confirmed by hand — check
 // the "[GamepadService] controller ... identified" debug log for the
@@ -36,10 +36,92 @@ enum KnownConsolePad { nintendo64 }
 // it claims to be before adding it.
 const _knownConsolePadsByVidPid = <(int, int), KnownConsolePad>{
   (0x0079, 0x0006): KnownConsolePad.nintendo64, // "Microntek USB Joystick" N64 adapter
+  (0x045e, 0x028e): KnownConsolePad.xbox360, // Xbox 360 Wired Controller (Microsoft's official VID/PID)
 };
 
 KnownConsolePad? knownConsolePadFromVidPid(int vendorId, int productId) =>
     _knownConsolePadsByVidPid[(vendorId, productId)];
+
+// A raw-input → [GamepadAction] mapping for one specific piece of hardware.
+// Raw button/axis codes are NOT standardized across controllers — on Linux
+// every pad reports plain numeric indices whose meaning is entirely
+// device-specific (see the comment on [KnownConsolePad]), so two different
+// pads can use the exact same code for two different buttons. Each
+// recognized device gets its own layout instead of sharing one global table.
+class GamepadLayout {
+  const GamepadLayout({
+    required this.buttons,
+    this.xAxisKeys = const {'left_stick_x', 'hat_x'},
+    this.yAxisKeys = const {'left_stick_y', 'hat_y'},
+  });
+
+  final Map<String, GamepadAction> buttons;
+  final Set<String> xAxisKeys;
+  final Set<String> yAxisKeys;
+
+  GamepadAction? mapButton(String key) => buttons[key];
+}
+
+// Fallback layout for any controller we haven't identified yet (VID/PID not
+// in [_knownConsolePadsByVidPid]). Only covers *named* button/axis strings,
+// which are safe to assume mean the same thing everywhere — they only show
+// up on backends that translate them for us (e.g. Windows XInput). Numeric
+// codes are device-specific and belong in that device's own layout below,
+// added once confirmed via the "unmapped button" debug log.
+const _genericLayout = GamepadLayout(
+  buttons: {
+    'a': GamepadAction.confirm,
+    'button_0': GamepadAction.confirm,
+    'b': GamepadAction.back,
+    'button_1': GamepadAction.back,
+    'start': GamepadAction.start,
+    'button_9': GamepadAction.start,
+    'select': GamepadAction.select,
+    'button_8': GamepadAction.select,
+    'tl': GamepadAction.l,
+    'l1': GamepadAction.l,
+    'left_shoulder': GamepadAction.l,
+    'tr': GamepadAction.r,
+    'r1': GamepadAction.r,
+    'right_shoulder': GamepadAction.r,
+    'dpad_up': GamepadAction.up,
+    'dpad_down': GamepadAction.down,
+    'dpad_left': GamepadAction.left,
+    'dpad_right': GamepadAction.right,
+  },
+);
+
+// "Microntek USB Joystick" N64 adapter — Linux joydev reports every button
+// as a plain numeric index; these were confirmed one at a time via the
+// unmapped-button debug log. Axis 0/1 is the real analog stick; 4/5 is the
+// D-pad hat (the "right stick" seen in the RetroArch autoconfig is actually
+// the C-button diamond emulated as 4 discrete buttons, not a real axis).
+const _nintendo64Layout = GamepadLayout(
+  buttons: {
+    '4': GamepadAction.back,
+    '5': GamepadAction.confirm,
+    '6': GamepadAction.l,
+    '7': GamepadAction.r,
+    '8': GamepadAction.select,
+    '9': GamepadAction.start,
+  },
+  xAxisKeys: {'0', '4'},
+  yAxisKeys: {'1', '5'},
+);
+
+// Xbox 360 Wired Controller — not yet mapped. Connect it, press each button,
+// and check the "unmapped button" debug log for its raw codes (they won't
+// match the N64 pad's numbering — see the class doc above), then fill this
+// in the same way [_nintendo64Layout] was built.
+const _xbox360Layout = GamepadLayout(buttons: {});
+
+// Add an entry here once a new [KnownConsolePad] has a confirmed layout —
+// devices recognized by VID/PID but missing from this table fall back to
+// [_genericLayout].
+const _layoutsByPad = <KnownConsolePad, GamepadLayout>{
+  KnownConsolePad.nintendo64: _nintendo64Layout,
+  KnownConsolePad.xbox360: _xbox360Layout,
+};
 
 class GamepadService {
   GamepadService._();
@@ -100,6 +182,12 @@ class GamepadService {
   KnownConsolePad? knownConsolePadForId(String id) {
     final vp = _controllerVendorProduct[id];
     return vp == null ? null : knownConsolePadFromVidPid(vp.$1, vp.$2);
+  }
+
+  GamepadLayout _layoutForId(String id) {
+    final pad = knownConsolePadForId(id);
+    if (pad == null) return _genericLayout;
+    return _layoutsByPad[pad] ?? _genericLayout;
   }
 
   ControllerType? typeForId(String id) {
@@ -233,12 +321,14 @@ class GamepadService {
 
   void _handleEvent(GamepadEvent event) {
     _recordVendorProduct(event);
+    final layout = _layoutForId(event.gamepadId);
     if (event.type == KeyType.button) {
-      final action = _mapButton(event.key);
+      final action = layout.mapButton(event.key);
       if (action == null) {
         // Helps identify the raw key string for buttons we don't map yet
         // (e.g. shoulder buttons on an untested controller) — check this log
-        // while pressing the button in question, then add it to _mapButton.
+        // while pressing the button in question, then add it to the right
+        // GamepadLayout above (or create a new one for the device).
         if (event.value == 1.0) {
           DebugLogger.log(
             '[GamepadService] unmapped button: ${event.key} '
@@ -258,35 +348,17 @@ class GamepadService {
       }
       // D-pads reported as digital buttons (rather than a hat axis) need
       // their own press/release-driven repeat, same as the analog case below.
+      // Namespaced by gamepadId so two connected pads can't share a timer
+      // just because they happen to report the same raw button code.
+      final timerKey = '${event.gamepadId}:btn_${event.key}';
       if (event.value == 1.0) {
-        _startRepeat('btn_${event.key}', action);
+        _startRepeat(timerKey, action);
       } else {
-        _stopRepeat('btn_${event.key}');
+        _stopRepeat(timerKey);
       }
     } else if (event.type == KeyType.analog) {
-      _handleAnalog(event.key, event.value);
+      _handleAnalog(event.gamepadId, layout, event.key, event.value);
     }
-  }
-
-  GamepadAction? _mapButton(String key) {
-    return switch (key) {
-      'a' || 'button_0' || '5' => GamepadAction.confirm,
-      'b' || 'button_1' || '4' => GamepadAction.back,
-      'start' || 'button_9' || '9' => GamepadAction.start,
-      'select' || 'button_8' || '8' => GamepadAction.select,
-      // Linux joydev names shoulder buttons tl/tr (top-left/top-right); other
-      // backends call them l1/r1 or left_shoulder/right_shoulder. On the
-      // "Microntek USB Joystick" pad they come through as raw numeric codes
-      // instead (following the same sequential numbering as button_4/5/8/9
-      // above), confirmed via the unmapped-button log.
-      'tl' || 'l1' || 'left_shoulder' || '6' => GamepadAction.l,
-      'tr' || 'r1' || 'right_shoulder' || '7' => GamepadAction.r,
-      'dpad_up' => GamepadAction.up,
-      'dpad_down' => GamepadAction.down,
-      'dpad_left' => GamepadAction.left,
-      'dpad_right' => GamepadAction.right,
-      _ => null,
-    };
   }
 
   static const _analogThreshold = 16000.0;
@@ -306,28 +378,30 @@ class GamepadService {
     _repeatTimers[timerKey] = null;
   }
 
-  void _handleAnalog(String key, double value) {
-    final prev = _analogState[key] ?? 0.0;
-    _analogState[key] = value;
+  void _handleAnalog(String gamepadId, GamepadLayout layout, String key, double value) {
+    // Namespaced by gamepadId so two connected pads can't clobber each
+    // other's axis state just because they happen to report the same code.
+    final stateKey = '$gamepadId:$key';
+    final prev = _analogState[stateKey] ?? 0.0;
+    _analogState[stateKey] = value;
 
-    // key '0'/'4' = X axis (stick/hat), key '1'/'5' = Y axis (stick/hat)
-    if (key == 'left_stick_x' || key == 'hat_x' || key == '0' || key == '4') {
+    if (layout.xAxisKeys.contains(key)) {
       if (value < -_analogThreshold && prev >= -_analogThreshold) {
-        _startRepeat('${key}_neg', GamepadAction.left);
-      } else if (value > _analogThreshold && prev <= _analogThreshold)
-        _startRepeat('${key}_pos', GamepadAction.right);
-      else if (value.abs() <= _analogThreshold) {
-        _stopRepeat('${key}_neg');
-        _stopRepeat('${key}_pos');
+        _startRepeat('$stateKey:neg', GamepadAction.left);
+      } else if (value > _analogThreshold && prev <= _analogThreshold) {
+        _startRepeat('$stateKey:pos', GamepadAction.right);
+      } else if (value.abs() <= _analogThreshold) {
+        _stopRepeat('$stateKey:neg');
+        _stopRepeat('$stateKey:pos');
       }
-    } else if (key == 'left_stick_y' || key == 'hat_y' || key == '1' || key == '5') {
+    } else if (layout.yAxisKeys.contains(key)) {
       if (value < -_analogThreshold && prev >= -_analogThreshold) {
-        _startRepeat('${key}_neg', GamepadAction.up);
-      } else if (value > _analogThreshold && prev <= _analogThreshold)
-        _startRepeat('${key}_pos', GamepadAction.down);
-      else if (value.abs() <= _analogThreshold) {
-        _stopRepeat('${key}_neg');
-        _stopRepeat('${key}_pos');
+        _startRepeat('$stateKey:neg', GamepadAction.up);
+      } else if (value > _analogThreshold && prev <= _analogThreshold) {
+        _startRepeat('$stateKey:pos', GamepadAction.down);
+      } else if (value.abs() <= _analogThreshold) {
+        _stopRepeat('$stateKey:neg');
+        _stopRepeat('$stateKey:pos');
       }
     }
   }
