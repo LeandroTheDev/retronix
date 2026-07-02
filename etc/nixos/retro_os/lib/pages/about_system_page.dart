@@ -111,9 +111,20 @@ class _InfoRow extends StatelessWidget {
           Icon(icon, color: Colors.white54, size: 22),
           const SizedBox(width: 20),
           Expanded(
+            flex: 3,
             child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 18)),
           ),
-          Text(value, style: const TextStyle(color: Colors.white60, fontSize: 16)),
+          Expanded(
+            flex: 2,
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              softWrap: true,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white60, fontSize: 16),
+            ),
+          ),
         ],
       ),
     );

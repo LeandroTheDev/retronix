@@ -55,6 +55,7 @@ class _SettingsDialog extends StatefulWidget {
 class _SettingsDialogState extends State<_SettingsDialog> {
   int _selectedIndex = 0;
   late final StreamSubscription<GamepadAction> _sub;
+  late final _rowKeys = List.generate(widget.options.length, (_) => GlobalKey());
 
   @override
   void initState() {
@@ -75,10 +76,12 @@ class _SettingsDialogState extends State<_SettingsDialog> {
         setState(() {
           _selectedIndex = (_selectedIndex - 1).clamp(0, widget.options.length - 1);
         });
+        _scrollToSelected();
       case GamepadAction.down:
         setState(() {
           _selectedIndex = (_selectedIndex + 1).clamp(0, widget.options.length - 1);
         });
+        _scrollToSelected();
       case GamepadAction.confirm:
         widget.options[_selectedIndex].onSelect();
       case GamepadAction.back:
@@ -89,54 +92,76 @@ class _SettingsDialogState extends State<_SettingsDialog> {
     }
   }
 
+  void _scrollToSelected() {
+    final ctx = _rowKeys[_selectedIndex].currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      alignment: 0.5,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.grey[900],
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.title,
-              style: const TextStyle(
-                color: Colors.white54,
-                fontSize: 14,
-                letterSpacing: 4,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.title,
+                style: const TextStyle(
+                  color: Colors.white54,
+                  fontSize: 14,
+                  letterSpacing: 4,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            ...List.generate(widget.options.length, (i) {
-              final opt = widget.options[i];
-              final selected = i == _selectedIndex;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                decoration: BoxDecoration(
-                  color: selected ? Colors.white : Colors.white10,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(opt.icon, color: selected ? Colors.black : Colors.white70, size: 22),
-                    const SizedBox(width: 16),
-                    Text(
-                      opt.label,
-                      style: TextStyle(
-                        color: selected ? Colors.black : Colors.white,
-                        fontSize: 18,
-                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              const SizedBox(height: 24),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: List.generate(widget.options.length, (i) {
+                    final opt = widget.options[i];
+                    final selected = i == _selectedIndex;
+                    return KeyedSubtree(
+                      key: _rowKeys[i],
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 120),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: selected ? Colors.white : Colors.white10,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(opt.icon, color: selected ? Colors.black : Colors.white70, size: 22),
+                            const SizedBox(width: 16),
+                            Text(
+                              opt.label,
+                              style: TextStyle(
+                                color: selected ? Colors.black : Colors.white,
+                                fontSize: 18,
+                                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    );
+                  }),
                 ),
-              );
-            }),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

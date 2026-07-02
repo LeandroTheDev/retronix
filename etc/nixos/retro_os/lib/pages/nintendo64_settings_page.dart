@@ -352,6 +352,7 @@ class _OptionRow extends StatelessWidget {
           Icon(icon, color: selected ? Colors.black : Colors.white54, size: 22),
           const SizedBox(width: 20),
           Expanded(
+            flex: 3,
             child: Text(
               label,
               style: TextStyle(
@@ -365,12 +366,19 @@ class _OptionRow extends StatelessWidget {
             Icon(Icons.chevron_left, color: canLeft ? fg : fgDim, size: 20),
             const SizedBox(width: 8),
           ],
-          Text(
-            value,
-            style: TextStyle(
-              color: selected ? Colors.black : Colors.white60,
-              fontSize: 16,
-              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          Expanded(
+            flex: 2,
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              softWrap: true,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: selected ? Colors.black : Colors.white60,
+                fontSize: 16,
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ),
           if (selected) ...[

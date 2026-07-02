@@ -31,6 +31,8 @@ class AppLocalizations {
   String get noResolutionsFound  => _pick('No resolutions found', 'Nenhuma resolução encontrada');
   String get volume              => _pick('Volume', 'Volume');
   String get audioDevice         => _pick('Audio Device', 'Dispositivo de Áudio');
+  String get restartSystem       => _pick('Restart System', 'Reiniciar Sistema');
+  String get restartConfirm      => _pick('Restart the system?', 'Deseja reiniciar o sistema?');
 
   // ── Update System Page ────────────────────────────────────────────────────
 
@@ -121,6 +123,10 @@ class AppLocalizations {
   // ── Shutdown Page ─────────────────────────────────────────────────────────
 
   String get shuttingDown => _pick('Shutting Down...', 'Desligando Sistema...');
+
+  // ── Restart Page ──────────────────────────────────────────────────────────
+
+  String get restarting => _pick('Restarting System...', 'Reiniciando Sistema...');
 }
 
 class AppLocalizationsScope extends InheritedWidget {
