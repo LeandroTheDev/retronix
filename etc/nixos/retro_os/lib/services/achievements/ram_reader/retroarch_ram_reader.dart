@@ -22,6 +22,11 @@ class RetroarchRamReader {
   Completer<String?>? _pending;
   Timer? _timeoutTimer;
 
+  // Logged on the false->true and true->false edges only (see [readBytes]) -
+  // a broken connection means every condition's read times out every poll,
+  // and logging that per-address would flood the log instead of helping.
+  bool _lastReadTimedOut = false;
+
   static const _requestTimeout = Duration(milliseconds: 500);
 
   Future<void> connect() async {
@@ -73,7 +78,21 @@ class RetroarchRamReader {
   Future<Uint8List?> readBytes(int address, int length) async {
     final addressHex = address.toRadixString(16);
     final reply = await _send('READ_CORE_RAM $addressHex $length');
-    if (reply == null || reply.isEmpty) return null;
+    if (reply == null || reply.isEmpty) {
+      if (!_lastReadTimedOut) {
+        _lastReadTimedOut = true;
+        DebugLogger.log(
+          '[RetroarchRamReader] no reply reading 0x$addressHex (timed out after $_requestTimeout) - '
+          'is RetroArch running with network_cmd_enable="true" and reachable at $host:$port? '
+          '(further timeouts logged again only once reads start succeeding, to avoid log spam)',
+        );
+      }
+      return null;
+    }
+    if (_lastReadTimedOut) {
+      _lastReadTimedOut = false;
+      DebugLogger.log('[RetroarchRamReader] reads recovered (0x$addressHex replied)');
+    }
 
     // Expected: "READ_CORE_RAM <addr> <byte> <byte> ..." or
     // "READ_CORE_RAM <addr> -1" when the core/address doesn't support it.

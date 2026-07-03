@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../services/achievements/achievement_service.dart';
 import '../services/gamepad_service.dart';
 import '../utils/debug_logger.dart';
 import '../utils/devices.dart';
@@ -68,6 +69,12 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       );
       DebugLogger.log('[Nintendo64GameOpen] retroarch launched (pid: ${process.pid})');
 
+      // Started right after the process launches rather than waiting for
+      // dynarec-ready: the RAM reader just times out harmlessly (see
+      // RetroarchRamReader's logging) until RetroArch's network command
+      // interface comes up, so there's no race to worry about here.
+      await AchievementService.instance.startWatching('Nintendo 64', widget.gameName);
+
       void onRetroarchLine(String line, String src) {
         DebugLogger.log('[retroarch:$src] $line');
         if (_showLoadingUi && line.contains('Init new dynarec')) {
@@ -96,6 +103,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       _exitHoldTimer?.cancel();
       overlayCombo.cancel();
       DebugLogger.log('[Nintendo64GameOpen] retroarch exited with code: $exitCode');
+      await AchievementService.instance.stopWatching();
 
       if (!mounted) return;
       if (exitCode != 0 && exitCode != -15) {
@@ -106,6 +114,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       }
     } catch (e) {
       DebugLogger.log('[Nintendo64GameOpen] failed to launch retroarch: $e');
+      await AchievementService.instance.stopWatching();
       if (mounted) Navigator.pop(context, l.retroarchLaunchError(e));
     }
   }

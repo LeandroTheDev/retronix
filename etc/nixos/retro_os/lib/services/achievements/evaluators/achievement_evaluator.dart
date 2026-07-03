@@ -83,6 +83,11 @@ class AchievementEvaluator {
 
   bool isUnlocked(String achievementId) => _unlocked.contains(achievementId);
 
+  /// How many achievements are unlocked so far this session (including ones
+  /// restored via [restoreUnlocked]) - handy for a one-line poll heartbeat
+  /// log, see [AchievementService].
+  int get unlockedCount => _unlocked.length;
+
   /// Restores previously-unlocked achievement IDs (e.g. loaded from disk) so
   /// they don't fire again this session.
   void restoreUnlocked(Iterable<String> achievementIds) => _unlocked.addAll(achievementIds);

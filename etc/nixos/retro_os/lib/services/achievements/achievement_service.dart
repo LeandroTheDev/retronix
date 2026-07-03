@@ -33,6 +33,7 @@ class AchievementService {
   Timer? _pollTimer;
   String? _currentConsole;
   String? _currentGame;
+  int _pollCount = 0;
 
   // Previous poll's readings, keyed the same way as the current poll's
   // snapshot in [_poll] — needed for CompareTarget.previousValue conditions
@@ -49,21 +50,36 @@ class AchievementService {
     await stopWatching();
     _currentConsole = console;
     _currentGame = game;
+    DebugLogger.log('[AchievementService] startWatching($console, $game)');
 
     _achievements = await _loadDefinitions(console, game);
     if (_achievements.isEmpty) {
-      DebugLogger.log('[AchievementService] no achievement definitions for $console/$game');
+      DebugLogger.log(
+        '[AchievementService] no achievement definitions for $console/$game '
+        '(expected at ${getGameAchievementsPath(console, game)})',
+      );
       return;
     }
 
-    _evaluator.restoreUnlocked(await _loadUnlockedIds(console, game));
+    final unlockedIds = await _loadUnlockedIds(console, game);
+    _evaluator.restoreUnlocked(unlockedIds);
     await _ramReader.connect();
 
+    _pollCount = 0;
     _pollTimer = Timer.periodic(_pollInterval, (_) => _poll());
-    DebugLogger.log('[AchievementService] watching ${_achievements.length} achievement(s) for $console/$game');
+    DebugLogger.log(
+      '[AchievementService] watching ${_achievements.length} achievement(s) for $console/$game '
+      '(${unlockedIds.length} already unlocked): ${_achievements.map((a) => a.title).join(', ')}',
+    );
   }
 
   Future<void> stopWatching() async {
+    if (_pollTimer != null) {
+      DebugLogger.log(
+        '[AchievementService] stopWatching($_currentConsole, $_currentGame) after $_pollCount poll(s), '
+        '${_evaluator.unlockedCount}/${_achievements.length} unlocked this session',
+      );
+    }
     _pollTimer?.cancel();
     _pollTimer = null;
     _ramReader.dispose();
@@ -80,15 +96,24 @@ class AchievementService {
   }
 
   Future<void> _poll() async {
+    _pollCount++;
+
     // Sequential UDP round-trips are fine at this cadence for a handful of
     // conditions — deduped by memory key so achievements sharing a memory
     // address only cost one read per poll instead of one per condition.
     final currentSnapshot = <String, int>{};
+    var attemptedReads = 0;
+    var failedReads = 0;
     Future<void> readIfNeeded(int address, MemorySize size) async {
       final key = memoryKey(address, size);
       if (currentSnapshot.containsKey(key)) return;
+      attemptedReads++;
       final bytes = await _ramReader.readBytes(address, size.bytes);
-      if (bytes != null) currentSnapshot[key] = extractValue(size, bytes);
+      if (bytes != null) {
+        currentSnapshot[key] = extractValue(size, bytes);
+      } else {
+        failedReads++;
+      }
     }
 
     // Pass 1: every condition's own literal address/size - this alone
@@ -129,6 +154,28 @@ class AchievementService {
           }
         }
       }
+    }
+
+    // A one-line heartbeat on the first poll (fast confirmation the loop and
+    // RAM reads are alive at all) and every ~5s after (10 polls @ 500ms) -
+    // loud enough to catch "nothing is happening" during manual testing
+    // without flooding the log every 500ms.
+    if (_pollCount == 1 || _pollCount % 10 == 0) {
+      final String readStatus;
+      if (attemptedReads == 0) {
+        readStatus = 'no addresses to read';
+      } else if (failedReads == attemptedReads) {
+        readStatus = 'ALL $attemptedReads READ(S) FAILED - is RetroArch running with the ROM loaded '
+            'and network_cmd_enable="true"?';
+      } else if (failedReads > 0) {
+        readStatus = '$failedReads/$attemptedReads read(s) failed';
+      } else {
+        readStatus = '$attemptedReads/$attemptedReads read(s) ok';
+      }
+      DebugLogger.log(
+        '[AchievementService] poll #$_pollCount: $readStatus, '
+        '${_evaluator.unlockedCount}/${_achievements.length} unlocked',
+      );
     }
 
     final newlyUnlocked = _evaluator.tick(
