@@ -4,6 +4,7 @@ import 'dart:io';
 import '../../utils/debug_logger.dart';
 import '../../utils/devices.dart';
 import 'achievement.dart';
+import 'avaliadores/achievement_condition.dart';
 import 'avaliadores/achievement_evaluator.dart';
 import 'leitor_ram/retroarch_ram_reader.dart';
 
@@ -32,6 +33,12 @@ class AchievementService {
   Timer? _pollTimer;
   String? _currentConsole;
   String? _currentGame;
+
+  // Previous poll's readings, keyed the same way as the current poll's
+  // snapshot in [_poll] — needed for CompareTarget.previousValue conditions
+  // (e.g. "this went up since last poll"). Reset alongside everything else
+  // in [stopWatching] so a new game never sees a stale delta baseline.
+  Map<String, int> _previousSnapshot = {};
 
   static const _pollInterval = Duration(milliseconds: 500);
 
@@ -63,6 +70,7 @@ class AchievementService {
     _achievements = [];
     _currentConsole = null;
     _currentGame = null;
+    _previousSnapshot = {};
   }
 
   void dispose() {
@@ -73,37 +81,68 @@ class AchievementService {
 
   Future<void> _poll() async {
     // Sequential UDP round-trips are fine at this cadence for a handful of
-    // conditions — keyed by "address:size" so achievements sharing a memory
-    // address (e.g. two conditions both watching the same counter) only cost
-    // one read per poll instead of one per condition.
-    final valuesByKey = <String, int?>{};
+    // conditions — deduped by memory key so achievements sharing a memory
+    // address only cost one read per poll instead of one per condition.
+    final currentSnapshot = <String, int>{};
+    Future<void> readIfNeeded(int address, MemorySize size) async {
+      final key = memoryKey(address, size);
+      if (currentSnapshot.containsKey(key)) return;
+      final bytes = await _ramReader.readBytes(address, size.bytes);
+      if (bytes != null) currentSnapshot[key] = extractValue(size, bytes);
+    }
+
+    // Pass 1: every condition's own literal address/size - this alone
+    // resolves everything except AddAddress-indirected reads, since an
+    // AddAddress condition's *own* address is always literal (it's what it
+    // points to that's dynamic).
     for (final achievement in _achievements) {
-      for (final condition in achievement.conditions) {
-        final key = '${condition.address}:${condition.size.bytes}';
-        if (valuesByKey.containsKey(key)) continue;
-        final bytes = await _ramReader.readBytes(condition.address, condition.size.bytes);
-        valuesByKey[key] = bytes == null ? null : _bigEndianValue(bytes);
+      for (final condition in achievement.allConditions) {
+        await readIfNeeded(condition.address, condition.size);
+        if (condition.compareTarget == CompareTarget.otherAddress) {
+          await readIfNeeded(condition.compareAddress!, condition.compareSize!);
+        }
+      }
+    }
+
+    // Pass 2: AddAddress indirection (RetroAchievements' "I:" flag) - the
+    // condition right after an AddAddress reads from (pointer base + its own
+    // configured address), and that base is only known after pass 1's read
+    // of the AddAddress condition's own address. Mirrors the indirect-base
+    // walk AchievementEvaluator does independently over the completed
+    // snapshot; kept in sync with it, see achievement_evaluator.dart.
+    for (final achievement in _achievements) {
+      for (final group in achievement.conditionGroups) {
+        int? indirectBase;
+        for (final condition in group) {
+          final address = condition.address + (indirectBase ?? 0);
+          if (indirectBase != null) {
+            await readIfNeeded(address, condition.size);
+            if (condition.compareTarget == CompareTarget.otherAddress) {
+              await readIfNeeded(condition.compareAddress! + indirectBase, condition.compareSize!);
+            }
+          }
+          if (condition.isAddAddress) {
+            final key = memoryKey(address, condition.size);
+            indirectBase = (condition.readPrevious ? _previousSnapshot[key] : currentSnapshot[key]) ?? 0;
+          } else {
+            indirectBase = null;
+          }
+        }
       }
     }
 
     final newlyUnlocked = _evaluator.tick(
       _achievements,
-      (condition) => valuesByKey['${condition.address}:${condition.size.bytes}'],
+      (address, size) => currentSnapshot[memoryKey(address, size)],
+      (address, size) => _previousSnapshot[memoryKey(address, size)],
     );
+    _previousSnapshot = currentSnapshot;
 
     for (final achievement in newlyUnlocked) {
       DebugLogger.log('[AchievementService] unlocked: ${achievement.title} (+${achievement.points})');
       _unlockedController.add(achievement);
       await _persistUnlocked(achievement.id);
     }
-  }
-
-  int _bigEndianValue(List<int> bytes) {
-    var value = 0;
-    for (final byte in bytes) {
-      value = (value << 8) | byte;
-    }
-    return value;
   }
 
   // ── Persistence ───────────────────────────────────────────────────────────
