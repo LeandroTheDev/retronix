@@ -4,9 +4,9 @@ import 'dart:io';
 import '../../utils/debug_logger.dart';
 import '../../utils/devices.dart';
 import 'achievement.dart';
-import 'avaliadores/achievement_condition.dart';
-import 'avaliadores/achievement_evaluator.dart';
-import 'leitor_ram/retroarch_ram_reader.dart';
+import 'evaluators/achievement_condition.dart';
+import 'evaluators/achievement_evaluator.dart';
+import 'ram_reader/retroarch_ram_reader.dart';
 
 /// Owns the poll loop tying [RetroarchRamReader] (memory access) and
 /// [AchievementEvaluator] (unlock logic) together for one running game, plus
@@ -135,6 +135,8 @@ class AchievementService {
       _achievements,
       (address, size) => currentSnapshot[memoryKey(address, size)],
       (address, size) => _previousSnapshot[memoryKey(address, size)],
+      onProgress: (achievement, progress) =>
+          DebugLogger.log('[AchievementService] progress: ${achievement.title} $progress'),
     );
     _previousSnapshot = currentSnapshot;
 

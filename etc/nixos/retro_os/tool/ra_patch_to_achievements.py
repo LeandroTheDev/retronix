@@ -2,7 +2,7 @@
 """Converts a RetroAchievements "patch" API response (the JSON body of a
 `r=patch` dorequest.php call, e.g. what tool/clean_http_debug_dump.py
 extracts from a raw capture) into this app's achievements.json format
-(see lib/services/achievements/avaliadores/achievement_condition.dart).
+(see lib/services/achievements/evaluators/achievement_condition.dart).
 
 The app's evaluator supports: independent AND'd conditions, ResetIf, PauseIf,
 AndNext/OrNext chains, alt groups (core AND (alt1 OR alt2...)), previous-value

@@ -6,6 +6,33 @@ class _ConditionState {
   bool wasSatisfied = false;
 }
 
+/// How close an achievement is to unlocking, reported via [AchievementEvaluator.tick]'s
+/// `onProgress` callback. [doneUnits]/[totalUnits] cover the core
+/// [Achievement.conditions]; [bestAltDoneUnits]/[bestAltTotalUnits] cover
+/// whichever of [Achievement.altGroups] is currently furthest along (null if
+/// the achievement has no alt groups) - the achievement still also needs
+/// that alt group fully done, not just the core, to unlock.
+class AchievementProgress {
+  const AchievementProgress({
+    required this.doneUnits,
+    required this.totalUnits,
+    this.bestAltDoneUnits,
+    this.bestAltTotalUnits,
+  });
+
+  final int doneUnits;
+  final int totalUnits;
+  final int? bestAltDoneUnits;
+  final int? bestAltTotalUnits;
+
+  @override
+  String toString() {
+    final core = '$doneUnits/$totalUnits';
+    if (bestAltDoneUnits == null) return core;
+    return '$core (best alt group: $bestAltDoneUnits/$bestAltTotalUnits)';
+  }
+}
+
 /// Per-achievement hit-count state: one slot per condition in the core
 /// [Achievement.conditions] list, plus one slot per condition in each of
 /// [Achievement.altGroups] (same shape, indexed the same way).
@@ -21,6 +48,11 @@ class _AchievementState {
 
   final List<_ConditionState> core;
   final List<List<_ConditionState>> altGroups;
+
+  // Last progress reported through the onProgress callback, so AchievementService
+  // only logs when something actually changed instead of every poll.
+  int lastLoggedDone = 0;
+  int? lastLoggedAltDone;
 
   void reset() {
     for (final state in core) {
@@ -60,14 +92,17 @@ class AchievementEvaluator {
   /// or null if it hasn't been read. Reads needed because of
   /// [AchievementCondition.isAddAddress] indirection must already be present
   /// too (see [AchievementService]'s two-pass poll) - this class does no I/O
-  /// itself. Returns the achievements that transitioned from locked to
-  /// unlocked on this call; already-unlocked achievements are skipped
-  /// entirely.
+  /// itself. [onProgress], if given, fires once per achievement whose
+  /// [AchievementProgress] changed this poll (including drops back to zero
+  /// from an isResetIf) - already-unlocked achievements are never reported.
+  /// Returns the achievements that transitioned from locked to unlocked on
+  /// this call; already-unlocked achievements are skipped entirely.
   List<Achievement> tick(
     List<Achievement> achievements,
     int? Function(int address, MemorySize size) currentValue,
-    int? Function(int address, MemorySize size) previousValue,
-  ) {
+    int? Function(int address, MemorySize size) previousValue, {
+    void Function(Achievement achievement, AchievementProgress progress)? onProgress,
+  }) {
     final newlyUnlocked = <Achievement>[];
 
     int? read(int address, MemorySize size, {required bool previous}) =>
@@ -170,8 +205,16 @@ class AchievementEvaluator {
     // isAddHits/isSubHits conditions *do* have their own tally (see
     // tallyForAccumulator) but, like AddSource, fold into the next unit
     // rather than being one themselves - RetroAchievements' AddHits/SubHits.
-    bool evaluateGroup(List<AchievementCondition> conditions, List<_ConditionState> states, List<bool?> resolved) {
+    // Returns done/total unit counts alongside allDone for progress
+    // reporting - see [AchievementProgress].
+    ({bool allDone, int done, int total}) evaluateGroup(
+      List<AchievementCondition> conditions,
+      List<_ConditionState> states,
+      List<bool?> resolved,
+    ) {
       var allDone = true;
+      var done = 0;
+      var total = 0;
       var addHitsAccumulator = 0;
       var i = 0;
       while (i < conditions.length) {
@@ -222,10 +265,15 @@ class AchievementEvaluator {
           addHitsAccumulator = 0;
         }
 
-        if (!unitSatisfied) allDone = false;
+        total++;
+        if (unitSatisfied) {
+          done++;
+        } else {
+          allDone = false;
+        }
         i++;
       }
-      return allDone;
+      return (allDone: allDone, done: done, total: total);
     }
 
     // Unlike isResetIf/onlyOnChange conditions, isPauseIf freezes every hit
@@ -245,22 +293,35 @@ class AchievementEvaluator {
       return false;
     }
 
-    bool evaluateGroupOrFrozen(
+    ({bool allDone, int done, int total}) evaluateGroupOrFrozen(
       List<AchievementCondition> conditions,
       List<_ConditionState> states,
       List<bool?> resolved,
     ) {
       if (!groupPaused(conditions, resolved)) return evaluateGroup(conditions, states, resolved);
+      var done = 0;
+      var total = 0;
+      var allDone = true;
       for (var i = 0; i < conditions.length; i++) {
         final condition = conditions[i];
-        if (condition.isResetIf || condition.isPauseIf || resolved[i] == null) continue;
-        // A transient (targetHits == null) condition has no persisted
-        // progress to freeze - it can't block on a frozen poll either way,
-        // so it's excluded rather than treated as failing.
+        if (condition.isResetIf ||
+            condition.isPauseIf ||
+            condition.isAddHits ||
+            condition.isSubHits ||
+            condition.chain != ChainType.none ||
+            resolved[i] == null) {
+          continue;
+        }
+        total++;
         final target = condition.targetHits;
-        if (target != null && states[i].hits < target) return false;
+        final satisfied = target == null || states[i].hits >= target;
+        if (satisfied) {
+          done++;
+        } else {
+          allDone = false;
+        }
       }
-      return true;
+      return (allDone: allDone, done: done, total: total);
     }
 
     for (final achievement in achievements) {
@@ -284,18 +345,44 @@ class AchievementEvaluator {
       }
       if (resetTriggered) {
         state.reset();
+        if (onProgress != null && (state.lastLoggedDone != 0 || (state.lastLoggedAltDone ?? 0) != 0)) {
+          state.lastLoggedDone = 0;
+          state.lastLoggedAltDone = achievement.altGroups.isEmpty ? null : 0;
+          onProgress(achievement, AchievementProgress(doneUnits: 0, totalUnits: state.core.length));
+        }
         continue;
       }
 
-      final coreDone = evaluateGroupOrFrozen(achievement.conditions, state.core, resolvedCore);
+      final coreResult = evaluateGroupOrFrozen(achievement.conditions, state.core, resolvedCore);
 
       var altDone = achievement.altGroups.isEmpty;
+      var bestAltDone = -1;
+      var bestAltTotal = 0;
       for (var g = 0; g < achievement.altGroups.length; g++) {
-        final done = evaluateGroupOrFrozen(achievement.altGroups[g], state.altGroups[g], resolvedAlts[g]);
-        if (done) altDone = true;
+        final altResult = evaluateGroupOrFrozen(achievement.altGroups[g], state.altGroups[g], resolvedAlts[g]);
+        if (altResult.allDone) altDone = true;
+        if (altResult.done > bestAltDone) {
+          bestAltDone = altResult.done;
+          bestAltTotal = altResult.total;
+        }
       }
 
-      if (coreDone && altDone) {
+      if (onProgress != null &&
+          (coreResult.done != state.lastLoggedDone || (achievement.altGroups.isNotEmpty && bestAltDone != state.lastLoggedAltDone))) {
+        state.lastLoggedDone = coreResult.done;
+        state.lastLoggedAltDone = achievement.altGroups.isEmpty ? null : bestAltDone;
+        onProgress(
+          achievement,
+          AchievementProgress(
+            doneUnits: coreResult.done,
+            totalUnits: coreResult.total,
+            bestAltDoneUnits: achievement.altGroups.isEmpty ? null : bestAltDone,
+            bestAltTotalUnits: achievement.altGroups.isEmpty ? null : bestAltTotal,
+          ),
+        );
+      }
+
+      if (coreResult.allDone && altDone) {
         _unlocked.add(achievement.id);
         newlyUnlocked.add(achievement);
       }

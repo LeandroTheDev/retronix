@@ -8,7 +8,7 @@ import '../utils/app_localizations.dart';
 import '../utils/app_menu.dart';
 import '../utils/snackbar.dart';
 import '../utils/sound.dart';
-import 'nintendo64_game_open.dart';
+import 'nintendo64_game_details_page.dart';
 
 class Nintendo64GamesPage extends StatefulWidget {
   const Nintendo64GamesPage({super.key});
@@ -70,7 +70,7 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
         setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, _games.length - 1));
         _scrollToSelected();
       case GamepadAction.confirm:
-        _launchGame();
+        _openGameDetails();
       default:
         break;
     }
@@ -87,11 +87,11 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
     );
   }
 
-  Future<void> _launchGame() async {
+  Future<void> _openGameDetails() async {
     final game = _games[_selectedIndex];
     final error = await Navigator.push<String>(
       context,
-      MaterialPageRoute(builder: (_) => Nintendo64GameOpen(gameName: game)),
+      MaterialPageRoute(builder: (_) => Nintendo64GameDetailsPage(gameName: game)),
     );
     if (error != null && mounted) {
       showErrorSnackBar(context, error);

@@ -1,4 +1,4 @@
-import 'avaliadores/achievement_condition.dart';
+import 'evaluators/achievement_condition.dart';
 
 class Achievement {
   const Achievement({

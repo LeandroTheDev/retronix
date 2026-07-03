@@ -132,6 +132,15 @@ class AppLocalizations {
   String bluetoothDisconnectFailed(String name) =>
       _pick('Failed to disconnect from $name', 'Falha ao desconectar de $name');
 
+  // ── Game Details Page ─────────────────────────────────────────────────────
+
+  String get play                => _pick('PLAY', 'JOGAR');
+  String get achievementsTitle   => _pick('Achievements', 'Conquistas');
+  String get noAchievementsFound => _pick('No achievements yet', 'Nenhuma conquista ainda');
+  String achievementPoints(int points) => _pick('$points pts', '$points pts');
+  String achievementsSummary(int count, int points) =>
+      _pick('$count achievements • $points pts', '$count conquistas • $points pts');
+
   // ── Game Open ─────────────────────────────────────────────────────────────
 
   String get holdStartToExit => _pick('Hold Start for 5 seconds to exit', 'Segure Start por 5 segundos para sair');
