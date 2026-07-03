@@ -17,9 +17,11 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   // Matches the ~7s runtime of the boot jingle — the logo assembly and the
   // idle hold below are both timed against it so they land on the last note.
   static const _bootSound = 'sounds/startup-sound-variation-6-freesounds-community.wav';
-  static const _assemblyDuration = Duration(milliseconds: 3600);
+  static const _assemblyDuration = Duration(milliseconds: 4500);
   static const _fallbackHold = Duration(milliseconds: 500);
   static const _maxHold = Duration(seconds: 10);
+
+  static const _soundStartDelay = Duration(seconds: 1);
 
   late final AnimationController _assembly;
   late final AnimationController _cursorBlink;
@@ -29,22 +31,31 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   StreamSubscription<void>? _soundCompleteSub;
   Timer? _safetyTimer;
   bool _navigated = false;
+  late final Future<void> _soundReady;
 
   @override
   void initState() {
     super.initState();
 
-    _assembly = AnimationController(vsync: this, duration: _assemblyDuration)..forward();
+    _assembly = AnimationController(vsync: this, duration: _assemblyDuration);
 
+    // Fraction of _assemblyDuration (4.5s) — text only starts fading in at
+    // 4.0s, with a gentle 500ms settle to the very end.
     _textOpacity = CurvedAnimation(
       parent: _assembly,
-      curve: const Interval(0.8, 1.0, curve: Curves.easeIn),
+      curve: const Interval(0.8889, 1.0, curve: Curves.easeOutCubic),
     );
 
     _cursorBlink = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))
       ..repeat(reverse: true);
 
-    Future.delayed(const Duration(seconds: 1), _playBootSound);
+    // Loads/decodes the asset right away so it's ready by the time the sound
+    // delay elapses, instead of paying that cost inside _playBootSound.
+    _soundReady = _player.setSource(AssetSource(_bootSound)).catchError((e) {
+      DebugLogger.log('[splash] boot sound preload failed: $e');
+    });
+
+    Future.delayed(_soundStartDelay, _playBootSound);
   }
 
   Future<void> _playBootSound() async {
@@ -52,8 +63,13 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     try {
       DebugLogger.log('[splash] starting boot sound playback');
       _soundCompleteSub = _player.onPlayerComplete.listen((_) => _goToConsoleSelector());
-      await _player.play(AssetSource(_bootSound));
-      DebugLogger.log('[splash] audioplayers.play() returned — waiting for onPlayerComplete');
+      await _soundReady;
+      // Kick off the logo assembly right before resume() so both start from
+      // the same instant — two independent timers would drift because
+      // resume() has its own native audio-backend startup latency.
+      _assembly.forward();
+      await _player.resume();
+      DebugLogger.log('[splash] audioplayers.resume() returned — waiting for onPlayerComplete');
       // Safety net in case the audio backend never fires onPlayerComplete
       // (e.g. missing driver on the device) — don't strand the boot screen.
       _safetyTimer = Timer(_maxHold, _goToConsoleSelector);

@@ -42,6 +42,18 @@ class _SnowflakePainter extends CustomPainter {
     ..cubicTo(26, -100, 30, -50, 0, -10)
     ..close();
 
+  // Fractions of _assemblyDuration (4.5s), staggered so petal 0 is at 50%
+  // progress by 0.524s and the last petal finishes right at 3.3s, matching
+  // the manually-marked toque timings.
+  static const _petalIntervals = [
+    [0.0000, 0.2300],
+    [0.1000, 0.2800],
+    [0.1400, 0.4000],
+    [0.1800, 0.5600],
+    [0.2100, 0.6000],
+    [0.2500, 0.6500],
+  ];
+
   double _local(double start, double end, Curve curve) {
     final raw = ((t - start) / (end - start)).clamp(0.0, 1.0);
     return curve.transform(raw);
@@ -62,8 +74,10 @@ class _SnowflakePainter extends CustomPainter {
     canvas.restore();
   }
 
+  // Background disc holds the screen alone from 0 to 0.524s (fraction of the
+  // 4.5s assembly), matching the manually-marked toque timings.
   void _paintSun(Canvas canvas) {
-    final sunT = _local(0.0, 0.35, Curves.easeOutCubic);
+    final sunT = _local(0.0, 0.1164, Curves.easeOutCubic);
     if (sunT <= 0) return;
 
     canvas.save();
@@ -94,8 +108,8 @@ class _SnowflakePainter extends CustomPainter {
   }
 
   void _paintPetal(Canvas canvas, int index) {
-    final start = 0.15 + index * 0.09;
-    final petalT = _local(start, start + 0.35, Curves.easeOutBack);
+    final interval = _petalIntervals[index];
+    final petalT = _local(interval[0], interval[1], Curves.easeOutBack);
     if (petalT <= 0) return;
 
     final angle = index * 60.0;
@@ -121,8 +135,12 @@ class _SnowflakePainter extends CustomPainter {
     canvas.restore();
   }
 
+  // Pops in on the last beat of the boot jingle, 2.3s (fraction of the 4.5s
+  // assembly). Curves.elasticOut rises to ~full size only ~10% into its
+  // interval then just wobbles/settles for the rest, so the window has to
+  // be short (150ms) or the pop reads as happening much earlier than 2.3s.
   void _paintCore(Canvas canvas) {
-    final coreT = _local(0.85, 1.0, Curves.elasticOut);
+    final coreT = _local(0.5278, 0.8111, Curves.elasticOut);
     if (coreT <= 0) return;
 
     final radius = 17.0 * coreT.clamp(0.0, 1.3);

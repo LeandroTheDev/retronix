@@ -28,7 +28,12 @@ class _GamepadStatusOverlayState extends State<GamepadStatusOverlay> {
         if (newId != null && _slots[i] == null) {
           final name = GamepadService.instance.nameForId(newId) ?? 'Controller';
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l.controllerConnected(i + 1, name))),
+            SnackBar(
+              content: Text(
+                l.controllerConnected(i + 1, name),
+                style: const TextStyle(fontFamily: 'PressStart'),
+              ),
+            ),
           );
         }
       }

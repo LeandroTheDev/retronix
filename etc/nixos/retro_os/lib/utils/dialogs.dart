@@ -142,7 +142,30 @@ class _SettingsDialogState extends State<_SettingsDialog> {
                         ),
                         child: Row(
                           children: [
-                            Icon(opt.icon, color: selected ? Colors.black : Colors.white70, size: 22),
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Icon(opt.icon, color: selected ? Colors.black : Colors.white70, size: 22),
+                                if (opt.hasNotification != null)
+                                  Positioned(
+                                    top: -2,
+                                    right: -2,
+                                    child: ValueListenableBuilder<bool>(
+                                      valueListenable: opt.hasNotification!,
+                                      builder: (_, value, _) => value
+                                          ? Container(
+                                              width: 10,
+                                              height: 10,
+                                              decoration: const BoxDecoration(
+                                                color: Colors.greenAccent,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            )
+                                          : const SizedBox.shrink(),
+                                    ),
+                                  ),
+                              ],
+                            ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Text(
@@ -154,20 +177,6 @@ class _SettingsDialogState extends State<_SettingsDialog> {
                                 ),
                               ),
                             ),
-                            if (opt.hasNotification != null)
-                              ValueListenableBuilder<bool>(
-                                valueListenable: opt.hasNotification!,
-                                builder: (_, value, _) => value
-                                    ? Container(
-                                        width: 10,
-                                        height: 10,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.greenAccent,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
                           ],
                         ),
                       ),
