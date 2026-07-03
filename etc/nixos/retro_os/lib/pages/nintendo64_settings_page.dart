@@ -27,6 +27,8 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
   final _aspectOptions         = const ['4:3', '16:9', '16:9 adjusted', 'fill'];
   final _overscanEnabledOptions = const ['false', 'true'];
   final _overscanAmountOptions = const ['0', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50'];
+  final _fpsShowOptions        = const ['false', 'true'];
+  final _audioVolumeOptions    = const ['0', '3', '6', '9', '12', '15', '18'];
 
   int _resIdx             = 0;
   int _msaaIdx            = 0;
@@ -35,13 +37,15 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
   int _aspectIdx          = 0;
   int _overscanEnabledIdx = 1;
   int _overscanAmountIdx  = 0;
+  int _fpsShowIdx         = 0;
+  int _audioVolumeIdx     = 0;
 
   String _corePath   = '';
   bool   _coreExists = true;
 
-  // One key per selectable row (0-6 = option rows, 7 = restore defaults, 8 = open retroarch),
+  // One key per selectable row (0-8 = option rows, 9 = restore defaults, 10 = open retroarch),
   // used to scroll the row into view as the gamepad selection moves.
-  final _rowKeys = List.generate(9, (_) => GlobalKey());
+  final _rowKeys = List.generate(11, (_) => GlobalKey());
 
   @override
   void initState() {
@@ -64,6 +68,8 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
     final aspect           = await SettingsService.instance.n64Aspect();
     final overscanEnabled  = await SettingsService.instance.n64OverscanEnabled();
     final overscanAmount   = await SettingsService.instance.n64OverscanAmount();
+    final fpsShow          = await SettingsService.instance.n64FpsShow();
+    final audioVolume      = await SettingsService.instance.n64AudioVolume();
     final core             = await SettingsService.instance.n64CorePath();
     if (!mounted) return;
     setState(() {
@@ -74,6 +80,8 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
       _aspectIdx          = _aspectOptions.indexOf(aspect).clamp(0, _aspectOptions.length - 1);
       _overscanEnabledIdx = _overscanEnabledOptions.indexOf(overscanEnabled).clamp(0, _overscanEnabledOptions.length - 1);
       _overscanAmountIdx  = _overscanAmountOptions.indexOf(overscanAmount).clamp(0, _overscanAmountOptions.length - 1);
+      _fpsShowIdx         = _fpsShowOptions.indexOf(fpsShow).clamp(0, _fpsShowOptions.length - 1);
+      _audioVolumeIdx     = _audioVolumeOptions.indexOf(audioVolume).clamp(0, _audioVolumeOptions.length - 1);
       _corePath           = core;
       _coreExists         = File(core).existsSync();
       _loading            = false;
@@ -84,18 +92,18 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, 8));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, 10));
         _scrollToSelected();
       case GamepadAction.down:
-        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, 8));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, 10));
         _scrollToSelected();
       case GamepadAction.left:
         _cycleValue(-1);
       case GamepadAction.right:
         _cycleValue(1);
       case GamepadAction.confirm:
-        if (_selectedIndex == 7) _resetAll();
-        if (_selectedIndex == 8) _openRetroarch();
+        if (_selectedIndex == 9) _resetAll();
+        if (_selectedIndex == 10) _openRetroarch();
       case GamepadAction.back:
         Navigator.pop(context);
       default:
@@ -140,6 +148,16 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
         if (next == _overscanAmountIdx) return;
         setState(() => _overscanAmountIdx = next);
         SettingsService.instance.setN64OverscanAmount(_overscanAmountOptions[next]);
+      case 7:
+        final next = (_fpsShowIdx + dir).clamp(0, _fpsShowOptions.length - 1);
+        if (next == _fpsShowIdx) return;
+        setState(() => _fpsShowIdx = next);
+        SettingsService.instance.setN64FpsShow(_fpsShowOptions[next]);
+      case 8:
+        final next = (_audioVolumeIdx + dir).clamp(0, _audioVolumeOptions.length - 1);
+        if (next == _audioVolumeIdx) return;
+        setState(() => _audioVolumeIdx = next);
+        SettingsService.instance.setN64AudioVolume(_audioVolumeOptions[next]);
     }
   }
 
@@ -280,6 +298,28 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
                       canRight: _overscanAmountIdx < _overscanAmountOptions.length - 1,
                     ),
                   ),
+                  KeyedSubtree(
+                    key: _rowKeys[7],
+                    child: _OptionRow(
+                      icon: Icons.query_stats,
+                      label: l.showFps,
+                      value: l.fpsShowLabels[_fpsShowIdx],
+                      selected: _selectedIndex == 7,
+                      canLeft:  _fpsShowIdx > 0,
+                      canRight: _fpsShowIdx < _fpsShowOptions.length - 1,
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: _rowKeys[8],
+                    child: _OptionRow(
+                      icon: Icons.volume_up,
+                      label: l.audioGain,
+                      value: '+${_audioVolumeOptions[_audioVolumeIdx]} dB',
+                      selected: _selectedIndex == 8,
+                      canLeft:  _audioVolumeIdx > 0,
+                      canRight: _audioVolumeIdx < _audioVolumeOptions.length - 1,
+                    ),
+                  ),
                   _CoreInfoRow(
                     label: l.coreRetroArch,
                     notFoundMessage: l.coreFileNotFound,
@@ -287,19 +327,19 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
                     exists: _coreExists,
                   ),
                   KeyedSubtree(
-                    key: _rowKeys[7],
+                    key: _rowKeys[9],
                     child: _ActionRow(
                       icon: Icons.restore,
                       label: l.restoreDefaults,
-                      selected: _selectedIndex == 7,
+                      selected: _selectedIndex == 9,
                     ),
                   ),
                   KeyedSubtree(
-                    key: _rowKeys[8],
+                    key: _rowKeys[10],
                     child: _ActionRow(
                       icon: Icons.sports_esports,
                       label: l.openRetroarch,
-                      selected: _selectedIndex == 8,
+                      selected: _selectedIndex == 10,
                     ),
                   ),
                 ],

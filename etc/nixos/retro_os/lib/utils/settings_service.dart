@@ -173,6 +173,31 @@ class SettingsService {
     await _save();
   }
 
+  // n64_fps_show: 'false' | 'true' — RetroArch's on-screen FPS counter
+  Future<String> n64FpsShow() async {
+    await _ensureLoaded();
+    return (_data['n64_fps_show'] as String?) ?? 'false';
+  }
+
+  Future<void> setN64FpsShow(String value) async {
+    await _ensureLoaded();
+    _data['n64_fps_show'] = value;
+    await _save();
+  }
+
+  // n64_audio_volume: extra gain in dB on top of RetroArch's 0dB (unity)
+  // baseline — '0' | '3' | '6' | '9' | '12' | '15' | '18'
+  Future<String> n64AudioVolume() async {
+    await _ensureLoaded();
+    return (_data['n64_audio_volume'] as String?) ?? '0';
+  }
+
+  Future<void> setN64AudioVolume(String value) async {
+    await _ensureLoaded();
+    _data['n64_audio_volume'] = value;
+    await _save();
+  }
+
   // ── Screen resolution ────────────────────────────────────────────────────
   // Plain text, not settings.json — display.nix's session script reads this
   // directly (via sed) at boot, before Flutter is even running, so the
@@ -252,7 +277,9 @@ class SettingsService {
       ..remove('n64_frame_dupes')
       ..remove('n64_aspect')
       ..remove('n64_overscan_enabled')
-      ..remove('n64_overscan_amount');
+      ..remove('n64_overscan_amount')
+      ..remove('n64_fps_show')
+      ..remove('n64_audio_volume');
     await _save();
   }
 
@@ -320,10 +347,14 @@ class SettingsService {
     // ignoring aspect entirely).
     final aspectRatioIndex = aspect == 'fill' ? '24' : '22';
     final device = await audioDevice();
+    final fpsShow = await n64FpsShow();
+    final audioVolume = await n64AudioVolume();
 
     final lines = [
       'aspect_ratio_index = "$aspectRatioIndex"',
       'audio_device = "$device"',
+      'fps_show = "$fpsShow"',
+      'audio_volume = "$audioVolume"',
     ];
 
     final path = _retroarchOverridePath();

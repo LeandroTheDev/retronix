@@ -90,6 +90,8 @@ class AppLocalizations {
   String get aspectRatio             => _pick('Aspect Ratio', 'Proporção de Tela');
   String get overscanCrop            => _pick('Overscan Crop', 'Corte de Overscan');
   String get overscanAmount          => _pick('Overscan Amount', 'Quantidade de Overscan');
+  String get showFps                 => _pick('Show FPS', 'Mostrar FPS');
+  String get audioGain               => _pick('Audio Gain', 'Ganho de Áudio');
   String get coreRetroArch           => 'RetroArch Core';
   String get coreFileNotFound        => _pick('File not found — games will not open', 'Arquivo não encontrado — os jogos não abrirão');
   String get restoreDefaults         => _pick('Restore Defaults', 'Restaurar padrões');
@@ -103,6 +105,7 @@ class AppLocalizations {
   List<String> get aspectLabels     =>
       ['4:3', '16:9', _pick('16:9 (adjusted)', '16:9 (ajustado)'), _pick('Fill Screen', 'Preencher Tela')];
   List<String> get overscanEnabledLabels => [off, on];
+  List<String> get fpsShowLabels    => [off, on];
 
   // ── About System Page ─────────────────────────────────────────────────────
 
