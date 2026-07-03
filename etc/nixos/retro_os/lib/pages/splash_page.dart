@@ -19,7 +19,9 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   static const _bootSound = 'sounds/startup-sound-variation-6-freesounds-community.wav';
   static const _assemblyDuration = Duration(milliseconds: 4500);
   static const _fallbackHold = Duration(milliseconds: 500);
-  static const _maxHold = Duration(seconds: 10);
+  // The clip is ~7.5s but everything past 5s is just reverb tail — cut the
+  // boot screen short instead of waiting for onPlayerComplete.
+  static const _playbackHold = Duration(milliseconds: 5000);
 
   static const _soundStartDelay = Duration(seconds: 1);
 
@@ -28,7 +30,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   late final Animation<double> _textOpacity;
   final _player = AudioPlayer();
 
-  StreamSubscription<void>? _soundCompleteSub;
   Timer? _safetyTimer;
   bool _navigated = false;
   late final Future<void> _soundReady;
@@ -62,17 +63,14 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     if (!mounted) return;
     try {
       DebugLogger.log('[splash] starting boot sound playback');
-      _soundCompleteSub = _player.onPlayerComplete.listen((_) => _goToConsoleSelector());
       await _soundReady;
       // Kick off the logo assembly right before resume() so both start from
       // the same instant — two independent timers would drift because
       // resume() has its own native audio-backend startup latency.
       _assembly.forward();
       await _player.resume();
-      DebugLogger.log('[splash] audioplayers.resume() returned — waiting for onPlayerComplete');
-      // Safety net in case the audio backend never fires onPlayerComplete
-      // (e.g. missing driver on the device) — don't strand the boot screen.
-      _safetyTimer = Timer(_maxHold, _goToConsoleSelector);
+      DebugLogger.log('[splash] audioplayers.resume() returned — moving on after $_playbackHold');
+      _safetyTimer = Timer(_playbackHold, _goToConsoleSelector);
     } catch (e) {
       DebugLogger.log('[splash] _playBootSound exception: $e');
       Future.delayed(_fallbackHold, _goToConsoleSelector);
@@ -83,7 +81,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     if (_navigated || !mounted) return;
     _navigated = true;
     _safetyTimer?.cancel();
-    _soundCompleteSub?.cancel();
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 400),
@@ -98,7 +95,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   void dispose() {
     _assembly.dispose();
     _cursorBlink.dispose();
-    _soundCompleteSub?.cancel();
     _safetyTimer?.cancel();
     _player.dispose();
     super.dispose();

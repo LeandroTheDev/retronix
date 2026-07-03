@@ -49,9 +49,9 @@ class _SnowflakePainter extends CustomPainter {
     [0.0000, 0.2300],
     [0.1000, 0.2800],
     [0.1400, 0.4000],
-    [0.1800, 0.5600],
-    [0.2100, 0.6000],
-    [0.2500, 0.6500],
+    [0.1800, 0.5300],
+    [0.2100, 0.5700],
+    [0.2500, 0.6000],
   ];
 
   double _local(double start, double end, Curve curve) {
