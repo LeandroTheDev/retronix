@@ -1,0 +1,47 @@
+[
+    {
+      "id": "collected_100_coins",
+      "title": "Collector",
+      "description": "Collect 100 coins in a single playthrough",
+      "points": 10,
+      "conditions": [
+        {
+          "address": "0x0eb8a0",
+          "size": "byte",
+          "op": "greaterOrEqual",
+          "value": 100
+        }
+      ]
+    },
+    {
+      "id": "got_first_star",
+      "title": "First Star",
+      "description": "Get your first star",
+      "points": 25,
+      "conditions": [
+        {
+          "address": "0x0eb920",
+          "size": "byte",
+          "op": "greaterThan",
+          "value": 0,
+          "onlyOnChange": true
+        }
+      ]
+    },
+    {
+      "id": "defeated_50_enemies",
+      "title": "Exterminator",
+      "description": "Defeat 50 enemies throughout the game",
+      "points": 50,
+      "conditions": [
+        {
+          "address": "0x0eb9a0",
+          "size": "word",
+          "op": "equals",
+          "value": 1,
+          "onlyOnChange": true,
+          "targetHits": 50
+        }
+      ]
+    }
+  ]

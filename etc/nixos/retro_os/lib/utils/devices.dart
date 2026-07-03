@@ -82,6 +82,14 @@ String? getGameImagePath(String console, String game) {
   return _findImage('${_consolesRoot()}/$console/Games/$game/game_image');
 }
 
+// Path to <console>/Games/<game>/game_achievements.json — the hand-authored
+// achievement definitions file, kept alongside the game's other assets
+// rather than in the app's own data dir (unlike unlocked progress, this is
+// content, not runtime state).
+String getGameAchievementsPath(String console, String game) {
+  return '${_consolesRoot()}/$console/Games/$game/game_achievements.json';
+}
+
 // Path to the ROM file inside <console>/Games/<game>/Game/
 Future<String?> getGameFilePath(String console, String game) async {
   final path = '${_consolesRoot()}/$console/Games/$game/Game';
