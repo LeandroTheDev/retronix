@@ -33,6 +33,10 @@ class AppLocalizations {
   String get audioDevice         => _pick('Audio Device', 'Dispositivo de Áudio');
   String get restartSystem       => _pick('Restart System', 'Reiniciar Sistema');
   String get restartConfirm      => _pick('Restart the system?', 'Deseja reiniciar o sistema?');
+  String get clearCache          => _pick('Clear Cache', 'Limpar Cache');
+  String get clearCacheConfirm   => _pick('Clear Nix cache? This may take a while.', 'Limpar cache do Nix? Isso pode demorar.');
+  String get clearCacheSuccess   => _pick('Cache cleared successfully', 'Cache limpo com sucesso');
+  String get clearCacheError     => _pick('Failed to clear cache', 'Falha ao limpar cache');
 
   // ── Update System Page ────────────────────────────────────────────────────
 
