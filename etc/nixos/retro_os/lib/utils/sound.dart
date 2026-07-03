@@ -2,6 +2,16 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'debug_logger.dart';
 
+const _swapSound = 'sounds/swap-sound-effect-512211-freesounds-community.wav';
+
+/// Clamps [current + delta] to [0, max], plays the navigation sound only
+/// when the index actually changes, and returns the new index.
+int navigateIndex(int current, int delta, int max) {
+  final next = (current + delta).clamp(0, max);
+  if (next != current) playSound(_swapSound);
+  return next;
+}
+
 /// Plays a one-shot sound effect from `assets/<assetPath>`.
 ///
 /// Always spins up a fresh [AudioPlayer] instead of reusing a shared one:

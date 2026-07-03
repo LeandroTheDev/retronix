@@ -147,7 +147,6 @@ class GamepadService {
 
   static const _connectSound    = 'sounds/connect-sound-effect-3045-freesounds-community.wav';
   static const _disconnectSound = 'sounds/disconnect-sound-effect-270300-freesounds-community.wav';
-  static const _swapSound       = 'sounds/swap-sound-effect-512211-freesounds-community.wav';
 
   // ── Player slots ─────────────────────────────────────────────────────────
   // Slot index 0..3 = player 1..4. Assigned by connection order: the first
@@ -295,12 +294,7 @@ class GamepadService {
     final action = _keyAction(event.logicalKey);
     if (action != null) {
       _controller.add(action);
-      if (event is KeyDownEvent) {
-        _buttonDownController.add(action);
-        if (action == GamepadAction.up || action == GamepadAction.down) {
-          playSound(_swapSound);
-        }
-      }
+      if (event is KeyDownEvent) _buttonDownController.add(action);
     }
     return action != null;
   }
@@ -374,9 +368,6 @@ class GamepadService {
   void _startRepeat(String timerKey, GamepadAction action) {
     _repeatTimers[timerKey]?.cancel();
     _controller.add(action);
-    if (action == GamepadAction.up || action == GamepadAction.down) {
-      playSound(_swapSound);
-    }
     _repeatTimers[timerKey] = Timer(_repeatDelay, () {
       _repeatTimers[timerKey] = Timer.periodic(_repeatInterval, (_) {
         _controller.add(action);

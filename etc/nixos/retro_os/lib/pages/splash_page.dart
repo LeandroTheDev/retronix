@@ -44,10 +44,11 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     _cursorBlink = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))
       ..repeat(reverse: true);
 
-    _playBootSound();
+    Future.delayed(const Duration(seconds: 1), _playBootSound);
   }
 
   Future<void> _playBootSound() async {
+    if (!mounted) return;
     try {
       DebugLogger.log('[splash] starting boot sound playback');
       _soundCompleteSub = _player.onPlayerComplete.listen((_) => _goToConsoleSelector());

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import '../services/gamepad_service.dart';
+import 'sound.dart';
 
 class SettingsOption {
   const SettingsOption({required this.label, required this.icon, required this.onSelect, this.hasNotification});
@@ -75,14 +76,10 @@ class _SettingsDialogState extends State<_SettingsDialog> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() {
-          _selectedIndex = (_selectedIndex - 1).clamp(0, widget.options.length - 1);
-        });
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, widget.options.length - 1));
         _scrollToSelected();
       case GamepadAction.down:
-        setState(() {
-          _selectedIndex = (_selectedIndex + 1).clamp(0, widget.options.length - 1);
-        });
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, widget.options.length - 1));
         _scrollToSelected();
       case GamepadAction.confirm:
         widget.options[_selectedIndex].onSelect();

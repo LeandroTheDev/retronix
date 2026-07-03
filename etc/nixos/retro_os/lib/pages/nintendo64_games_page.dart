@@ -7,6 +7,7 @@ import '../utils/devices.dart';
 import '../utils/app_localizations.dart';
 import '../utils/app_menu.dart';
 import '../utils/snackbar.dart';
+import '../utils/sound.dart';
 import 'nintendo64_game_open.dart';
 
 class Nintendo64GamesPage extends StatefulWidget {
@@ -63,14 +64,10 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
     if (_games.isEmpty) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() {
-          _selectedIndex = (_selectedIndex - 1).clamp(0, _games.length - 1);
-        });
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, _games.length - 1));
         _scrollToSelected();
       case GamepadAction.down:
-        setState(() {
-          _selectedIndex = (_selectedIndex + 1).clamp(0, _games.length - 1);
-        });
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, _games.length - 1));
         _scrollToSelected();
       case GamepadAction.confirm:
         _launchGame();

@@ -6,6 +6,7 @@ import '../utils/debug_logger.dart';
 import '../utils/devices.dart';
 import '../utils/app_menu.dart';
 import '../utils/app_localizations.dart';
+import '../utils/sound.dart';
 import 'nintendo64_games_page.dart';
 
 class ConsoleSelectorPage extends StatefulWidget {
@@ -55,21 +56,9 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
     if (_consoles.isEmpty) return;
     switch (action) {
       case GamepadAction.up:
-        final newIndexUp = (_selectedIndex - 1).clamp(0, _consoles.length - 1);
-        DebugLogger.log(
-          '[ConsoleSelectorPage] setState from _handleAction(up): $_selectedIndex -> $newIndexUp',
-        );
-        setState(() {
-          _selectedIndex = newIndexUp;
-        });
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, _consoles.length - 1));
       case GamepadAction.down:
-        final newIndexDown = (_selectedIndex + 1).clamp(0, _consoles.length - 1);
-        DebugLogger.log(
-          '[ConsoleSelectorPage] setState from _handleAction(down): $_selectedIndex -> $newIndexDown',
-        );
-        setState(() {
-          _selectedIndex = newIndexDown;
-        });
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, _consoles.length - 1));
       case GamepadAction.confirm:
         _navigate();
       default:

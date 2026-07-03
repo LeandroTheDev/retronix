@@ -91,9 +91,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 4));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, 4));
       case GamepadAction.down:
-        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 4));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, 4));
       case GamepadAction.left:
         _cycleValue(-1);
       case GamepadAction.right:

@@ -5,6 +5,7 @@ import '../utils/app_localizations.dart';
 import '../utils/bluetooth.dart';
 import '../utils/debug_logger.dart';
 import '../utils/snackbar.dart';
+import '../utils/sound.dart';
 
 class BluetoothPage extends StatefulWidget {
   const BluetoothPage({super.key});
@@ -68,10 +69,10 @@ class _BluetoothPageState extends State<BluetoothPage> {
     if (_devices.isEmpty) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, _devices.length - 1));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, _devices.length - 1));
         _scrollToSelected();
       case GamepadAction.down:
-        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, _devices.length - 1));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, _devices.length - 1));
         _scrollToSelected();
       case GamepadAction.confirm:
         _toggleConnection(_devices[_selectedIndex]);

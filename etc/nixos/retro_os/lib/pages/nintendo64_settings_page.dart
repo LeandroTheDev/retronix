@@ -6,6 +6,7 @@ import '../utils/debug_logger.dart';
 import '../utils/settings_service.dart';
 import '../utils/app_localizations.dart';
 import '../utils/snackbar.dart';
+import '../utils/sound.dart';
 
 class Nintendo64SettingsPage extends StatefulWidget {
   const Nintendo64SettingsPage({super.key});
@@ -83,10 +84,10 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, 8));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, 8));
         _scrollToSelected();
       case GamepadAction.down:
-        setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, 8));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, 8));
         _scrollToSelected();
       case GamepadAction.left:
         _cycleValue(-1);
