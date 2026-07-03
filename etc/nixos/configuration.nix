@@ -7,6 +7,7 @@
       ./display.nix
       ./mdns.nix
       ./packages.nix
+      ./raspberrypi.nix
       ./users.nix
     ];
 
