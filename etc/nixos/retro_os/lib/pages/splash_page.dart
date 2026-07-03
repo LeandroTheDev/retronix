@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import '../utils/app_localizations.dart';
 import '../utils/debug_logger.dart';
+import '../utils/sound.dart';
 import '../widgets/snowflake_logo.dart';
 import 'console_selector_page.dart';
 
@@ -55,6 +56,10 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     _soundReady = _player.setSource(AssetSource(_bootSound)).catchError((e) {
       DebugLogger.log('[splash] boot sound preload failed: $e');
     });
+
+    // Warm up every other UI sound effect while the boot jingle plays, so
+    // the first swap/connect/error sound in the app doesn't stutter.
+    preloadAllSounds();
 
     Future.delayed(_soundStartDelay, _playBootSound);
   }

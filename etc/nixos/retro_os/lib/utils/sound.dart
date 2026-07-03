@@ -4,6 +4,30 @@ import 'debug_logger.dart';
 
 const _swapSound = 'sounds/swap-sound-effect-512211-freesounds-community.wav';
 
+/// Every UI sound effect played anywhere in the app (kept in sync with the
+/// asset path constants in gamepad_service.dart, snackbar.dart and
+/// system_settings_page.dart) — warmed up together so the first real trigger
+/// of each one doesn't pay the audioplayers asset-extraction latency.
+const _allSoundAssets = [
+  _swapSound,
+  'sounds/connect-sound-effect-3045-freesounds-community.wav',
+  'sounds/disconnect-sound-effect-270300-freesounds-community.wav',
+  'sounds/error-sound-effect-3287-freesounds-community.wav',
+  'sounds/change-sound-effect-402322-freesounds-community.wav',
+  'sounds/change2-sound-effect-188167-freesounds-community.wav',
+];
+
+/// Warms the audio cache for every UI sound effect — call once, early
+/// (e.g. from SplashPage), so navigation/connect/error sounds don't stutter
+/// on their first play.
+Future<void> preloadAllSounds() async {
+  try {
+    await AudioCache.instance.loadAll(_allSoundAssets);
+  } catch (e) {
+    DebugLogger.log('[sound] preloadAllSounds failed: $e');
+  }
+}
+
 /// Clamps [current + delta] to [0, max], plays the navigation sound only
 /// when the index actually changes, and returns the new index.
 int navigateIndex(int current, int delta, int max) {
