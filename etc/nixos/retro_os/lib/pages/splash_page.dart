@@ -21,7 +21,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   static const _fallbackHold = Duration(milliseconds: 500);
   // The clip is ~7.5s but everything past 5s is just reverb tail — cut the
   // boot screen short instead of waiting for onPlayerComplete.
-  static const _playbackHold = Duration(milliseconds: 5000);
+  static const _playbackHold = Duration(milliseconds: 5500);
 
   static const _soundStartDelay = Duration(seconds: 1);
 
