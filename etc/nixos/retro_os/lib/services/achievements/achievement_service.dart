@@ -34,7 +34,7 @@ class AchievementService {
   String? _currentConsole;
   String? _currentGame;
   int _pollCount = 0;
-  int? _lastDebugStarCount;
+  // int? _lastDebugStarCount;
 
   // Previous poll's readings, keyed the same way as the current poll's
   // snapshot in [_poll] — needed for CompareTarget.previousValue conditions
@@ -95,13 +95,17 @@ class AchievementService {
     _currentConsole = null;
     _currentGame = null;
     _previousSnapshot = {};
-    _lastDebugStarCount = null;
+    // _lastDebugStarCount = null;
   }
 
   void dispose() {
     _pollTimer?.cancel();
     _ramReader.dispose();
     _unlockedController.close();
+  }
+
+  void debugTriggerUnlock(Achievement achievement) {
+    _unlockedController.add(achievement);
   }
 
   Future<void> _poll() async {
@@ -205,37 +209,37 @@ class AchievementService {
       );
     }
 
-    // DEBUG: force-read 0x33b21e alongside 0x33b266 to compare both star count addresses.
-    await readIfNeeded(0x33b21e, MemorySize.byte);
+    // // DEBUG: force-read 0x33b21e alongside 0x33b266 to compare both star count addresses.
+    // await readIfNeeded(0x33b21e, MemorySize.byte);
 
-    // DEBUG: log a_new_journey condition results only when the star count changes.
-    final debugAchievement = _achievements.where((a) => a.id == 'a_new_journey').firstOrNull;
-    if (debugAchievement != null) {
-      final starCur = currentSnapshot[memoryKey(0x33b266, MemorySize.byte)];
-      if (starCur != _lastDebugStarCount) {
-        _lastDebugStarCount = starCur;
-        final parts = <String>[];
-        var allPass = true;
-        for (var i = 0; i < debugAchievement.conditions.length; i++) {
-          final c = debugAchievement.conditions[i];
-          final cur = currentSnapshot[memoryKey(c.address, c.size)];
-          final prev = _previousSnapshot[memoryKey(c.address, c.size)];
-          final reading = c.readPrevious ? prev : cur;
-          final bool? passes = (reading != null && c.op != null && c.value != null)
-              ? satisfiesComparison(reading, c.op!, c.value!)
-              : null;
-          if (passes != true) allPass = false;
-          final label = c.readPrevious ? 'd0x${c.address.toRadixString(16)}' : '0x${c.address.toRadixString(16)}';
-          parts.add('#$i ${passes == null ? '?' : passes ? 'OK' : 'FAIL'} $label=${reading ?? 'null'}');
-        }
-        final knownStarCur = currentSnapshot[memoryKey(0x33b21e, MemorySize.byte)];
-        DebugLogger.log(
-          '[Achievement:a_new_journey] star changed → 0x33b266=$starCur | '
-          '${parts.join(' | ')} | ${allPass ? '→ SHOULD UNLOCK' : '→ blocked'} '
-          '| 0x33b21e=$knownStarCur',
-        );
-      }
-    }
+    // // DEBUG: log a_new_journey condition results only when the star count changes.
+    // final debugAchievement = _achievements.where((a) => a.id == 'a_new_journey').firstOrNull;
+    // if (debugAchievement != null) {
+    //   final starCur = currentSnapshot[memoryKey(0x33b266, MemorySize.byte)];
+    //   if (starCur != _lastDebugStarCount) {
+    //     _lastDebugStarCount = starCur;
+    //     final parts = <String>[];
+    //     var allPass = true;
+    //     for (var i = 0; i < debugAchievement.conditions.length; i++) {
+    //       final c = debugAchievement.conditions[i];
+    //       final cur = currentSnapshot[memoryKey(c.address, c.size)];
+    //       final prev = _previousSnapshot[memoryKey(c.address, c.size)];
+    //       final reading = c.readPrevious ? prev : cur;
+    //       final bool? passes = (reading != null && c.op != null && c.value != null)
+    //           ? satisfiesComparison(reading, c.op!, c.value!)
+    //           : null;
+    //       if (passes != true) allPass = false;
+    //       final label = c.readPrevious ? 'd0x${c.address.toRadixString(16)}' : '0x${c.address.toRadixString(16)}';
+    //       parts.add('#$i ${passes == null ? '?' : passes ? 'OK' : 'FAIL'} $label=${reading ?? 'null'}');
+    //     }
+    //     final knownStarCur = currentSnapshot[memoryKey(0x33b21e, MemorySize.byte)];
+    //     DebugLogger.log(
+    //       '[Achievement:a_new_journey] star changed → 0x33b266=$starCur | '
+    //       '${parts.join(' | ')} | ${allPass ? '→ SHOULD UNLOCK' : '→ blocked'} '
+    //       '| 0x33b21e=$knownStarCur',
+    //     );
+    //   }
+    // }
 
     final newlyUnlocked = _evaluator.tick(
       _achievements,

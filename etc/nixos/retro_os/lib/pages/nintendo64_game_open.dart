@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../services/achievements/achievement.dart';
 import '../services/achievements/achievement_service.dart';
+import '../services/achievement_window_service.dart';
 import '../services/gamepad_service.dart';
 import '../utils/debug_logger.dart';
 import '../utils/devices.dart';
@@ -74,6 +76,17 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       // RetroarchRamReader's logging) until RetroArch's network command
       // interface comes up, so there's no race to worry about here.
       await AchievementService.instance.startWatching('Nintendo 64', widget.gameName);
+      AchievementWindowService.instance.startSession(process.pid);
+
+      Future.delayed(const Duration(seconds: 10), () {
+        AchievementService.instance.debugTriggerUnlock(Achievement(
+          id: '_test_overlay',
+          title: 'Teste de Overlay',
+          description: 'Popup sobre o RetroArch',
+          points: 99,
+          conditions: const [],
+        ));
+      });
 
       void onRetroarchLine(String line, String src) {
         DebugLogger.log('[retroarch:$src] $line');
@@ -104,6 +117,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       overlayCombo.cancel();
       DebugLogger.log('[Nintendo64GameOpen] retroarch exited with code: $exitCode');
       await AchievementService.instance.stopWatching();
+      AchievementWindowService.instance.stopSession();
 
       if (!mounted) return;
       if (exitCode != 0 && exitCode != -15) {
@@ -115,6 +129,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
     } catch (e) {
       DebugLogger.log('[Nintendo64GameOpen] failed to launch retroarch: $e');
       await AchievementService.instance.stopWatching();
+      AchievementWindowService.instance.stopSession();
       if (mounted) Navigator.pop(context, l.retroarchLaunchError(e));
     }
   }

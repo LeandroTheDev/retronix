@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/achievements/achievement.dart';
+import '../services/achievements/achievement_service.dart';
 import '../services/gamepad_service.dart';
 import '../utils/app_localizations.dart';
 import '../utils/debug_logger.dart';
@@ -166,7 +167,13 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
                           ],
                         ],
                         const SizedBox(height: 20),
-                        _PlayButton(label: l.play, onTap: _playGame),
+                        Row(
+                          children: [
+                            _PlayButton(label: l.play, onTap: _playGame),
+                            const SizedBox(width: 12),
+                            _TestNotificationButton(achievements: _achievements),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -229,6 +236,41 @@ class _PlayButton extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TestNotificationButton extends StatelessWidget {
+  const _TestNotificationButton({required this.achievements});
+
+  final List<Achievement> achievements;
+
+  static final _fakeAchievement = Achievement(
+    id: '_test',
+    title: 'Conquista de Teste',
+    description: 'Popup de preview',
+    points: 25,
+    conditions: const [],
+  );
+
+  void _trigger() {
+    final a = achievements.isNotEmpty ? achievements.first : _fakeAchievement;
+    AchievementService.instance.debugTriggerUnlock(a);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _trigger,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0x22FFB300),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0x44FFB300), width: 1),
+        ),
+        child: const Icon(Icons.emoji_events, color: Color(0xFFFFB300), size: 18),
       ),
     );
   }

@@ -7,12 +7,15 @@ import 'utils/app_localizations.dart';
 import 'utils/settings_service.dart';
 import 'utils/system_info.dart';
 import 'widgets/gamepad_status_overlay.dart';
+import 'widgets/achievement_notification_overlay.dart';
+import 'services/achievement_window_service.dart';
 import 'services/update_checker_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GamepadService.instance.init();
   UpdateCheckerService.instance.init();
+  AchievementWindowService.instance.init();
   await LocaleService.instance.load();
   final savedVol = await SettingsService.instance.savedVolume();
   final savedDevice = await SettingsService.instance.audioDevice();
@@ -68,7 +71,7 @@ class _RetroOsAppState extends State<RetroOsApp> {
           ),
         ),
         home: const SplashPage(),
-        builder: (context, child) => Stack(children: [?child, const GamepadStatusOverlay()]),
+        builder: (context, child) => Stack(children: [?child, const GamepadStatusOverlay(), const AchievementNotificationOverlay()]),
       ),
     );
   }
