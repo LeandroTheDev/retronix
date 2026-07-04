@@ -16,7 +16,7 @@ String _consolesRoot() {
     root = '${File(Platform.resolvedExecutable).parent.path}/Consoles';
   }
 
-  DebugLogger.log('[devices] consolesRoot: $root');
+  // DebugLogger.log('[devices] consolesRoot: $root');
   return root;
 }
 

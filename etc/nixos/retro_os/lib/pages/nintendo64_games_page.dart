@@ -51,7 +51,7 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
 
   void _handleAction(GamepadAction action) {
     if (ModalRoute.of(context)?.isCurrent != true) return;
-    DebugLogger.log('[Nintendo64GamesPage] action: $action | loading: $_loading | games: ${_games.length}');
+    // DebugLogger.log('[Nintendo64GamesPage] action: $action | loading: $_loading | games: ${_games.length}');
     if (action == GamepadAction.back) {
       DebugLogger.log('[Nintendo64GamesPage] popping');
       Navigator.pop(context);

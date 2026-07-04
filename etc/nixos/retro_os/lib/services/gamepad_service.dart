@@ -290,7 +290,7 @@ class GamepadService {
     // (OS-level keyboard auto-repeat) — without it, holding a key only
     // ever fires the initial press.
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
-    DebugLogger.log('[GamepadService] key event: ${event.logicalKey}');
+    // DebugLogger.log('[GamepadService] key event: ${event.logicalKey}');
     final action = _keyAction(event.logicalKey);
     if (action != null) {
       _controller.add(action);

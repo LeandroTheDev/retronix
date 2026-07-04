@@ -34,6 +34,7 @@ class AchievementService {
   String? _currentConsole;
   String? _currentGame;
   int _pollCount = 0;
+  int? _lastDebugStarCount;
 
   // Previous poll's readings, keyed the same way as the current poll's
   // snapshot in [_poll] — needed for CompareTarget.previousValue conditions
@@ -66,11 +67,18 @@ class AchievementService {
     await _ramReader.connect();
 
     _pollCount = 0;
-    _pollTimer = Timer.periodic(_pollInterval, (_) => _poll());
+    _schedulePoll();
     DebugLogger.log(
       '[AchievementService] watching ${_achievements.length} achievement(s) for $console/$game '
       '(${unlockedIds.length} already unlocked): ${_achievements.map((a) => a.title).join(', ')}',
     );
+  }
+
+  void _schedulePoll() {
+    _pollTimer = Timer(_pollInterval, () async {
+      await _poll();
+      if (_pollTimer != null) _schedulePoll();
+    });
   }
 
   Future<void> stopWatching() async {
@@ -87,6 +95,7 @@ class AchievementService {
     _currentConsole = null;
     _currentGame = null;
     _previousSnapshot = {};
+    _lastDebugStarCount = null;
   }
 
   void dispose() {
@@ -104,8 +113,15 @@ class AchievementService {
     final currentSnapshot = <String, int>{};
     var attemptedReads = 0;
     var failedReads = 0;
-    Future<void> readIfNeeded(int address, MemorySize size) async {
-      final key = memoryKey(address, size);
+    // N64 MIPS pointers are 4-byte big-endian values like 0x80HHMMLL, where
+    // the high byte is always 0x80 (RDRAM prefix) and the RDRAM offset is the
+    // lower 3 bytes (HHMMLL). RetroAchievements' tribyte AddAddress convention
+    // reads from address+1 to skip that 0x80 byte and get the 3-byte RDRAM
+    // offset directly. storeKey lets the caller separate the read address from
+    // the snapshot key so the evaluator (which uses condition.address as the
+    // key) still finds the correct value.
+    Future<void> readIfNeeded(int address, MemorySize size, {String? storeKey}) async {
+      final key = storeKey ?? memoryKey(address, size);
       if (currentSnapshot.containsKey(key)) return;
       attemptedReads++;
       final bytes = await _ramReader.readBytes(address, size.bytes);
@@ -116,13 +132,24 @@ class AchievementService {
       }
     }
 
+    // For tribyte AddAddress conditions (N64 pointer reads): read from
+    // address+1 to get the lower 3 bytes of the 4-byte MIPS pointer, but
+    // store under the original address key so the evaluator finds it normally.
+    Future<void> readPointerOrValue(int address, MemorySize size, {required bool isAddAddress}) async {
+      if (isAddAddress && size == MemorySize.tribyte) {
+        await readIfNeeded(address + 1, size, storeKey: memoryKey(address, size));
+      } else {
+        await readIfNeeded(address, size);
+      }
+    }
+
     // Pass 1: every condition's own literal address/size - this alone
     // resolves everything except AddAddress-indirected reads, since an
     // AddAddress condition's *own* address is always literal (it's what it
     // points to that's dynamic).
     for (final achievement in _achievements) {
       for (final condition in achievement.allConditions) {
-        await readIfNeeded(condition.address, condition.size);
+        await readPointerOrValue(condition.address, condition.size, isAddAddress: condition.isAddAddress);
         if (condition.compareTarget == CompareTarget.otherAddress) {
           await readIfNeeded(condition.compareAddress!, condition.compareSize!);
         }
@@ -141,7 +168,7 @@ class AchievementService {
         for (final condition in group) {
           final address = condition.address + (indirectBase ?? 0);
           if (indirectBase != null) {
-            await readIfNeeded(address, condition.size);
+            await readPointerOrValue(address, condition.size, isAddAddress: condition.isAddAddress);
             if (condition.compareTarget == CompareTarget.otherAddress) {
               await readIfNeeded(condition.compareAddress! + indirectBase, condition.compareSize!);
             }
@@ -176,6 +203,38 @@ class AchievementService {
         '[AchievementService] poll #$_pollCount: $readStatus, '
         '${_evaluator.unlockedCount}/${_achievements.length} unlocked',
       );
+    }
+
+    // DEBUG: force-read 0x33b21e alongside 0x33b266 to compare both star count addresses.
+    await readIfNeeded(0x33b21e, MemorySize.byte);
+
+    // DEBUG: log a_new_journey condition results only when the star count changes.
+    final debugAchievement = _achievements.where((a) => a.id == 'a_new_journey').firstOrNull;
+    if (debugAchievement != null) {
+      final starCur = currentSnapshot[memoryKey(0x33b266, MemorySize.byte)];
+      if (starCur != _lastDebugStarCount) {
+        _lastDebugStarCount = starCur;
+        final parts = <String>[];
+        var allPass = true;
+        for (var i = 0; i < debugAchievement.conditions.length; i++) {
+          final c = debugAchievement.conditions[i];
+          final cur = currentSnapshot[memoryKey(c.address, c.size)];
+          final prev = _previousSnapshot[memoryKey(c.address, c.size)];
+          final reading = c.readPrevious ? prev : cur;
+          final bool? passes = (reading != null && c.op != null && c.value != null)
+              ? satisfiesComparison(reading, c.op!, c.value!)
+              : null;
+          if (passes != true) allPass = false;
+          final label = c.readPrevious ? 'd0x${c.address.toRadixString(16)}' : '0x${c.address.toRadixString(16)}';
+          parts.add('#$i ${passes == null ? '?' : passes ? 'OK' : 'FAIL'} $label=${reading ?? 'null'}');
+        }
+        final knownStarCur = currentSnapshot[memoryKey(0x33b21e, MemorySize.byte)];
+        DebugLogger.log(
+          '[Achievement:a_new_journey] star changed → 0x33b266=$starCur | '
+          '${parts.join(' | ')} | ${allPass ? '→ SHOULD UNLOCK' : '→ blocked'} '
+          '| 0x33b21e=$knownStarCur',
+        );
+      }
     }
 
     final newlyUnlocked = _evaluator.tick(

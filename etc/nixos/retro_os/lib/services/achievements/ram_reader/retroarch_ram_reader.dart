@@ -98,7 +98,6 @@ class RetroarchRamReader {
     // "READ_CORE_RAM <addr> -1" when the core/address doesn't support it.
     final parts = reply.split(' ');
     if (parts.length < 3 || parts[2] == '-1') {
-      DebugLogger.log('[RetroarchRamReader] read failed at 0x$addressHex: "$reply"');
       return null;
     }
 

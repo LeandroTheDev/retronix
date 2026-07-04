@@ -355,6 +355,7 @@ class SettingsService {
       'audio_device = "$device"',
       'fps_show = "$fpsShow"',
       'audio_volume = "$audioVolume"',
+      'network_cmd_enable = "true"',
     ];
 
     final path = _retroarchOverridePath();

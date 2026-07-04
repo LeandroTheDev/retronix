@@ -47,7 +47,7 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
   }
 
   void _handleAction(GamepadAction action) {
-    DebugLogger.log('[ConsoleSelectorPage] _handleAction received: $action');
+    // DebugLogger.log('[ConsoleSelectorPage] _handleAction received: $action');
     if (ModalRoute.of(context)?.isCurrent != true) return;
     if (action == GamepadAction.back || action == GamepadAction.start) {
       showAppSettingsDialog(context);
