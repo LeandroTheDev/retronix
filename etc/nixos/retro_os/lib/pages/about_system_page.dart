@@ -89,7 +89,7 @@ class _AboutSystemPageState extends State<AboutSystemPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 80),
+            padding: const EdgeInsets.fromLTRB(80, 80, 80, 48),
             child: Text(
               l.aboutSystemTitle,
               style: const TextStyle(color: Colors.white54, fontSize: 16, letterSpacing: 5),

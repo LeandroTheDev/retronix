@@ -111,7 +111,7 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(80, 48, 80, 24),
+              padding: const EdgeInsets.fromLTRB(80, 80, 80, 24),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [

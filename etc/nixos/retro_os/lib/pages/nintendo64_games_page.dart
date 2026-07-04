@@ -106,7 +106,7 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
       body: Column(
         children: [
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 48),
+            padding: EdgeInsets.only(top: 80, bottom: 48),
             child: Text(
               'NINTENDO 64',
               style: TextStyle(

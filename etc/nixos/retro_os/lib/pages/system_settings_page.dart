@@ -184,7 +184,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 80),
+            padding: const EdgeInsets.fromLTRB(80, 80, 80, 48),
             child: Text(l.systemSettingsTitle, style: const TextStyle(color: Colors.white54, fontSize: 16, letterSpacing: 2)),
           ),
           Expanded(

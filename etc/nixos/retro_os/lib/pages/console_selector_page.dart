@@ -86,7 +86,7 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
           Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 48),
+                padding: const EdgeInsets.only(top: 80, bottom: 48),
                 child: Text(
                   l.selectConsole,
                   style: const TextStyle(

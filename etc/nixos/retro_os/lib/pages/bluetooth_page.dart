@@ -125,7 +125,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 80),
+            padding: const EdgeInsets.fromLTRB(80, 80, 80, 48),
             child: Row(
               children: [
                 Text(

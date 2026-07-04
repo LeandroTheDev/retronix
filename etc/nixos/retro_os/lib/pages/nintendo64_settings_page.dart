@@ -207,7 +207,7 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 80),
+            padding: const EdgeInsets.fromLTRB(80, 80, 80, 48),
             child: Text(
               l.nintendo64SettingsTitle,
               style: const TextStyle(color: Colors.white54, fontSize: 16, letterSpacing: 5),
