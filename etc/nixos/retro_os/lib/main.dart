@@ -29,18 +29,10 @@ Future<void> main(List<String> args) async {
     final winW = (220.0 * scale).roundToDouble();
     final winH = (80.0 * scale).roundToDouble();
 
-    windowManager.waitUntilReadyToShow(
-      WindowOptions(
-        size: Size(winW, winH),
-        center: true,
-        backgroundColor: Colors.black,
-        skipTaskbar: true,
-        titleBarStyle: TitleBarStyle.hidden,
-      ),
-      () async {
-        await windowManager.show();
-      },
-    );
+    windowManager.waitUntilReadyToShow(WindowOptions(size: Size(winW, winH), backgroundColor: Colors.black, skipTaskbar: true, titleBarStyle: TitleBarStyle.hidden), () async {
+      await windowManager.setAlignment(Alignment.bottomRight);
+      await windowManager.show();
+    });
     runApp(const _AchievementTestWindow());
     return;
   }
@@ -99,9 +91,7 @@ class _RetroOsAppState extends State<RetroOsApp> {
 
   Future<void> _openTestNotification() async {
     try {
-      final controller = await WindowController.create(
-        const WindowConfiguration(hiddenAtLaunch: true, arguments: 'achievement_test'),
-      );
+      final controller = await WindowController.create(const WindowConfiguration(hiddenAtLaunch: true, arguments: 'achievement_test'));
       await controller.show();
     } catch (e) {
       DebugLogger.log('[RetroOsApp] test notification error: $e');
