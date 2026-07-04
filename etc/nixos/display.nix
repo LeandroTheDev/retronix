@@ -2,6 +2,7 @@
 
 let
   retro_os = pkgs.callPackage ./retro-os.nix {};
+  retro_os_notification = pkgs.callPackage ./retro-os-notification.nix {};
 
   # Output name isn't hardcoded — detected below, since which HDMI port
   # reports as connected depends on the cable/port actually in use.
@@ -61,6 +62,7 @@ let
     # since nothing ever moves it, it stays hidden for good.
     ${pkgs.unclutter}/bin/unclutter -idle 0 -root &
     ${pkgs.openbox}/bin/openbox --config-file ${openbox_rc} &
+    export PATH="${retro_os_notification}/bin:$PATH"
     exec ${retro_os}/bin/retro_os
   '';
 in

@@ -12,25 +12,10 @@ struct _MyApplication {
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
-
 static void my_application_activate(GApplication* application) {
   MyApplication* self = MY_APPLICATION(application);
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
-
-  // Layer shell — deve ser chamado antes de realize
-  g_print("[layer-shell] supported: %d\n", gtk_layer_is_supported());
-  gtk_layer_init_for_window(window);
-  g_print("[layer-shell] is_layer_window: %d\n", gtk_layer_is_layer_window(window));
-  gtk_layer_set_layer(window, GTK_LAYER_SHELL_LAYER_OVERLAY);
-  gtk_layer_set_exclusive_zone(window, 0);
-  gtk_layer_set_keyboard_mode(window, GTK_LAYER_SHELL_KEYBOARD_MODE_NONE);
-
-  // 4 ancoras — KDE requer todas para respeitar tamanho
-  gtk_layer_set_anchor(window, GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
-  gtk_layer_set_anchor(window, GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
-  gtk_layer_set_anchor(window, GTK_LAYER_SHELL_EDGE_TOP, TRUE);
-  gtk_layer_set_anchor(window, GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
 
   GdkDisplay* display = gdk_display_get_default();
   GdkMonitor* monitor = gdk_display_get_primary_monitor(display);
@@ -46,12 +31,6 @@ static void my_application_activate(GApplication* application) {
   int win_h = (int)(80.0 * scale);
   int margin = (int)(16.0 * scale);
 
-  // Margens LEFT e TOP empurram a janela para o canto inferior direito
-  gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_LEFT, geometry.width - win_w - margin);
-  gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_TOP, geometry.height - win_h - margin);
-  gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_RIGHT, margin);
-  gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_BOTTOM, margin);
-
   gtk_window_set_default_size(window, win_w, win_h);
 
   GdkGeometry hints = {};
@@ -61,6 +40,31 @@ static void my_application_activate(GApplication* application) {
   hints.max_height = win_h;
   gtk_window_set_geometry_hints(window, nullptr, &hints,
                                 (GdkWindowHints)(GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
+
+  if (gtk_layer_is_supported()) {
+    // Wayland: layer shell
+    gtk_layer_init_for_window(window);
+    gtk_layer_set_layer(window, GTK_LAYER_SHELL_LAYER_OVERLAY);
+    gtk_layer_set_exclusive_zone(window, 0);
+    gtk_layer_set_keyboard_mode(window, GTK_LAYER_SHELL_KEYBOARD_MODE_NONE);
+    gtk_layer_set_anchor(window, GTK_LAYER_SHELL_EDGE_TOP, TRUE);
+    gtk_layer_set_anchor(window, GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
+    gtk_layer_set_anchor(window, GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
+    gtk_layer_set_anchor(window, GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
+    gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_LEFT, geometry.width - win_w - margin);
+    gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_TOP, geometry.height - win_h - margin);
+    gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_RIGHT, margin);
+    gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_BOTTOM, margin);
+  } else {
+    // X11: posicionamento direto
+    gtk_window_set_decorated(window, FALSE);
+    gtk_window_set_keep_above(window, TRUE);
+    gtk_window_set_skip_taskbar_hint(window, TRUE);
+    gtk_window_set_focus_on_map(window, FALSE);
+    gtk_window_move(window,
+                    geometry.x + geometry.width - win_w - margin,
+                    geometry.y + geometry.height - win_h - margin);
+  }
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
@@ -76,7 +80,6 @@ static void my_application_activate(GApplication* application) {
   gtk_widget_realize(GTK_WIDGET(view));
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
   gtk_widget_show_all(GTK_WIDGET(window));
-  g_print("[layer-shell] window shown\n");
 }
 
 static gboolean my_application_local_command_line(GApplication* application,
