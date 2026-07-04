@@ -35,15 +35,6 @@ dependencies:
   gamepads: ^0.1.10+4
   flutter_svg: ^2.0.0
   audioplayers: ^6.0.0
-  desktop_multi_window: ^0.3.0
-  window_manager:
-    git:
-      url: https://github.com/boyan01/window_manager.git
-      path: packages/window_manager
-      ref: 6fae92d21b4c80ce1b8f71c1190d7970cf722bd4
-
-dependency_overrides:
-  synchronized: 3.4.0+1
 
 dev_dependencies:
   flutter_test:

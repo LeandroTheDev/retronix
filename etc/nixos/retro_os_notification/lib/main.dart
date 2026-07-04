@@ -3,25 +3,34 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 void main(List<String> args) {
-  final seconds = args.isNotEmpty ? int.tryParse(args[0]) ?? 2 : 2;
+  final title = args.isNotEmpty ? args[0] : 'Conquista Desbloqueada';
+  final points = args.length > 1 ? int.tryParse(args[1]) ?? 0 : 0;
+  final seconds = args.length > 2 ? int.tryParse(args[2]) ?? 4 : 4;
+
   Timer(Duration(seconds: seconds), () => exit(0));
-  runApp(const NotificationApp());
+  runApp(NotificationApp(title: title, points: points));
 }
 
 class NotificationApp extends StatelessWidget {
-  const NotificationApp({super.key});
+  const NotificationApp({super.key, required this.title, required this.points});
+
+  final String title;
+  final int points;
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: NotificationWindow(),
+      home: NotificationWindow(title: title, points: points),
     );
   }
 }
 
 class NotificationWindow extends StatelessWidget {
-  const NotificationWindow({super.key});
+  const NotificationWindow({super.key, required this.title, required this.points});
+
+  final String title;
+  final int points;
 
   static const _gold = Color(0xFFFFB300);
 
@@ -51,12 +60,12 @@ class NotificationWindow extends StatelessWidget {
                       child: const Icon(Icons.emoji_events, color: _gold, size: 20),
                     ),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
+                          const Text(
                             'CONQUISTA DESBLOQUEADA',
                             style: TextStyle(
                               color: _gold,
@@ -65,10 +74,10 @@ class NotificationWindow extends StatelessWidget {
                               letterSpacing: 0.8,
                             ),
                           ),
-                          SizedBox(height: 3),
+                          const SizedBox(height: 3),
                           Text(
-                            'Conquista de Teste',
-                            style: TextStyle(
+                            title,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -76,10 +85,10 @@ class NotificationWindow extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
-                            '+25 pts',
-                            style: TextStyle(
+                            '+$points pts',
+                            style: const TextStyle(
                               color: _gold,
                               fontSize: 9,
                               fontWeight: FontWeight.bold,

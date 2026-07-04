@@ -22,7 +22,7 @@ static void my_application_activate(GApplication* application) {
   g_print("[layer-shell] supported: %d\n", gtk_layer_is_supported());
   gtk_layer_init_for_window(window);
   g_print("[layer-shell] is_layer_window: %d\n", gtk_layer_is_layer_window(window));
-  gtk_layer_set_layer(window, GTK_LAYER_SHELL_LAYER_TOP);
+  gtk_layer_set_layer(window, GTK_LAYER_SHELL_LAYER_OVERLAY);
   gtk_layer_set_exclusive_zone(window, 0);
   gtk_layer_set_keyboard_mode(window, GTK_LAYER_SHELL_KEYBOARD_MODE_NONE);
 
