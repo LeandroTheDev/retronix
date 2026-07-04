@@ -21,6 +21,7 @@ class NotificationApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(fontFamily: 'PressStart'),
       home: NotificationWindow(title: title, points: points),
     );
   }

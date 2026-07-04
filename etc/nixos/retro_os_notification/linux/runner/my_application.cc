@@ -27,7 +27,7 @@ static void my_application_activate(GApplication* application) {
   if (scale < 0.5) scale = 0.5;
   if (scale > 2.0) scale = 2.0;
 
-  int win_w = (int)(220.0 * scale);
+  int win_w = (int)(260.0 * scale);
   int win_h = (int)(80.0 * scale);
   int margin = (int)(16.0 * scale);
 
