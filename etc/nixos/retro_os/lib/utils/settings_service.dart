@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 import 'debug_logger.dart';
 
 const _n64CoreCandidates = [
@@ -350,12 +351,22 @@ class SettingsService {
     final fpsShow = await n64FpsShow();
     final audioVolume = await n64AudioVolume();
 
+    final display = PlatformDispatcher.instance.displays.firstOrNull;
+    final dpr = display?.devicePixelRatio ?? 1.0;
+    final screenW = display != null ? (display.size.width / dpr).round() : 1920;
+    final screenH = display != null ? (display.size.height / dpr).round() : 1080;
+
     final lines = [
       'aspect_ratio_index = "$aspectRatioIndex"',
       'audio_device = "$device"',
       'fps_show = "$fpsShow"',
       'audio_volume = "$audioVolume"',
       'network_cmd_enable = "true"',
+      'video_fullscreen = "false"',
+      'video_windowed_fullscreen = "false"',
+      'video_windowed_position_width = "$screenW"',
+      'video_windowed_position_height = "$screenH"',
+      'video_window_show_decorations = "false"',
     ];
 
     final path = _retroarchOverridePath();

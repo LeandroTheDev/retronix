@@ -62,7 +62,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
 
       final process = await Process.start(
         'retroarch',
-        ['-L', corePath, '--appendconfig=$overridePath', '--fullscreen', '--verbose', romPath],
+        ['-L', corePath, '--appendconfig=$overridePath', '--verbose', romPath],
         environment: {
           ...Platform.environment,
           'MESA_GL_VERSION_OVERRIDE': '3.3COMPAT',
