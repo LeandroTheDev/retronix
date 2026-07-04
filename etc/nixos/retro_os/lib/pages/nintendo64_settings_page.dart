@@ -5,7 +5,6 @@ import '../services/gamepad_service.dart';
 import '../utils/debug_logger.dart';
 import '../utils/settings_service.dart';
 import '../utils/app_localizations.dart';
-import '../utils/snackbar.dart';
 import '../utils/sound.dart';
 
 class Nintendo64SettingsPage extends StatefulWidget {
@@ -43,9 +42,9 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
   String _corePath   = '';
   bool   _coreExists = true;
 
-  // One key per selectable row (0-8 = option rows, 9 = restore defaults, 10 = open retroarch),
+  // One key per selectable row (0-8 = option rows, 9 = restore defaults),
   // used to scroll the row into view as the gamepad selection moves.
-  final _rowKeys = List.generate(11, (_) => GlobalKey());
+  final _rowKeys = List.generate(10, (_) => GlobalKey());
 
   @override
   void initState() {
@@ -92,10 +91,10 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, 10));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, 9));
         _scrollToSelected();
       case GamepadAction.down:
-        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, 10));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, 9));
         _scrollToSelected();
       case GamepadAction.left:
         _cycleValue(-1);
@@ -103,7 +102,6 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
         _cycleValue(1);
       case GamepadAction.confirm:
         if (_selectedIndex == 9) _resetAll();
-        if (_selectedIndex == 10) _openRetroarch();
       case GamepadAction.back:
         Navigator.pop(context);
       default:
@@ -170,26 +168,6 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
       curve: Curves.easeOut,
       alignment: 0.5,
     );
-  }
-
-  Future<void> _openRetroarch() async {
-    try {
-      final process = await Process.start(
-        'retroarch',
-        [],
-        environment: {
-          ...Platform.environment,
-          'MESA_GL_VERSION_OVERRIDE': '3.3COMPAT',
-          'MESA_GLSL_VERSION_OVERRIDE': '330',
-        },
-      );
-      await process.exitCode;
-    } catch (e) {
-      DebugLogger.log('[Nintendo64SettingsPage] failed to launch retroarch: $e');
-      if (mounted) {
-        showErrorSnackBar(context, e.toString());
-      }
-    }
   }
 
   Future<void> _resetAll() async {
@@ -332,14 +310,6 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
                       icon: Icons.restore,
                       label: l.restoreDefaults,
                       selected: _selectedIndex == 9,
-                    ),
-                  ),
-                  KeyedSubtree(
-                    key: _rowKeys[10],
-                    child: _ActionRow(
-                      icon: Icons.sports_esports,
-                      label: l.openRetroarch,
-                      selected: _selectedIndex == 10,
                     ),
                   ),
                 ],

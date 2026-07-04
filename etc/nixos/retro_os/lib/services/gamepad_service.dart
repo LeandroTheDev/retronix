@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:gamepads/gamepads.dart';
 import '../utils/debug_logger.dart';
@@ -187,6 +188,15 @@ class GamepadService {
 
   Timer? _deviceScanTimer;
 
+  bool _splashDone = false;
+  final _splashDoneNotifier = ValueNotifier<bool>(false);
+  ValueListenable<bool> get splashDone => _splashDoneNotifier;
+
+  void markSplashDone() {
+    _splashDone = true;
+    _splashDoneNotifier.value = true;
+  }
+
   int? playerNumberForId(String id) {
     final index = _playerSlots.indexOf(id);
     return index == -1 ? null : index + 1;
@@ -263,7 +273,7 @@ class GamepadService {
     for (var i = 0; i < _playerSlots.length; i++) {
       if (_playerSlots[i] != null && !connectedIds.contains(_playerSlots[i])) {
         DebugLogger.log('[GamepadService] player ${i + 1} disconnected (${_playerSlots[i]})');
-        playSound(_disconnectSound);
+        if (_splashDone) playSound(_disconnectSound);
         _playerSlots[i] = null;
         changed = true;
       }
@@ -276,7 +286,7 @@ class GamepadService {
       _playerSlots[freeIndex] = controller.id;
       changed = true;
       DebugLogger.log('[GamepadService] player ${freeIndex + 1} assigned: ${controller.id} (${controller.name})');
-      playSound(_connectSound);
+      if (_splashDone) playSound(_connectSound);
     }
 
     if (changed) _slotsController.add(currentPlayerSlots);
@@ -335,6 +345,8 @@ class GamepadService {
     if (knownPad != null) {
       DebugLogger.log('[GamepadService] controller ${event.gamepadId} recognized as: $knownPad');
     }
+    // Notify overlay so it rebuilds with the correct pad/SVG now that VID/PID is known.
+    _slotsController.add(currentPlayerSlots);
   }
 
   void _handleEvent(GamepadEvent event) {

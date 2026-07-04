@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../services/gamepad_service.dart';
 import '../utils/app_localizations.dart';
+import '../utils/debug_logger.dart';
 
 /// Persistent top-left indicator showing which of the 4 player slots
 /// currently have a gamepad assigned. Meant to be layered on top of every
@@ -48,11 +49,14 @@ class _GamepadStatusOverlayState extends State<GamepadStatusOverlay> {
   String? _svgAssetForSlot(int i) {
     final id = _slots[i];
     if (id == null) return null;
+    final vp = GamepadService.instance.vendorProductForId(id);
     final pad = GamepadService.instance.knownConsolePadForId(id);
+    DebugLogger.log('[GamepadOverlay] slot $i id=$id vp=$vp pad=$pad');
     if (pad == KnownConsolePad.nintendo64) return 'assets/images/n64-controller.svg';
     if (pad == KnownConsolePad.xbox360 || pad == KnownConsolePad.xboxSeries) {
       return 'assets/images/xbox-controller.svg';
     }
+    DebugLogger.log('[GamepadOverlay] slot $i no svg matched — falling back to icon');
     return null;
   }
 
@@ -67,9 +71,21 @@ class _GamepadStatusOverlayState extends State<GamepadStatusOverlay> {
           children: List.generate(_slots.length, (i) {
             final connected = _slots[i] != null;
             final svgAsset = _svgAssetForSlot(i);
+            DebugLogger.log('[GamepadOverlay] build slot $i connected=$connected svgAsset=$svgAsset');
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: svgAsset != null ? SvgPicture.asset(svgAsset, width: iconSize, height: iconSize, colorFilter: ColorFilter.mode(Colors.greenAccent, BlendMode.srcIn)) : Icon(Icons.sports_esports, size: iconSize, color: connected ? Colors.greenAccent : Colors.white24),
+              child: svgAsset != null
+                  ? SvgPicture.asset(
+                      svgAsset,
+                      width: iconSize,
+                      height: iconSize,
+                      colorFilter: ColorFilter.mode(Colors.greenAccent, BlendMode.srcIn),
+                      placeholderBuilder: (ctx) {
+                        DebugLogger.log('[GamepadOverlay] slot $i svg still loading: $svgAsset');
+                        return Icon(Icons.sports_esports, size: iconSize, color: Colors.greenAccent);
+                      },
+                    )
+                  : Icon(Icons.sports_esports, size: iconSize, color: connected ? Colors.greenAccent : Colors.white24),
             );
           }),
         ),

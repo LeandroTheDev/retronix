@@ -95,7 +95,14 @@ class _RetroOsAppState extends State<RetroOsApp> {
           ),
         ),
         home: const SplashPage(),
-        builder: (context, child) => Stack(children: [?child, const GamepadStatusOverlay(), const AchievementNotificationOverlay()]),
+        builder: (context, child) => Stack(children: [
+          ?child,
+          ValueListenableBuilder<bool>(
+            valueListenable: GamepadService.instance.splashDone,
+            builder: (_, done, _) => done ? const GamepadStatusOverlay() : const SizedBox.shrink(),
+          ),
+          const AchievementNotificationOverlay(),
+        ]),
       ),
     );
   }

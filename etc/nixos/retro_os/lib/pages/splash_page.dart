@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import '../services/gamepad_service.dart';
 import '../utils/app_localizations.dart';
 import '../utils/debug_logger.dart';
 import '../utils/sound.dart';
@@ -86,6 +87,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     if (_navigated || !mounted) return;
     _navigated = true;
     _safetyTimer?.cancel();
+    GamepadService.instance.markSplashDone();
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 400),
