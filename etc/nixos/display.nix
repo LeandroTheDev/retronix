@@ -21,7 +21,7 @@ let
   # display's EDID and xrandr would just fail. So we only apply the saved
   # mode if the currently connected output actually advertises it; otherwise
   # we skip it and fall back to Xorg's default, same as a missing file.
-  # Minimal openbox config: single desktop, default decorations on all windows.
+  # Minimal openbox config: no decorations on any window, single desktop.
   # Openbox is a stacking WM so overlay windows can float on top of retro_os,
   # unlike matchbox which only ever shows one window at a time.
   openbox_rc = pkgs.writeText "openbox-rc.xml" ''
@@ -32,9 +32,12 @@ let
       <placement><policy>Smart</policy></placement>
       <desktops><number>1</number></desktops>
       <applications>
+        <application class="*">
+          <decor>no</decor>
+        </application>
         <application class="retroarch">
           <fullscreen>no</fullscreen>
-          <maximized>no</maximized>
+          <maximized>yes</maximized>
         </application>
       </applications>
     </openbox_config>
