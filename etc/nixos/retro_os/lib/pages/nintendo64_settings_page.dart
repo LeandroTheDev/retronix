@@ -176,7 +176,7 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
     try {
       final process = await Process.start(
         'retroarch',
-        ['--fullscreen'],
+        [],
         environment: {
           ...Platform.environment,
           'MESA_GL_VERSION_OVERRIDE': '3.3COMPAT',
