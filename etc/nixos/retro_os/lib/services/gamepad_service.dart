@@ -290,7 +290,7 @@ class GamepadService {
     // (OS-level keyboard auto-repeat) — without it, holding a key only
     // ever fires the initial press.
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
-    // DebugLogger.log('[GamepadService] key event: ${event.logicalKey}');
+    DebugLogger.log('[GamepadService] key event: ${event.logicalKey}');
     final action = _keyAction(event.logicalKey);
     if (action != null) {
       _controller.add(action);
@@ -325,18 +325,15 @@ class GamepadService {
     _recordVendorProduct(event);
     final layout = _layoutForId(event.gamepadId);
     if (event.type == KeyType.button) {
+      if (event.value == 1.0) {
+        final action = layout.mapButton(event.key);
+        DebugLogger.log(
+          '[GamepadService] button press: key=${event.key} action=${action ?? "unmapped"} '
+          '(gamepad: ${event.gamepadId}, vendorId: ${event.vendorId}, productId: ${event.productId})',
+        );
+      }
       final action = layout.mapButton(event.key);
       if (action == null) {
-        // Helps identify the raw key string for buttons we don't map yet
-        // (e.g. shoulder buttons on an untested controller) — check this log
-        // while pressing the button in question, then add it to the right
-        // GamepadLayout above (or create a new one for the device).
-        if (event.value == 1.0) {
-          DebugLogger.log(
-            '[GamepadService] unmapped button: ${event.key} '
-            '(gamepad: ${event.gamepadId}, vendorId: ${event.vendorId}, productId: ${event.productId})',
-          );
-        }
         return;
       }
       if (event.value == 1.0) {
@@ -345,7 +342,10 @@ class GamepadService {
         _buttonUpController.add(action);
       }
       if (!_repeatableActions.contains(action)) {
-        if (event.value == 1.0) _controller.add(action);
+        if (event.value == 1.0) {
+          DebugLogger.log('[GamepadService] emitting to stream: $action');
+          _controller.add(action);
+        }
         return;
       }
       // D-pads reported as digital buttons (rather than a hat axis) need
