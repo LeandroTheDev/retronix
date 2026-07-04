@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 void main(List<String> args) {
-  final title = args.isNotEmpty ? args[0] : 'Conquista Desbloqueada';
+  final title = args.isNotEmpty ? args[0] : "Huh, where's the achievement title?";
   final points = args.length > 1 ? int.tryParse(args[1]) ?? 0 : 0;
   final seconds = args.length > 2 ? int.tryParse(args[2]) ?? 4 : 4;
 
@@ -40,65 +40,54 @@ class NotificationWindow extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF111111),
       body: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0x55FFB300), width: 1),
-        ),
+        decoration: BoxDecoration(border: Border.all(color: const Color(0x55FFB300), width: 1)),
         child: Column(
           children: [
             Container(height: 2, color: _gold),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: const Color(0x22FFB300),
-                        borderRadius: BorderRadius.circular(4),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(color: const Color(0x22FFB300), borderRadius: BorderRadius.circular(4)),
+                        child: const Icon(Icons.emoji_events, color: _gold, size: 20),
                       ),
-                      child: const Icon(Icons.emoji_events, color: _gold, size: 20),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'CONQUISTA DESBLOQUEADA',
-                            style: TextStyle(
-                              color: _gold,
-                              fontSize: 6,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.8,
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 220,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'CONQUISTA DESBLOQUEADA',
+                              style: TextStyle(color: _gold, fontSize: 6, fontWeight: FontWeight.bold, letterSpacing: 0.8),
                             ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
+                            const SizedBox(height: 3),
+                            Text(
+                              title,
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '+$points pts',
-                            style: const TextStyle(
-                              color: _gold,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
+                            const SizedBox(height: 2),
+                            Text(
+                              '+$points pts',
+                              style: const TextStyle(color: _gold, fontSize: 9, fontWeight: FontWeight.bold),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

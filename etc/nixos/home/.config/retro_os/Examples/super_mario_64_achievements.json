@@ -385,34 +385,6 @@
     "conditions": []
   },
   {
-    "id": "sm64_chuckya_chuckno",
-    "title": "Chuckya? Chuckno!",
-    "description": "Escape the grasp of King Bob-omb or a Chuckya by pressing the A Button or pushing the Analog Stick 11 times before they throw Mario.",
-    "points": 2,
-    "conditions": []
-  },
-  {
-    "id": "sm64_half_empty_or_half_full",
-    "title": "Half Empty or Half Full?",
-    "description": "Access Wet-Dry World when the water is empty, in the middle, and at full capacity in a single session.",
-    "points": 2,
-    "conditions": []
-  },
-  {
-    "id": "sm64_the_clock_is_ticking",
-    "title": "The Clock Is Ticking",
-    "description": "Access Tick Tock Clock with all possible time states in a single session.",
-    "points": 3,
-    "conditions": []
-  },
-  {
-    "id": "sm64_too_tired",
-    "title": "Too tired",
-    "description": "Zzzzz",
-    "points": 2,
-    "conditions": []
-  },
-  {
     "id": "sm64_flawless_victory_round_1",
     "title": "Flawless Victory - Round 1",
     "description": "Beat Bowser in the Dark World without being damaged throughout the stage.",
@@ -437,90 +409,6 @@
     "id": "sm64_the_power_of_all_120_stars",
     "title": "The Power of All 120 Stars",
     "description": "Beat Bowser in the Sky after getting all 120 Power Stars.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_long_walk_to_the_mountain",
-    "title": "Long Walk to the Mountain",
-    "description": "Climb to the top of the mountain in Bob-omb Battlefield without pressing 'A' or using a Warp.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_jump_to_the_island_in_the_sky",
-    "title": "Jump to the Island in the Sky",
-    "description": "Collect the Star 'Shoot to the Island in the Sky' in Bob-omb Battlefield without using any cannon.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_mario_shoots_to_the_sky",
-    "title": "Mario Shoots to the Sky",
-    "description": "Collect the Star 'Mario Wings to the Sky' in Bob-omb Battlefield without using the Wing Cap.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_cannonless_into_the_wild_blue",
-    "title": "Cannonless into the Wild Blue",
-    "description": "Collect the Star 'Shoot into the Wild Blue' in Whomp's Fortress without using the cannon.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_jump_onto_the_caged_island",
-    "title": "Jump onto the Caged Island",
-    "description": "Collect the Star 'Fall onto the Caged Island' in Whomp's Fortress without using the owl.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_jump_onto_the_stone_cliff",
-    "title": "Jump onto the Stone Cliff",
-    "description": "Collect the Star 'Blast to the Stone Pillar' in Jolly Roger Bay without using the cannon.",
-    "points": 25,
-    "conditions": []
-  },
-  {
-    "id": "sm64_swim_through_the_jet_stream",
-    "title": "Swim Through the Jet Stream",
-    "description": "Collect the Star 'Through the Jet Stream' in Jolly Roger Bay without using the Metal Cap.",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_wall_kicks_will_work_but_flying_too",
-    "title": "Wall Kicks Will Work, but Flying Too",
-    "description": "Collect the Star 'Wall Kicks Will Work' in Cool, Cool Mountain without touching the slope with the recovery heart.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_secret_way_around_the_haunted_books",
-    "title": "Secret Way Around the Haunted Books",
-    "description": "Collect the Star 'Secret of the Haunted Books' in Big Boo's Haunt without solving the puzzle.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_a_maze_ing_jumps_to_the_exit",
-    "title": "A-Maze-Ing Jumps to the Exit",
-    "description": "Collect the Star 'A-Maze-Ing Emergency Exit' in Hazy Maze Cave without inhaling the toxic gas.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_delivery_for_the_ancient_pharaoh",
-    "title": "Delivery for the Ancient Pharaoh",
-    "description": "Collect the Star 'Shining Atop the Pyramid' in Shifting Sand Land while holding the small crate.",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_secret_passage_to_the_temple_treasure",
-    "title": "Secret Passage to the Temple Treasure",
-    "description": "Collect the Star 'Inside the Ancient Pyramid' in Shifting Sand Land without going below the top platform in the pyramid.",
     "points": 5,
     "conditions": []
   },
@@ -567,58 +455,9 @@
     "conditions": []
   },
   {
-    "id": "sm64_falling_like_an_iron_bar",
-    "title": "Falling Like an Iron Bar",
-    "description": "Collect the Red Coin Star in Cavern of the Metal Cap without using a second Metal Cap.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_hot_shell_ride_for_golden_coins",
-    "title": "Hot Shell Ride for Golden Coins",
-    "description": "Collect 90 coins wh,18:1783166322.2004287^]16952:5:false!16916:ile riding a Koopa Shell in Lethal Lava Land.",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_cool_shell_ride_for_golden_coins",
-    "title": "Cool Shell Ride for Golden Coins",
-    "description": "Collect 75 coins while riding a Koopa Shell in Snowman's Land.",
-    "points": 10,
-    "conditions": []
-  },
-  {
     "id": "sm64_princess_s_secret_treasure",
     "title": "Princess's Secret Treasure",
     "description": "Collect all 80 coins in The Princess's Secret Slide.",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_is_there_a_secret",
-    "title": "Is There a Secret?",
-    "description": "Read the sign near the log on the small island in Tiny-Huge Island.",
-    "points": 2,
-    "conditions": []
-  },
-  {
-    "id": "sm64_mario_s_speedrun_in_the_plains",
-    "title": "Mario's Speedrun in the Plains",
-    "description": "Win against Koopa the Quick in 34 seconds or less in Bob-omb Battlefield without using the Wing Cap.",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_mario_s_speedrun_on_the_island",
-    "title": "Mario's Speedrun on the Island",
-    "description": "Win against Koopa the Quick in 20 seconds or less in Tiny-Huge Island without using the Koopa Shell.",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_mario_s_speedslide",
-    "title": "Mario's Speedslide",
-    "description": "Finish The Princess's Secret Slide in 17 seconds or less.",
     "points": 10,
     "conditions": []
   },
@@ -700,13 +539,6 @@
     "conditions": []
   },
   {
-    "id": "sm64_red_challenge_of_the_molten_area",
-    "title": "Red Challenge of the Molten Area",
-    "description": "Collect the 8 Red Coins and the Star in Lethal Lava Land without pressing 'A' or taking damage.",
-    "points": 10,
-    "conditions": []
-  },
-  {
     "id": "sm64_red_challenge_in_the_desert",
     "title": "Red Challenge in the Desert",
     "description": "Collect the 8 Red Coins and the Star in Shifting Sand Land without taking damage.",
@@ -725,13 +557,6 @@
     "title": "Red Challenge on the Island",
     "description": "Collect the 8 Red Coins and the Star in Tiny-Huge Island without taking damage.",
     "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_red_challenge_in_the_clock",
-    "title": "Red Challenge in the Clock",
-    "description": "Collect the 8 Red Coins and the Star in Tick Tock Clock while in the fastest time state.",
-    "points": 10,
     "conditions": []
   },
   {
@@ -802,13 +627,6 @@
     "title": "Secret of the Rainbows",
     "description": "Use the warp in Rainbow Ride.",
     "points": 1,
-    "conditions": []
-  },
-  {
-    "id": "sm64_show_me_your_moves",
-    "title": "Show Me Your Moves",
-    "description": "Perform all 15 combo moves.",
-    "points": 5,
     "conditions": []
   },
   {
@@ -996,7 +814,7 @@
   {
     "id": "sm64_lifesaver_ix",
     "title": "Lifesaver IX",
-    "description": "Collect the 1-UP in,18:1783166322.2140245^]12724:5:false!12687: Dire, Dire Docks.",
+    "description": "Collect the 1-UP in: Dire, Dire Docks.",
     "points": 1,
     "conditions": []
   },
@@ -1113,66 +931,10 @@
     "conditions": []
   },
   {
-    "id": "sm64_blocks_destroyer_round_1",
-    "title": "!-Blocks Destroyer Round 1",
-    "description": "Destroy 8 !-Blocks in Wet-Dry World without taking damage during the entire stage (see comment)",
-    "points": 0,
-    "conditions": []
-  },
-  {
-    "id": "sm64_blocks_destroyer_round_2",
-    "title": "!-Blocks Destroyer Round 2",
-    "description": "Destroy 13 !-Blocks in Tick Tock Clock without taking damage during the entire stage (see comment)",
-    "points": 0,
-    "conditions": []
-  },
-  {
-    "id": "sm64_l_is_real_2401",
-    "title": "L is Real 2401",
-    "description": "Run around the Ethernal Star Statue a total of 100 times in a row without falling off the Railing.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_uuuuh_what",
-    "title": "Uuuuh, what?",
-    "description": "Get stuck in the Killer Corner outside the Castle.",
-    "points": 2,
-    "conditions": []
-  },
-  {
-    "id": "sm64_that_s_not_bowser",
-    "title": "That's not Bowser?!",
-    "description": "Start a BLJ on the Infinite Stairs and land inside Course 11 'Wet-Dry World'.",
-    "points": 3,
-    "conditions": []
-  },
-  {
     "id": "sm64_swimming_with_the_fish",
     "title": "Swimming with the Fish",
     "description": "Enter one of the Aquariums next to Course 3 'Jolly Roger Bay'.",
     "points": 2,
-    "conditions": []
-  },
-  {
-    "id": "sm64_infinite_coins_in_the_battlefield",
-    "title": "Infinite Coins in the Battlefield",
-    "description": "Set your Coin Record in Course 1 'Bob-omb Battlefield' to exactly 255 Coins.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_infinite_coins_in_the_fortress",
-    "title": "Infinite Coins in the Fortress",
-    "description": "Set your Coin Record in Course 2 'Whomp's Fortress' to exactly 255 Coins.",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_infinite_coins_in_the_hot_desert",
-    "title": "Infinite Coins in the hot Desert",
-    "description": "Set your Coin Record in Course 8 'Shifting Sand Land' to exactly 255 Coins.",
-    "points": 10,
     "conditions": []
   },
   {
@@ -1491,13 +1253,6 @@
     "conditions": []
   },
   {
-    "id": "sm64_starless",
-    "title": "Starless",
-    "description": "Beat Bowser in the Dark World without collecting a single Power Star",
-    "points": 25,
-    "conditions": []
-  },
-  {
     "id": "sm64_damageless_i",
     "title": "Damageless I",
     "description": "In a single session, collect 10 Power Stars without taking damage or dying",
@@ -1530,41 +1285,6 @@
     "title": "Unstoppable",
     "description": "In a single session, collect 120 Power Stars and beat the game",
     "points": 100,
-    "conditions": []
-  },
-  {
-    "id": "sm64_yump_on_the_tower",
-    "title": "Yump on the Tower",
-    "description": "Activate Red !-Switch, skip Red Switch's Text and collect the Star in Tower of the Wing Cap",
-    "points": 3,
-    "conditions": []
-  },
-  {
-    "id": "sm64_yump_under_the_moat",
-    "title": "Yump under the Moat",
-    "description": "Activate Blue !-Switch, skip Blue Switch's Text and collect the Star in The Secret Under the Moat",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_yump_in_the_cavern",
-    "title": "Yump in the Cavern",
-    "description": "Activate Green !-Switch, skip Green Switch's Text and collect the Star in Cavern of the Metal Cap",
-    "points": 3,
-    "conditions": []
-  },
-  {
-    "id": "sm64_sorry_i_have_no_time",
-    "title": "Sorry, I Have No Time...",
-    "description": "Skip Lakitu's textbox and enter the castle - Jumping from the roof is allowed",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_is_that_all_you_got",
-    "title": "Is That All You Got?!",
-    "description": "Reach the top of Peach's Castle without using the cannon. Using a Wing Cap is allowed",
-    "points": 10,
     "conditions": []
   },
   {
@@ -1603,13 +1323,6 @@
     "conditions": []
   },
   {
-    "id": "sm64_too_tired",
-    "title": "Too Tired",
-    "description": "Let Mario sleep",
-    "points": 1,
-    "conditions": []
-  },
-  {
     "id": "sm64_no_coin_no_1_up_no_damage_round_1",
     "title": "No Coin, No 1-UP, No Damage Round 1",
     "description": "Beat Bowser in the Dark World without taking damage or collecting anything throughout the stage",
@@ -1627,181 +1340,6 @@
     "id": "sm64_no_coin_no_1_up_no_damage_round_3",
     "title": "No Coin, No 1-UP, No Damage Round 3",
     "description": "Beat Bowser in the Sky without taking damage or collecting anything throughout the stage",
-    "points": 25,
-    "conditions": []
-  },
-  {
-    "id": "sm64_beware_of_the_dog",
-    "title": "Beware of the Dog",
-    "description": "Collect the Star \"Behind Chain Chomp's Gate\" in Bob-omb Battlefield without releasing the Chain Chomp",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_gem_in_the_wall",
-    "title": "Gem in the Wall",
-    "description": "Collect the Star \"Blast Away the Wall\" in Whomp's Fortress without using the cannon",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_climb_the_fortress",
-    "title": "Climb the Fortress",
-    "description": "Collect the Star \"Shoot Into the Wild Blue\" in Whomp's Fortress without using the A button, taking damage or using the cannon",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_don_t_let_the_eel_escape",
-    "title": "Don't Let the Eel escape!",
-    "description": "Don't let the eel escape",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_heavy_enough_on_my_own",
-    "title": "Heavy Enough on My Own",
-    "description": "Collect the Star \"Metal-Head Mario Can Move!\" in Hazy Maze Cave without using the Metal Cap",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_jumping_isn_t_worth_it",
-    "title": "Jumping Isn't Worth It!",
-    "description": "Collect the Star \"Swimming Beast in the Cavern\" in Hazy Maze Cave without using the A button or taking damage",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_jumping_still_isn_t_worth_it",
-    "title": "Jumping Still Isn't Worth It!",
-    "description": "Collect the Star \"Red-Hot Log Rolling\" in Lethal Lava Land without using the A button or taking damage",
-    "points": 25,
-    "conditions": []
-  },
-  {
-    "id": "sm64_seems_like_that_snowman_can_t_talk",
-    "title": "Seems Like That Snowman Can't Talk",
-    "description": "Skip the Snowman's textbox and collect the Star \"Snowman's Big Head\" in Snowman's Land without using the cannon",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_a_spinning_jump_isn_t_worth_it",
-    "title": "A Spinning Jump Isn't Worth It!",
-    "description": "Collect the Star \"Whirl from the Freezing Pond\" in Snowman's Land without using a spinning jump or cannon",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_climb_the_world",
-    "title": "Climb the World",
-    "description": "With the water level either low or empty, collect the Star \"Quick Race Through Downtown!\" in Wet-Dry World without using the cannon",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_dry_the_pipe",
-    "title": "Dry the Pipe",
-    "description": "In Wet-Dry World lower the water level in the town and get back into the pipe while the water level is low",
-    "points": 25,
-    "conditions": []
-  },
-  {
-    "id": "sm64_best_wallkicks",
-    "title": "Best Wallkicks",
-    "description": "Collect the Star \"Breathtaking View from Bridge\" in Tall, Tall Mountain without activating the Purple Switch",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_enter_unassisted",
-    "title": "Enter Unassisted",
-    "description": "Collect the Star \"Wiggler's Red Coins\" in Tiny-Huge Island without entering the pipe or using a cannon or shell",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_climb_the_clock",
-    "title": "Climb the Clock",
-    "description": "In a single session, collect every Star in Tick Tock Clock while the time is stopped",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_nothing_can_trick_me",
-    "title": "Nothing Can Trick Me",
-    "description": "Collect the Star \"Tricky Triangles\" in Rainbow Ride without activating the Purple Switch",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_can_also_reach_this_one",
-    "title": "Can Also Reach This One",
-    "description": "Collect the Star \"Somewhere Over the Rainbow\" in Rainbow Ride without using a carpet",
-    "points": 25,
-    "conditions": []
-  },
-  {
-    "id": "sm64_green_demon_of_the_battlefield",
-    "title": "Green Demon of the Battlefield",
-    "description": "In Bob-omb Battlefield, collect every red coin and collect the red coin Star while a 1-Up is chasing you",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_green_demon_of_the_fortress",
-    "title": "Green Demon of the Fortress",
-    "description": "In Whomp's Fortress, collect every red coin and collect the red coin Star while a 1-Up is chasing you",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_green_demon_of_the_cold_mountain",
-    "title": "Green Demon of the Cold Mountain",
-    "description": "In Cool, Cool Mountain, collect every red coin and collect the red coin Star while a 1-Up is chasing you",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_green_demon_of_the_desert",
-    "title": "Green Demon of the Desert",
-    "description": "In Shifting Sand Land, collect every red coin and collect the red coin Star while a 1-Up is chasing you",
-    "points": 10,
-    "conditions": []
-  },
-  {
-    "id": "sm64_green_demon_of_the_frosty_land",
-    "title": "Green Demon of the Frosty Land",
-    "description": "In Snowman's Land, collect every red coin and collect the red coin Star while a 1-Up is chasing you",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_green_demon_of_the_clock_tower",
-    "title": "Green Demon of the Clock Tower",
-    "description": "In Tick Tock Clock, collect every red coin and collect the red coin Star while a 1-Up is chasing you",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_green_demon_of_the_rainbow",
-    "title": "Green Demon of the Rainbow",
-    "description": "In Rainbow Ride, collect every red coin and collect the red coin Star while a 1-Up is chasing you",
-    "points": 5,
-    "conditions": []
-  },
-  {
-    "id": "sm64_green_demon_of_the_clouds",
-    "title": "Green Demon of the Clouds",
-    "description": "In Wing Mario Over the Rainbow, collect every red coin and collect the red coin Star while a 1-Up is chasing you",
-    "points": 50,
-    "conditions": []
-  },
-  {
-    "id": "sm64_green_demon_of_the_fiery_sea",
-    "title": "Green Demon of the Fiery Sea",
-    "description": "In Bowser in the Fire Sea, collect every red coin and collect the red coin Star while a 1-Up is chasing you",
     "points": 25,
     "conditions": []
   },

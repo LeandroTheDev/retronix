@@ -28,7 +28,7 @@ ControllerType controllerTypeFromName(String name) {
 // Linux) rather than a string that can come back empty or unreliable (see
 // the "Microntek USB Joystick" pad, whose reported name is blank at connect
 // time on some boots, but whose vendorId/productId are always present).
-enum KnownConsolePad { nintendo64, xbox360 }
+enum KnownConsolePad { nintendo64, xbox360, xboxSeries }
 
 // Add an entry here for every adapter/pad we've confirmed by hand — check
 // the "[GamepadService] controller ... identified" debug log for the
@@ -36,7 +36,8 @@ enum KnownConsolePad { nintendo64, xbox360 }
 // it claims to be before adding it.
 const _knownConsolePadsByVidPid = <(int, int), KnownConsolePad>{
   (0x0079, 0x0006): KnownConsolePad.nintendo64, // "Microntek USB Joystick" N64 adapter
-  (0x045e, 0x028e): KnownConsolePad.xbox360, // Xbox 360 Wired Controller (Microsoft's official VID/PID)
+  (0x045e, 0x028e): KnownConsolePad.xbox360,  // Xbox 360 Wired Controller (Microsoft's official VID/PID)
+  (0x045e, 0x0b12): KnownConsolePad.xboxSeries, // Xbox Series S/X controller (confirmed via debug log)
 };
 
 KnownConsolePad? knownConsolePadFromVidPid(int vendorId, int productId) =>
@@ -110,10 +111,24 @@ const _nintendo64Layout = GamepadLayout(
 );
 
 // Xbox 360 Wired Controller — not yet mapped. Connect it, press each button,
-// and check the "unmapped button" debug log for its raw codes (they won't
-// match the N64 pad's numbering — see the class doc above), then fill this
+// and check the "unmapped button" debug log for its raw codes, then fill this
 // in the same way [_nintendo64Layout] was built.
 const _xbox360Layout = GamepadLayout(buttons: {});
+
+// Xbox Series S/X controller — button codes confirmed via debug log
+// (vendorId=0x045e, productId=0x0b12). D-pad and analog axis keys
+// are still unconfirmed — check the "analog move" debug log.
+const _xboxSeriesLayout = GamepadLayout(
+  buttons: {
+    '0': GamepadAction.confirm,
+    '1': GamepadAction.back,
+    '4': GamepadAction.l,
+    '5': GamepadAction.r,
+    '7': GamepadAction.start,
+  },
+  xAxisKeys: {'0', '6'}, // left stick X + d-pad X
+  yAxisKeys: {'1', '7'}, // left stick Y + d-pad Y
+);
 
 // Add an entry here once a new [KnownConsolePad] has a confirmed layout —
 // devices recognized by VID/PID but missing from this table fall back to
@@ -121,6 +136,7 @@ const _xbox360Layout = GamepadLayout(buttons: {});
 const _layoutsByPad = <KnownConsolePad, GamepadLayout>{
   KnownConsolePad.nintendo64: _nintendo64Layout,
   KnownConsolePad.xbox360: _xbox360Layout,
+  KnownConsolePad.xboxSeries: _xboxSeriesLayout,
 };
 
 class GamepadService {
@@ -386,6 +402,16 @@ class GamepadService {
     final stateKey = '$gamepadId:$key';
     final prev = _analogState[stateKey] ?? 0.0;
     _analogState[stateKey] = value;
+
+    final isX = layout.xAxisKeys.contains(key);
+    final isY = layout.yAxisKeys.contains(key);
+    if (value.abs() > _analogThreshold) {
+      DebugLogger.log(
+        '[GamepadService] analog move: key=$key value=$value '
+        'mapped=${isX ? "x-axis" : isY ? "y-axis" : "unmapped"} '
+        '(gamepad: $gamepadId)',
+      );
+    }
 
     if (layout.xAxisKeys.contains(key)) {
       if (value < -_analogThreshold && prev >= -_analogThreshold) {

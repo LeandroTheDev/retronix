@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../services/gamepad_service.dart';
 import '../utils/app_localizations.dart';
 
@@ -29,10 +30,7 @@ class _GamepadStatusOverlayState extends State<GamepadStatusOverlay> {
           final name = GamepadService.instance.nameForId(newId) ?? 'Controller';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                l.controllerConnected(i + 1, name),
-                style: const TextStyle(fontFamily: 'PressStart'),
-              ),
+              content: Text(l.controllerConnected(i + 1, name), style: const TextStyle(fontFamily: 'PressStart')),
             ),
           );
         }
@@ -47,6 +45,17 @@ class _GamepadStatusOverlayState extends State<GamepadStatusOverlay> {
     super.dispose();
   }
 
+  String? _svgAssetForSlot(int i) {
+    final id = _slots[i];
+    if (id == null) return null;
+    final pad = GamepadService.instance.knownConsolePadForId(id);
+    if (pad == KnownConsolePad.nintendo64) return 'assets/images/n64-controller.svg';
+    if (pad == KnownConsolePad.xbox360 || pad == KnownConsolePad.xboxSeries) {
+      return 'assets/images/xbox-controller.svg';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final iconSize = MediaQuery.sizeOf(context).height * 0.05;
@@ -57,13 +66,10 @@ class _GamepadStatusOverlayState extends State<GamepadStatusOverlay> {
         child: Row(
           children: List.generate(_slots.length, (i) {
             final connected = _slots[i] != null;
+            final svgAsset = _svgAssetForSlot(i);
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: Icon(
-                Icons.sports_esports,
-                size: iconSize,
-                color: connected ? Colors.greenAccent : Colors.white24,
-              ),
+              child: svgAsset != null ? SvgPicture.asset(svgAsset, width: iconSize, height: iconSize, colorFilter: ColorFilter.mode(Colors.greenAccent, BlendMode.srcIn)) : Icon(Icons.sports_esports, size: iconSize, color: connected ? Colors.greenAccent : Colors.white24),
             );
           }),
         ),

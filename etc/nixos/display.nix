@@ -31,6 +31,9 @@ let
       <focus><focusNew>yes</focusNew><followMouse>no</followMouse></focus>
       <placement><policy>Smart</policy></placement>
       <desktops><number>1</number></desktops>
+      <keyboard>
+        <chainQuitKey>C-g</chainQuitKey>
+      </keyboard>
       <applications>
         <application class="*">
           <decor>no</decor>
