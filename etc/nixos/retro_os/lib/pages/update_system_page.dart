@@ -34,7 +34,7 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
   final _outputLines = <String>[];
   Process? _process;
 
-  static final _steps = [_Step(label: (l) => l.updateStepCleanTmp, command: 'rm -rf $_tmpDir'), _Step(label: (l) => l.updateStepClone, command: 'git clone $_repoUrl $_tmpDir'), _Step(label: (l) => l.updateStepRemoveOld, command: 'sudo rm -rf /etc/nixos'), _Step(label: (l) => l.updateStepCopyNew, command: 'sudo cp -r $_tmpDir/etc/nixos /etc/nixos && rm -rf $_tmpDir'), _Step(label: (l) => l.updateStepRebuild, command: 'sudo nixos-rebuild boot')];
+  static List<_Step> get _steps => [_Step(label: (l) => l.updateStepCleanTmp, command: 'git -C $_sourceDir fetch origin --quiet'), _Step(label: (l) => l.updateStepClone, command: 'git -C $_sourceDir reset --hard origin/main'), _Step(label: (l) => l.updateStepRemoveOld, command: 'sudo rm -rf /etc/nixos'), _Step(label: (l) => l.updateStepCopyNew, command: 'sudo cp -r $_sourceDir/etc/nixos /etc/nixos'), _Step(label: (l) => l.updateStepRebuild, command: 'sudo nixos-rebuild boot')];
 
   late List<_StepStatus> _stepStatuses = List.filled(_steps.length, _StepStatus.pending);
 
@@ -66,7 +66,10 @@ class _UpdateSystemPageState extends State<UpdateSystemPage> {
   }
 
   static const _repoUrl = 'https://github.com/LeandroTheDev/retronix';
-  static const _tmpDir = '/tmp/retronix_update';
+  static String get _sourceDir {
+    final home = Platform.environment['HOME'] ?? '/home/admin';
+    return '$home/.local/share/retro_os/source';
+  }
 
   Future<void> _startUpdate() async {
     DebugLogger.log('[UpdateSystemPage] starting update from $_repoUrl');
