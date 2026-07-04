@@ -90,6 +90,23 @@ String getGameAchievementsPath(String console, String game) {
   return '${_consolesRoot()}/$console/Games/$game/game_achievements.json';
 }
 
+// Path to the runtime progress file that stores which achievement IDs have
+// been unlocked for a given console/game.  Lives in the app's own data dir
+// (not next to the ROM) because it is generated at runtime, not authored.
+String getGameProgressPath(String console, String game) {
+  final String base;
+  if (Platform.isLinux) {
+    final xdgDataHome = Platform.environment['XDG_DATA_HOME'] ?? '${Platform.environment['HOME']}/.local/share';
+    base = '$xdgDataHome/retro_os/achievements/progress';
+  } else if (Platform.isWindows) {
+    final appData = Platform.environment['APPDATA'] ?? '${Platform.environment['USERPROFILE']}\\AppData\\Roaming';
+    base = '$appData\\retro_os\\achievements\\progress';
+  } else {
+    base = '${File(Platform.resolvedExecutable).parent.path}/achievements/progress';
+  }
+  return '$base/$console/$game.json';
+}
+
 // Path to the ROM file inside <console>/Games/<game>/Game/
 Future<String?> getGameFilePath(String console, String game) async {
   final path = '${_consolesRoot()}/$console/Games/$game/Game';

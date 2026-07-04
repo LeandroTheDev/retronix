@@ -140,6 +140,8 @@ class AppLocalizations {
   String achievementPoints(int points) => _pick('$points pts', '$points pts');
   String achievementsSummary(int count, int points) =>
       _pick('$count achievements • $points pts', '$count conquistas • $points pts');
+  String achievementsUnlockedSummary(int unlocked, int total) =>
+      _pick('$unlocked / $total unlocked', '$unlocked / $total desbloqueadas');
 
   // ── Game Open ─────────────────────────────────────────────────────────────
 
