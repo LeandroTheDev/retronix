@@ -13,6 +13,10 @@ pkgs.flutter.buildFlutterApplication {
 
   pubspecLock = lib.importJSON ./retro_os/pubspec.lock.json;
 
+  gitHashes = {
+    window_manager = "sha256-MP+X30PZLfFbOgtXpDjYnN8uinFsTKCcfJGZuKIJFqU=";
+  };
+
   nativeBuildInputs = with pkgs; [ pkg-config makeWrapper ];
   buildInputs = with pkgs; [
     gtk3

@@ -20,9 +20,25 @@ let
   # display's EDID and xrandr would just fail. So we only apply the saved
   # mode if the currently connected output actually advertises it; otherwise
   # we skip it and fall back to Xorg's default, same as a missing file.
-  retro_os_session = pkgs.writeShellScript "retro_os-session" ''
-    export FONTCONFIG_FILE=/etc/fonts/fonts.conf
+  # Minimal openbox config: no decorations on any window, single desktop.
+  # Openbox is a stacking WM so overlay windows can float on top of retro_os,
+  # unlike matchbox which only ever shows one window at a time.
+  openbox_rc = pkgs.writeText "openbox-rc.xml" ''
+    <?xml version="1.0" encoding="UTF-8"?>
+    <openbox_config xmlns="http://openbox.org/3.4/rc">
+      <resistance><strength>10</strength><screen_edge_strength>20</screen_edge_strength></resistance>
+      <focus><focusNew>yes</focusNew><followMouse>no</followMouse></focus>
+      <placement><policy>Smart</policy></placement>
+      <desktops><number>1</number></desktops>
+      <applications>
+        <application class="*">
+          <decor>no</decor>
+        </application>
+      </applications>
+    </openbox_config>
+  '';
 
+  retro_os_session = pkgs.writeShellScript "retro_os-session" ''
     DISPLAY_MODE_FILE="$HOME/.local/share/retro_os/display_mode"
     if [ -f "$DISPLAY_MODE_FILE" ]; then
       RESOLUTION=$(${pkgs.gnused}/bin/sed -n '1p' "$DISPLAY_MODE_FILE")
@@ -44,11 +60,7 @@ let
     # cursor immediately instead of waiting for it to sit idle first, and
     # since nothing ever moves it, it stays hidden for good.
     ${pkgs.unclutter}/bin/unclutter -idle 0 -root &
-    # -use_titlebar no: retro_os already starts undecorated+fullscreen, but
-    # RetroArch maps its window in normal windowed mode before switching to
-    # fullscreen a moment later — without this flag, matchbox briefly draws
-    # a titlebar on it during that gap.
-    ${pkgs.matchbox}/bin/matchbox-window-manager -use_titlebar no &
+    ${pkgs.openbox}/bin/openbox --config-file ${openbox_rc} &
     exec ${retro_os}/bin/retro_os
   '';
 in
@@ -58,10 +70,12 @@ in
     extraPackages = with pkgs; [ mesa ];
   };
 
-  # Xorg + matchbox: minimal X11 kiosk stack — boots directly into retro_os
-  # Flutter frontend. Switched from cage/Wayland because Flutter's GTK/GDK
-  # embedder hits a known EGL_BAD_SURFACE bug in eglSwapInterval under the
-  # wlroots (GDK-Wayland) backend; GDK's X11/GLX path doesn't have this issue.
+  # Xorg + openbox: minimal X11 stack — boots directly into retro_os Flutter
+  # frontend. Openbox replaces matchbox because we need overlay windows to
+  # float on top of retro_os; matchbox only shows one window at a time.
+  # Switched from cage/Wayland because Flutter's GTK/GDK embedder hits a
+  # known EGL_BAD_SURFACE bug in eglSwapInterval under the wlroots
+  # (GDK-Wayland) backend; GDK's X11/GLX path doesn't have this issue.
   services.xserver = {
     enable = true;
     videoDrivers = [ "modesetting" ];
