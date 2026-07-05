@@ -60,7 +60,7 @@ class RetroarchRamReader {
   // otherwise there'd be no way to tell which reply belongs to which request.
   Future<String?> _send(String command) async {
     final socket = _socket;
-    if (socket == null) throw StateError('RetroarchRamReader.connect() was not called');
+    if (socket == null) return null;
     while (_pending != null) {
       await _pending!.future;
     }
