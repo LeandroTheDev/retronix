@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'achievements/achievement.dart';
@@ -11,6 +12,7 @@ class AchievementWindowService {
 
   StreamSubscription<Achievement>? _sub;
   int? _retroarchPid;
+  Process? _process;
 
   static const _holdSeconds = 4;
 
@@ -22,8 +24,23 @@ class AchievementWindowService {
     return 'retro_os_notification';
   }
 
-  void init() {
+  Future<void> init() async {
     _sub = AchievementService.instance.unlocked.listen(_onUnlocked);
+    await _launchProcess();
+  }
+
+  Future<void> _launchProcess() async {
+    try {
+      _process = await Process.start(_binary, []);
+      DebugLogger.log('[AchievementWindowService] notification process started (pid=${_process!.pid})');
+      _process!.exitCode.then((_) {
+        DebugLogger.log('[AchievementWindowService] notification process exited, restarting...');
+        _process = null;
+        _launchProcess();
+      });
+    } catch (e) {
+      DebugLogger.log('[AchievementWindowService] failed to start notification process: $e');
+    }
   }
 
   void startSession(int retroarchPid) {
@@ -38,20 +55,26 @@ class AchievementWindowService {
 
   void dispose() {
     _sub?.cancel();
+    _process?.stdin.close();
+    _process?.kill();
+    _process = null;
   }
 
   Future<void> _onUnlocked(Achievement achievement) async {
     if (_retroarchPid == null) return;
+    if (_process == null) await _launchProcess();
 
-    DebugLogger.log('[AchievementWindowService] spawning notification: ${achievement.title}');
+    final message = jsonEncode({
+      'title': achievement.title,
+      'points': achievement.points,
+      'seconds': _holdSeconds,
+    });
+
+    DebugLogger.log('[AchievementWindowService] sending notification: ${achievement.title}');
     try {
-      await Process.start(_binary, [
-        achievement.title,
-        '${achievement.points}',
-        '$_holdSeconds',
-      ]);
+      _process!.stdin.writeln(message);
     } catch (e) {
-      DebugLogger.log('[AchievementWindowService] spawn error: $e');
+      DebugLogger.log('[AchievementWindowService] send error: $e');
     }
   }
 }

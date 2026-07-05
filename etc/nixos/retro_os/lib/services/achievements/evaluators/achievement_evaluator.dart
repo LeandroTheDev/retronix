@@ -224,7 +224,24 @@ class AchievementEvaluator {
       var i = 0;
       while (i < conditions.length) {
         final condition = conditions[i];
-        if (condition.isResetIf || condition.isPauseIf || resolved[i] == null) {
+        if (condition.isResetIf || condition.isPauseIf || condition.isTrigger || resolved[i] == null) {
+          i++;
+          continue;
+        }
+
+        if (condition.isResetNextIf) {
+          if (resolved[i]!) {
+            for (var j = i + 1; j < conditions.length; j++) {
+              final next = conditions[j];
+              if (!next.isResetIf && !next.isPauseIf && !next.isTrigger &&
+                  !next.isResetNextIf && !next.isAddAddress &&
+                  !next.isAddSource && !next.isSubSource &&
+                  next.chain == ChainType.none && resolved[j] != null) {
+                states[j].hits = 0;
+                break;
+              }
+            }
+          }
           i++;
           continue;
         }
@@ -298,6 +315,16 @@ class AchievementEvaluator {
       return false;
     }
 
+    // All isTrigger conditions in a group must be currently satisfied at the
+    // moment the achievement would fire, or the unlock is blocked. Unlike
+    // regular conditions, Trigger conditions don't contribute to done/total.
+    bool allTriggersActive(List<AchievementCondition> conditions, List<bool?> resolved) {
+      for (var i = 0; i < conditions.length; i++) {
+        if (conditions[i].isTrigger && !(resolved[i] ?? false)) return false;
+      }
+      return true;
+    }
+
     ({bool allDone, int done, int total}) evaluateGroupOrFrozen(
       List<AchievementCondition> conditions,
       List<_ConditionState> states,
@@ -311,6 +338,8 @@ class AchievementEvaluator {
         final condition = conditions[i];
         if (condition.isResetIf ||
             condition.isPauseIf ||
+            condition.isTrigger ||
+            condition.isResetNextIf ||
             condition.isAddHits ||
             condition.isSubHits ||
             condition.chain != ChainType.none ||
@@ -363,9 +392,13 @@ class AchievementEvaluator {
       var altDone = achievement.altGroups.isEmpty;
       var bestAltDone = -1;
       var bestAltTotal = 0;
+      final completedAltIndices = <int>[];
       for (var g = 0; g < achievement.altGroups.length; g++) {
         final altResult = evaluateGroupOrFrozen(achievement.altGroups[g], state.altGroups[g], resolvedAlts[g]);
-        if (altResult.allDone) altDone = true;
+        if (altResult.allDone) {
+          altDone = true;
+          completedAltIndices.add(g);
+        }
         if (altResult.done > bestAltDone) {
           bestAltDone = altResult.done;
           bestAltTotal = altResult.total;
@@ -388,8 +421,17 @@ class AchievementEvaluator {
       }
 
       if (coreResult.allDone && altDone) {
-        _unlocked.add(achievement.id);
-        newlyUnlocked.add(achievement);
+        var triggersOk = allTriggersActive(achievement.conditions, resolvedCore);
+        if (triggersOk && achievement.altGroups.isNotEmpty) {
+          // At least one completing alt group must also have its Triggers active.
+          triggersOk = completedAltIndices.any(
+            (g) => allTriggersActive(achievement.altGroups[g], resolvedAlts[g]),
+          );
+        }
+        if (triggersOk) {
+          _unlocked.add(achievement.id);
+          newlyUnlocked.add(achievement);
+        }
       }
     }
 

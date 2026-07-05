@@ -15,7 +15,10 @@ enum MemorySize {
   byte(1),
   word(2),
   tribyte(3),
-  dword(4);
+  dword(4),
+  /// Binary-Coded Decimal: each nibble holds one decimal digit (0-9).
+  /// e.g. raw bytes [0x12, 0x34] → decimal 1234. Reads 4 bytes over the wire.
+  bcd(4);
 
   const MemorySize(this.bytes);
   final int bytes;
@@ -41,6 +44,7 @@ int extractValue(MemorySize size, List<int> rawBytes) => switch (size) {
   MemorySize.bit7 => (rawBytes[0] >> 7) & 0x1,
   MemorySize.nibbleLow => rawBytes[0] & 0xF,
   MemorySize.nibbleHigh => (rawBytes[0] >> 4) & 0xF,
+  MemorySize.bcd => rawBytes.fold(0, (acc, b) => acc * 100 + ((b >> 4) & 0xF) * 10 + (b & 0xF)),
   MemorySize.byte ||
   MemorySize.word ||
   MemorySize.tribyte ||
@@ -105,6 +109,8 @@ class AchievementCondition {
     this.isSubSource = false,
     this.isAddHits = false,
     this.isSubHits = false,
+    this.isTrigger = false,
+    this.isResetNextIf = false,
     this.onlyOnChange = false,
     this.targetHits,
     this.chain = ChainType.none,
@@ -195,6 +201,22 @@ class AchievementCondition {
   /// adding - RetroAchievements' SubHits flag.
   final bool isSubHits;
 
+  /// When true, this condition is a "gate at unlock": it is NOT counted as a
+  /// regular hit unit — instead, it must be currently satisfied at the exact
+  /// poll where all other conditions have just finished, otherwise the
+  /// achievement is blocked even though all hit counts are met. Trigger
+  /// conditions with their own [targetHits] follow the same hit-count
+  /// semantics as normal conditions, but they never contribute to the group's
+  /// done/total counts — RetroAchievements' Trigger (T:) flag.
+  final bool isTrigger;
+
+  /// When true and satisfied on a poll, zeroes the hit count of the next
+  /// terminal (chain == none, non-watchdog) condition in this group — a
+  /// targeted reset that leaves all other conditions untouched, unlike
+  /// [isResetIf] which wipes the whole achievement. RetroAchievements'
+  /// ZeroReset / ResetNextIf (Z:) flag.
+  final bool isResetNextIf;
+
   /// When true, this condition only counts as satisfied on the poll where
   /// the comparison flips from false to true (e.g. "just picked up the
   /// item"), not on every poll where it happens to still hold (e.g.
@@ -247,6 +269,8 @@ class AchievementCondition {
     isSubSource: json['isSubSource'] as bool? ?? false,
     isAddHits: json['isAddHits'] as bool? ?? false,
     isSubHits: json['isSubHits'] as bool? ?? false,
+    isTrigger: json['isTrigger'] as bool? ?? false,
+    isResetNextIf: json['isResetNextIf'] as bool? ?? false,
     onlyOnChange: json['onlyOnChange'] as bool? ?? false,
     targetHits: json['targetHits'] as int?,
     chain: json['chain'] == null ? ChainType.none : ChainType.values.byName(json['chain'] as String),
@@ -269,6 +293,8 @@ class AchievementCondition {
     if (isSubSource) 'isSubSource': isSubSource,
     if (isAddHits) 'isAddHits': isAddHits,
     if (isSubHits) 'isSubHits': isSubHits,
+    if (isTrigger) 'isTrigger': isTrigger,
+    if (isResetNextIf) 'isResetNextIf': isResetNextIf,
     if (onlyOnChange) 'onlyOnChange': onlyOnChange,
     if (targetHits != null) 'targetHits': targetHits,
     if (chain != ChainType.none) 'chain': chain.name,

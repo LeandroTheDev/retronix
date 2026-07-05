@@ -1,97 +1,143 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 
 void main(List<String> args) {
-  final title = args.isNotEmpty ? args[0] : "Huh, where's the achievement title?";
-  final points = args.length > 1 ? int.tryParse(args[1]) ?? 0 : 0;
-  final seconds = args.length > 2 ? int.tryParse(args[2]) ?? 4 : 4;
-
-  Timer(Duration(seconds: seconds), () => exit(0));
-  runApp(NotificationApp(title: title, points: points));
+  runApp(const NotificationApp());
 }
 
 class NotificationApp extends StatelessWidget {
-  const NotificationApp({super.key, required this.title, required this.points});
-
-  final String title;
-  final int points;
+  const NotificationApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'PressStart'),
-      home: NotificationWindow(title: title, points: points),
+      home: const NotificationWindow(),
     );
   }
 }
 
-class NotificationWindow extends StatelessWidget {
-  const NotificationWindow({super.key, required this.title, required this.points});
+class NotificationWindow extends StatefulWidget {
+  const NotificationWindow({super.key});
 
-  final String title;
-  final int points;
+  @override
+  State<NotificationWindow> createState() => _NotificationWindowState();
+}
+
+class _NotificationWindowState extends State<NotificationWindow> with SingleTickerProviderStateMixin {
+  String _title = '';
+  int _points = 0;
+  Timer? _hideTimer;
+  late final AnimationController _controller;
+  late final Animation<Offset> _slide;
 
   static const _gold = Color(0xFFFFB300);
 
   @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    stdin.transform(utf8.decoder).transform(const LineSplitter()).listen(_onMessage);
+  }
+
+  void _onMessage(String line) {
+    final data = jsonDecode(line) as Map<String, dynamic>;
+    final title = data['title'] as String? ?? '';
+    final points = data['points'] as int? ?? 0;
+    final seconds = data['seconds'] as int? ?? 4;
+
+    _hideTimer?.cancel();
+    setState(() {
+      _title = title;
+      _points = points;
+    });
+    _controller.forward(from: 0.0);
+    _hideTimer = Timer(Duration(seconds: seconds), () {
+      _controller.reverse();
+    });
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF111111),
-      body: Container(
-        decoration: BoxDecoration(border: Border.all(color: const Color(0x55FFB300), width: 1)),
-        child: Column(
-          children: [
-            Container(height: 2, color: _gold),
-            Expanded(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(color: const Color(0x22FFB300), borderRadius: BorderRadius.circular(4)),
-                        child: const Icon(Icons.emoji_events, color: _gold, size: 20),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 220,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              'CONQUISTA DESBLOQUEADA',
-                              style: TextStyle(color: _gold, fontSize: 6, fontWeight: FontWeight.bold, letterSpacing: 0.8),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              title,
-                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '+$points pts',
-                              style: const TextStyle(color: _gold, fontSize: 9, fontWeight: FontWeight.bold),
-                            ),
-                          ],
+    return SlideTransition(
+      position: _slide,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Container(
+          decoration: BoxDecoration(border: Border.all(color: const Color(0x55FFB300), width: 1)),
+          child: Column(
+            children: [
+              Container(height: 2, color: _gold),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: const Color(0x22FFB300),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Icon(Icons.emoji_events, color: _gold, size: 20),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 220,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'CONQUISTA DESBLOQUEADA',
+                                style: TextStyle(color: _gold, fontSize: 6, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                _title,
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '+$_points pts',
+                                style: const TextStyle(color: _gold, fontSize: 9, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -27,7 +27,7 @@ static void my_application_activate(GApplication* application) {
   if (scale < 0.5) scale = 0.5;
   if (scale > 2.0) scale = 2.0;
 
-  int win_w = (int)(300.0 * scale);
+  int win_w = (int)(316.0 * scale);
   int win_h = (int)(80.0 * scale);
   int margin = (int)(16.0 * scale);
 
@@ -51,9 +51,9 @@ static void my_application_activate(GApplication* application) {
     gtk_layer_set_anchor(window, GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
     gtk_layer_set_anchor(window, GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
     gtk_layer_set_anchor(window, GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
-    gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_LEFT, geometry.width - win_w - margin);
+    gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_LEFT, geometry.width - win_w);
     gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_TOP, geometry.height - win_h - margin);
-    gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_RIGHT, margin);
+    gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_RIGHT, 0);
     gtk_layer_set_margin(window, GTK_LAYER_SHELL_EDGE_BOTTOM, margin);
   } else {
     // X11: posicionamento direto
@@ -62,7 +62,7 @@ static void my_application_activate(GApplication* application) {
     gtk_window_set_skip_taskbar_hint(window, TRUE);
     gtk_window_set_focus_on_map(window, FALSE);
     gtk_window_move(window,
-                    geometry.x + geometry.width - win_w - margin,
+                    geometry.x + geometry.width - win_w,
                     geometry.y + geometry.height - win_h - margin);
   }
 
@@ -70,9 +70,16 @@ static void my_application_activate(GApplication* application) {
   fl_dart_project_set_dart_entrypoint_arguments(
       project, self->dart_entrypoint_arguments);
 
+  // Enable RGBA visual for compositor transparency (required on X11; Wayland handles it automatically)
+  GdkScreen* screen = gtk_widget_get_screen(GTK_WIDGET(window));
+  GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
+  if (visual) {
+    gtk_widget_set_visual(GTK_WIDGET(window), visual);
+  }
+  gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
+
   FlView* view = fl_view_new(project);
-  GdkRGBA background_color;
-  gdk_rgba_parse(&background_color, "#000000");
+  GdkRGBA background_color = {0.0, 0.0, 0.0, 0.0};
   fl_view_set_background_color(view, &background_color);
   gtk_widget_show(GTK_WIDGET(view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
