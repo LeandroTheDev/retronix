@@ -47,6 +47,30 @@ let
     </openbox_config>
   '';
 
+  # Shared helper: runs xrandr --auto to bring the output online, then
+  # re-applies the user's saved resolution from display_mode (if the display
+  # advertises it). Used by both the udev hotplug rule and the hdmi-watchdog.
+  apply_saved_resolution = pkgs.writeShellScript "apply-saved-resolution" ''
+    DISPLAY_MODE_FILE="/home/admin/.local/share/retro_os/display_mode"
+    XRANDR_QUERY=$(${pkgs.xrandr}/bin/xrandr --query 2>/dev/null)
+    OUTPUT=$(echo "$XRANDR_QUERY" | ${pkgs.gnugrep}/bin/grep ' connected' | ${pkgs.coreutils}/bin/cut -d' ' -f1 | ${pkgs.coreutils}/bin/head -n1)
+    [ -z "$OUTPUT" ] && exit 0
+
+    if [ -f "$DISPLAY_MODE_FILE" ]; then
+      RESOLUTION=$(${pkgs.gnused}/bin/sed -n '1p' "$DISPLAY_MODE_FILE")
+      RATE=$(${pkgs.gnused}/bin/sed -n '2p' "$DISPLAY_MODE_FILE")
+      if echo "$XRANDR_QUERY" \
+          | ${pkgs.gnused}/bin/sed -n "/^$OUTPUT connected/,/^[^ ]/p" \
+          | ${pkgs.gnugrep}/bin/grep -qE "^ +$RESOLUTION( |$)"; then
+        ${pkgs.xrandr}/bin/xrandr --output "$OUTPUT" --mode "$RESOLUTION" --rate "$RATE"
+        exit 0
+      fi
+    fi
+
+    # No saved mode or display doesn't support it — fall back to xrandr --auto.
+    ${pkgs.xrandr}/bin/xrandr --auto
+  '';
+
   retro_os_session = pkgs.writeShellScript "retro_os-session" ''
     DISPLAY_MODE_FILE="$HOME/.local/share/retro_os/display_mode"
     if [ -f "$DISPLAY_MODE_FILE" ]; then
@@ -134,11 +158,12 @@ in
     grep -q 'hdmi_drive'         "$CFG" || echo 'hdmi_drive=2'         >> "$CFG"
   '';
 
-  # Re-run xrandr --auto when the TV is hotplugged after boot (TV was off
-  # during boot). The modesetting driver fires a DRM change event on hotplug;
-  # xrandr --auto enables the newly-detected output at its preferred resolution.
+  # Re-run apply_saved_resolution when the TV is hotplugged after boot (TV was
+  # off during boot). The modesetting driver fires a DRM change event on
+  # hotplug; the script re-enables the output and then restores the user's
+  # chosen resolution instead of defaulting to the TV's preferred 4K mode.
   services.udev.extraRules = ''
-    ACTION=="change", SUBSYSTEM=="drm", RUN+="${pkgs.bash}/bin/sh -c 'DISPLAY=:0 XAUTHORITY=/home/admin/.Xauthority ${pkgs.xrandr}/bin/xrandr --auto'"
+    ACTION=="change", SUBSYSTEM=="drm", RUN+="${pkgs.bash}/bin/sh -c 'DISPLAY=:0 XAUTHORITY=/home/admin/.Xauthority ${apply_saved_resolution}'"
   '';
 
   # Watchdog that polls xrandr every 5 s and re-enables the HDMI output when
@@ -170,9 +195,10 @@ in
             | ${pkgs.gnugrep}/bin/grep ' connected' \
             | ${pkgs.gnugrep}/bin/grep -E '[0-9]+x[0-9]+\+[0-9]+\+[0-9]+')
           if [ -z "$ACTIVE" ]; then
-            ${pkgs.xrandr}/bin/xrandr --auto
-            # Give the display time to negotiate EDID before the next check.
+            # Give the display time to negotiate EDID, then restore the user's
+            # saved resolution (or fall back to xrandr --auto if none stored).
             sleep 3
+            ${apply_saved_resolution}
           fi
         done
       '';
