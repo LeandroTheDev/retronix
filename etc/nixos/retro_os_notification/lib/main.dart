@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main(List<String> args) {
   runApp(const NotificationApp());
@@ -27,28 +28,24 @@ class NotificationWindow extends StatefulWidget {
   State<NotificationWindow> createState() => _NotificationWindowState();
 }
 
-class _NotificationWindowState extends State<NotificationWindow> with SingleTickerProviderStateMixin {
+class _NotificationWindowState extends State<NotificationWindow> {
+  static const _channel = MethodChannel('notification_window');
+
   String _title = '';
   int _points = 0;
   Timer? _hideTimer;
-  late final AnimationController _controller;
-  late final Animation<Offset> _slide;
 
   static const _gold = Color(0xFFFFB300);
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 350),
-    );
-    _slide = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-
     stdin.transform(utf8.decoder).transform(const LineSplitter()).listen(_onMessage);
+
+    // DEBUG: dispara conquista teste após 5s
+    Future.delayed(const Duration(seconds: 5), () {
+      _onMessage('{"title":"Conquista Teste","points":100,"seconds":4}');
+    });
   }
 
   void _onMessage(String line) {
@@ -62,82 +59,78 @@ class _NotificationWindowState extends State<NotificationWindow> with SingleTick
       _title = title;
       _points = points;
     });
-    _controller.forward(from: 0.0);
+    _channel.invokeMethod('show');
     _hideTimer = Timer(Duration(seconds: seconds), () {
-      _controller.reverse();
+      _channel.invokeMethod('hide');
     });
   }
 
   @override
   void dispose() {
     _hideTimer?.cancel();
-    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SlideTransition(
-      position: _slide,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Container(
-          decoration: BoxDecoration(border: Border.all(color: const Color(0x55FFB300), width: 1)),
-          child: Column(
-            children: [
-              Container(height: 2, color: _gold),
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: const Color(0x22FFB300),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Icon(Icons.emoji_events, color: _gold, size: 20),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(color: Colors.black, border: Border.all(color: const Color(0x55FFB300), width: 1)),
+        child: Column(
+          children: [
+            Container(height: 2, color: _gold),
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: const Color(0x22FFB300),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 220,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                'CONQUISTA DESBLOQUEADA',
-                                style: TextStyle(color: _gold, fontSize: 6, fontWeight: FontWeight.bold, letterSpacing: 0.8),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                _title,
-                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '+$_points pts',
-                                style: const TextStyle(color: _gold, fontSize: 9, fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
+                        child: const Icon(Icons.emoji_events, color: _gold, size: 20),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 220,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'CONQUISTA DESBLOQUEADA',
+                              style: TextStyle(color: _gold, fontSize: 6, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              _title,
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '+$_points pts',
+                              style: const TextStyle(color: _gold, fontSize: 9, fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
