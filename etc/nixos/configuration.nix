@@ -22,7 +22,11 @@
   # Use the extlinux boot loader. (NixOS wants to enable GRUB by default)
   boot.loader.grub.enable = false;
   # Enables the generation of /boot/extlinux/extlinux.conf
-  boot.loader.generic-extlinux-compatible.enable = true;
+  boot.loader.generic-extlinux-compatible = {
+    enable = true;
+    configurationLimit = 2; # current + 1 rollback generation
+  };
+  boot.loader.timeout = 0; # boot immediately, no selection screen
 
   # Increase CMA pool so the GPU (DRM/KMS) can allocate framebuffers
   #boot.kernelParams = [ "cma=256M" ];
