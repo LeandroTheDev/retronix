@@ -31,6 +31,7 @@ class NotificationWindow extends StatefulWidget {
 class _NotificationWindowState extends State<NotificationWindow> {
   static const _channel = MethodChannel('notification_window');
 
+  String _header = '';
   String _title = '';
   int _points = 0;
   Timer? _hideTimer;
@@ -45,12 +46,14 @@ class _NotificationWindowState extends State<NotificationWindow> {
 
   void _onMessage(String line) {
     final data = jsonDecode(line) as Map<String, dynamic>;
+    final header = data['header'] as String? ?? '';
     final title = data['title'] as String? ?? '';
     final points = data['points'] as int? ?? 0;
     final seconds = data['seconds'] as int? ?? 4;
 
     _hideTimer?.cancel();
     setState(() {
+      _header = header;
       _title = title;
       _points = points;
     });
@@ -101,9 +104,9 @@ class _NotificationWindowState extends State<NotificationWindow> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
-                              'CONQUISTA DESBLOQUEADA',
-                              style: TextStyle(color: _gold, fontSize: 6, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                            Text(
+                              _header,
+                              style: const TextStyle(color: _gold, fontSize: 6, fontWeight: FontWeight.bold, letterSpacing: 0.8),
                             ),
                             const SizedBox(height: 3),
                             Text(

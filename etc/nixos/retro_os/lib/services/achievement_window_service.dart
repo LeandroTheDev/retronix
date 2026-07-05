@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'achievements/achievement.dart';
 import 'achievements/achievement_service.dart';
+import '../utils/app_localizations.dart';
 import '../utils/debug_logger.dart';
+import '../utils/locale_service.dart';
 
 class AchievementWindowService {
   AchievementWindowService._();
@@ -24,9 +26,8 @@ class AchievementWindowService {
     return 'retro_os_notification';
   }
 
-  Future<void> init() async {
+  void init() {
     _sub = AchievementService.instance.unlocked.listen(_onUnlocked);
-    await _launchProcess();
   }
 
   Future<void> _launchProcess() async {
@@ -34,9 +35,11 @@ class AchievementWindowService {
       _process = await Process.start(_binary, []);
       DebugLogger.log('[AchievementWindowService] notification process started (pid=${_process!.pid})');
       _process!.exitCode.then((_) {
-        DebugLogger.log('[AchievementWindowService] notification process exited, restarting...');
         _process = null;
-        _launchProcess();
+        if (_retroarchPid != null) {
+          DebugLogger.log('[AchievementWindowService] notification process exited, restarting...');
+          _launchProcess();
+        }
       });
     } catch (e) {
       DebugLogger.log('[AchievementWindowService] failed to start notification process: $e');
@@ -46,11 +49,15 @@ class AchievementWindowService {
   void startSession(int retroarchPid) {
     _retroarchPid = retroarchPid;
     DebugLogger.log('[AchievementWindowService] session started, retroarch pid=$retroarchPid');
+    _launchProcess();
   }
 
   void stopSession() {
     DebugLogger.log('[AchievementWindowService] session stopped');
     _retroarchPid = null;
+    _process?.stdin.close();
+    _process?.kill();
+    _process = null;
   }
 
   void dispose() {
@@ -65,6 +72,7 @@ class AchievementWindowService {
     if (_process == null) await _launchProcess();
 
     final message = jsonEncode({
+      'header': AppLocalizations(LocaleService.instance.locale).achievementUnlocked,
       'title': achievement.title,
       'points': achievement.points,
       'seconds': _holdSeconds,

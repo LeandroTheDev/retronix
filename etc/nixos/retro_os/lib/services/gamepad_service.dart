@@ -192,6 +192,18 @@ class GamepadService {
   final _splashDoneNotifier = ValueNotifier<bool>(false);
   ValueListenable<bool> get splashDone => _splashDoneNotifier;
 
+  bool _gameRunning = false;
+
+  void setGameRunning(bool value) {
+    _gameRunning = value;
+    if (value) {
+      for (final t in _repeatTimers.values) {
+        t?.cancel();
+      }
+      _repeatTimers.clear();
+    }
+  }
+
   void markSplashDone() {
     _splashDone = true;
     _splashDoneNotifier.value = true;
@@ -220,25 +232,6 @@ class GamepadService {
   ControllerType? typeForId(String id) {
     final name = _controllerNames[id];
     return name == null ? null : controllerTypeFromName(name);
-  }
-
-  // Fires [onTrigger] once when every action in [combo] has been pressed
-  // within [window] of each other (e.g. L+R to toggle the in-game overlay).
-  StreamSubscription<GamepadAction> watchCombo(
-    Set<GamepadAction> combo,
-    void Function() onTrigger, {
-    Duration window = const Duration(milliseconds: 400),
-  }) {
-    final recent = <GamepadAction>{};
-    return actions.listen((action) {
-      if (!combo.contains(action)) return;
-      recent.add(action);
-      Future.delayed(window, () => recent.remove(action));
-      if (combo.every(recent.contains)) {
-        recent.clear();
-        onTrigger();
-      }
-    });
   }
 
   void init() {
@@ -309,8 +302,10 @@ class GamepadService {
   bool _handleKeyEvent(KeyEvent event) {
     if (event is KeyUpEvent) {
       final action = _keyAction(event.logicalKey);
-      if (action != null) _buttonUpController.add(action);
-      return action != null;
+      if (action == null) return false;
+      if (_gameRunning && action != GamepadAction.start) return false;
+      _buttonUpController.add(action);
+      return true;
     }
     // KeyRepeatEvent is what the platform sends while a key is held down
     // (OS-level keyboard auto-repeat) — without it, holding a key only
@@ -318,11 +313,11 @@ class GamepadService {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
     DebugLogger.log('[GamepadService] key event: ${event.logicalKey}');
     final action = _keyAction(event.logicalKey);
-    if (action != null) {
-      _controller.add(action);
-      if (event is KeyDownEvent) _buttonDownController.add(action);
-    }
-    return action != null;
+    if (action == null) return false;
+    if (_gameRunning && action != GamepadAction.start) return false;
+    _controller.add(action);
+    if (event is KeyDownEvent) _buttonDownController.add(action);
+    return true;
   }
 
   static const _repeatableActions = {GamepadAction.up, GamepadAction.down, GamepadAction.left, GamepadAction.right};
@@ -364,6 +359,7 @@ class GamepadService {
       if (action == null) {
         return;
       }
+      if (_gameRunning && action != GamepadAction.start) return;
       if (event.value == 1.0) {
         _buttonDownController.add(action);
       } else if (event.value == 0.0) {
@@ -387,7 +383,7 @@ class GamepadService {
         _stopRepeat(timerKey);
       }
     } else if (event.type == KeyType.analog) {
-      _handleAnalog(event.gamepadId, layout, event.key, event.value);
+      if (!_gameRunning) _handleAnalog(event.gamepadId, layout, event.key, event.value);
     }
   }
 
