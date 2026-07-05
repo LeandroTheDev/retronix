@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import '../services/achievements/achievement.dart';
 import '../services/achievements/achievement_service.dart';
@@ -26,6 +27,7 @@ class _AchievementNotificationOverlayState
   final _queue = <Achievement>[];
   Achievement? _current;
   Timer? _dismissTimer;
+  final _player = AudioPlayer();
 
   static const _duration = Duration(milliseconds: 380);
   static const _holdDuration = Duration(seconds: 4);
@@ -46,6 +48,7 @@ class _AchievementNotificationOverlayState
     _sub?.cancel();
     _dismissTimer?.cancel();
     _ctrl.dispose();
+    _player.dispose();
     super.dispose();
   }
 
@@ -58,6 +61,7 @@ class _AchievementNotificationOverlayState
     if (_queue.isEmpty) return;
     setState(() => _current = _queue.removeAt(0));
     _ctrl.forward(from: 0);
+    _player.play(AssetSource('sounds/achivement-soudn-effect-23145-freesounds-community.wav'));
     _dismissTimer?.cancel();
     _dismissTimer = Timer(_holdDuration, _dismiss);
   }

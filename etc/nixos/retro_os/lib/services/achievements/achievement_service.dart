@@ -111,9 +111,9 @@ class AchievementService {
   Future<void> _poll() async {
     _pollCount++;
 
-    // Sequential UDP round-trips are fine at this cadence for a handful of
-    // conditions — deduped by memory key so achievements sharing a memory
-    // address only cost one read per poll instead of one per condition.
+    // UDP reads are serialized by the reader (RetroArch replies carry no
+    // request ID), so they run sequentially. Deduped by memory key so
+    // achievements sharing an address only cost one read per poll.
     final currentSnapshot = <String, int>{};
     var attemptedReads = 0;
     var failedReads = 0;

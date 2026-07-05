@@ -27,7 +27,10 @@ class RetroarchRamReader {
   // and logging that per-address would flood the log instead of helping.
   bool _lastReadTimedOut = false;
 
-  static const _requestTimeout = Duration(milliseconds: 500);
+  // 100 ms is plenty for a localhost UDP response; 500 ms was too conservative
+  // and caused each timed-out read during RetroArch startup to stall the poll
+  // loop for half a second per unique memory address.
+  static const _requestTimeout = Duration(milliseconds: 100);
 
   Future<void> connect() async {
     _socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
@@ -82,7 +85,7 @@ class RetroarchRamReader {
       if (!_lastReadTimedOut) {
         _lastReadTimedOut = true;
         DebugLogger.log(
-          '[RetroarchRamReader] no reply reading 0x$addressHex (timed out after $_requestTimeout) - '
+          '[RetroarchRamReader] no reply reading 0x$addressHex (timed out after ${_requestTimeout.inMilliseconds}ms) - '
           'is RetroArch running with network_cmd_enable="true" and reachable at $host:$port? '
           '(further timeouts logged again only once reads start succeeding, to avoid log spam)',
         );
