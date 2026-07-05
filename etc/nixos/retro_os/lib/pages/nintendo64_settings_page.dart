@@ -270,7 +270,7 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
                     child: _OptionRow(
                       icon: Icons.crop_free,
                       label: l.overscanAmount,
-                      value: '${_overscanAmountOptions[_overscanAmountIdx]}px',
+                      value: l.overscanAmountValue(_overscanAmountOptions[_overscanAmountIdx]),
                       selected: _selectedIndex == 6,
                       canLeft:  _overscanAmountIdx > 0,
                       canRight: _overscanAmountIdx < _overscanAmountOptions.length - 1,
@@ -292,7 +292,7 @@ class _Nintendo64SettingsPageState extends State<Nintendo64SettingsPage> {
                     child: _OptionRow(
                       icon: Icons.volume_up,
                       label: l.audioGain,
-                      value: '+${_audioVolumeOptions[_audioVolumeIdx]} dB',
+                      value: l.audioGainValue(_audioVolumeOptions[_audioVolumeIdx]),
                       selected: _selectedIndex == 8,
                       canLeft:  _audioVolumeIdx > 0,
                       canRight: _audioVolumeIdx < _audioVolumeOptions.length - 1,

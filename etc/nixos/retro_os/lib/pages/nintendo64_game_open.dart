@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../services/achievements/achievement.dart';
 import '../services/achievements/achievement_service.dart';
 import '../services/achievement_window_service.dart';
 import '../services/gamepad_service.dart';
@@ -77,16 +76,6 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       // interface comes up, so there's no race to worry about here.
       await AchievementService.instance.startWatching('Nintendo 64', widget.gameName);
       AchievementWindowService.instance.startSession(process.pid);
-
-      Future.delayed(const Duration(seconds: 10), () {
-        AchievementService.instance.debugTriggerUnlock(Achievement(
-          id: '_test_overlay',
-          title: 'Teste de Overlay',
-          description: 'Popup sobre o RetroArch',
-          points: 99,
-          conditions: const [],
-        ));
-      });
 
       void onRetroarchLine(String line, String src) {
         DebugLogger.log('[retroarch:$src] $line');
@@ -174,19 +163,18 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     if (!_showLoadingUi) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Colors.black,
         body: Center(
           child: Text(
-            'Jogo esta rodando!',
-            style: TextStyle(color: Colors.white54, fontSize: 20, letterSpacing: 3),
+            l.gameRunning,
+            style: const TextStyle(color: Colors.white54, fontSize: 20, letterSpacing: 3),
           ),
         ),
       );
     }
-
-    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(

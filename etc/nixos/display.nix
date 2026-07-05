@@ -62,9 +62,7 @@ let
       if echo "$XRANDR_QUERY" \
           | ${pkgs.gnused}/bin/sed -n "/^$OUTPUT connected/,/^[^ ]/p" \
           | ${pkgs.gnugrep}/bin/grep -qE "^ +$RESOLUTION( |$)"; then
-        ${pkgs.xrandr}/bin/xrandr --output "$OUTPUT" --mode "$RESOLUTION" --rate "$RATE" >> /tmp/retro_os.log 2>&1
-      else
-        echo "[retro_os-session] saved mode $RESOLUTION@$RATE not supported by $OUTPUT, using Xorg default" >> /tmp/retro_os.log
+        ${pkgs.xrandr}/bin/xrandr --output "$OUTPUT" --mode "$RESOLUTION" --rate "$RATE"
       fi
     fi
 
@@ -172,9 +170,7 @@ in
             | ${pkgs.gnugrep}/bin/grep ' connected' \
             | ${pkgs.gnugrep}/bin/grep -E '[0-9]+x[0-9]+\+[0-9]+\+[0-9]+')
           if [ -z "$ACTIVE" ]; then
-            echo "$(${pkgs.coreutils}/bin/date): no active output — running xrandr --auto" \
-              >> /tmp/hdmi_watchdog.log
-            ${pkgs.xrandr}/bin/xrandr --auto >> /tmp/hdmi_watchdog.log 2>&1
+            ${pkgs.xrandr}/bin/xrandr --auto
             # Give the display time to negotiate EDID before the next check.
             sleep 3
           fi

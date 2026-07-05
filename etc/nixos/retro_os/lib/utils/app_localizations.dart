@@ -137,14 +137,20 @@ class AppLocalizations {
   String get play                => _pick('PLAY', 'JOGAR');
   String get achievementsTitle   => _pick('Achievements', 'Conquistas');
   String get noAchievementsFound => _pick('No achievements yet', 'Nenhuma conquista ainda');
-  String achievementPoints(int points) => _pick('$points pts', '$points pts');
+  String achievementPoints(int points)     => _pick('$points pts', '$points pts');
+  String achievementPointsGain(int points) => _pick('+$points pts', '+$points pts');
   String achievementsSummary(int count, int points) =>
       _pick('$count achievements • $points pts', '$count conquistas • $points pts');
   String achievementsUnlockedSummary(int unlocked, int total) =>
       _pick('$unlocked / $total unlocked', '$unlocked / $total desbloqueadas');
 
+  // ── Games Page ── (title) ─────────────────────────────────────────────────
+
+  String get nintendo64Title => 'NINTENDO 64';
+
   // ── Game Open ─────────────────────────────────────────────────────────────
 
+  String get gameRunning     => _pick('Game is running!', 'Jogo está rodando!');
   String get holdStartToExit => _pick('Hold Start for 5 seconds to exit', 'Segure Start por 5 segundos para sair');
   String get pressLrToContinue => _pick('Press L+R to continue', 'Aperte L+R para continuar');
 
@@ -164,8 +170,18 @@ class AppLocalizations {
 
   // ── Gamepad ───────────────────────────────────────────────────────────────
 
+  String get controllerFallbackName => _pick('Controller', 'Controle');
   String controllerConnected(int player, String name) =>
       _pick('Player $player connected: $name', 'Jogador $player conectado: $name');
+
+  // ── Achievement Notification ──────────────────────────────────────────────
+
+  String get achievementUnlocked => _pick('ACHIEVEMENT UNLOCKED', 'CONQUISTA DESBLOQUEADA');
+
+  // ── Settings value suffixes ───────────────────────────────────────────────
+
+  String overscanAmountValue(String px) => '${px}px';
+  String audioGainValue(String db)      => '+$db dB';
 }
 
 class AppLocalizationsScope extends InheritedWidget {

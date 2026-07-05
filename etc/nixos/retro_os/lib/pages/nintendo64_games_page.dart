@@ -105,11 +105,11 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
       backgroundColor: Colors.black,
       body: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 80, bottom: 48),
+          Padding(
+            padding: const EdgeInsets.only(top: 80, bottom: 48),
             child: Text(
-              'NINTENDO 64',
-              style: TextStyle(
+              l.nintendo64Title,
+              style: const TextStyle(
                 color: Colors.white54,
                 fontSize: 18,
                 letterSpacing: 6,

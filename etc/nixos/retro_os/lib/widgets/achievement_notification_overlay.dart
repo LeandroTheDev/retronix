@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/achievements/achievement.dart';
 import '../services/achievements/achievement_service.dart';
+import '../utils/app_localizations.dart';
 
 /// Sits on top of every screen (added in MaterialApp.builder Stack) and shows
 /// a Steam-style slide-in toast whenever an achievement is unlocked.
@@ -94,6 +95,7 @@ class _Toast extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Material(
       color: Colors.transparent,
       child: Container(
@@ -124,9 +126,9 @@ class _Toast extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'CONQUISTA DESBLOQUEADA',
-                    style: TextStyle(
+                  Text(
+                    l.achievementUnlocked,
+                    style: const TextStyle(
                       color: Color(0xFFFFB300),
                       fontSize: 9,
                       fontWeight: FontWeight.bold,
@@ -146,7 +148,7 @@ class _Toast extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '+${achievement.points} pts',
+                    l.achievementPointsGain(achievement.points),
                     style: const TextStyle(
                       color: Color(0xFFFFB300),
                       fontSize: 12,
