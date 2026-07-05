@@ -91,15 +91,16 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, 4));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, 5));
       case GamepadAction.down:
-        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, 4));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, 5));
       case GamepadAction.left:
         _cycleValue(-1);
       case GamepadAction.right:
         _cycleValue(1);
       case GamepadAction.confirm:
         if (_selectedIndex == 4) _confirmClearCache();
+        if (_selectedIndex == 5) _confirmDeleteConsoles();
       case GamepadAction.back:
         Navigator.pop(context);
       default:
@@ -118,6 +119,23 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(result.exitCode == 0 ? l.clearCacheSuccess : l.clearCacheError)),
     );
+  }
+
+  Future<void> _confirmDeleteConsoles() async {
+    final l = AppLocalizations.of(context);
+    final confirmed = await showConfirmDialog(context, message: l.deleteConsolesConfirm, labelYes: l.yes, labelNo: l.no);
+    if (!mounted || !confirmed) return;
+    final consolesDir = Directory('${Platform.environment['HOME'] ?? '/home/admin'}/.local/share/retro_os/Consoles');
+    DebugLogger.log('[SystemSettingsPage] deleting consoles dir: ${consolesDir.path}');
+    try {
+      if (await consolesDir.exists()) await consolesDir.delete(recursive: true);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.deleteConsolesSuccess)));
+    } catch (e) {
+      DebugLogger.log('[SystemSettingsPage] delete consoles error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.deleteConsolesError)));
+    }
   }
 
   void _cycleValue(int dir) {
@@ -195,6 +213,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                 _OptionRow(icon: Icons.volume_up, label: l.volume, value: volumeValue, selected: _selectedIndex == 2, canLeft: !_loadingVolume && _volumeIdx > 0, canRight: !_loadingVolume && _volumeIdx < _volumeOptions.length - 1),
                 _OptionRow(icon: Icons.speaker, label: l.audioDevice, value: audioValue, selected: _selectedIndex == 3, canLeft: !_loadingAudio && _audioIdx > 0, canRight: !_loadingAudio && _audioIdx < _audioDevices.length - 1),
                 _ActionRow(icon: Icons.cleaning_services, label: l.clearCache, selected: _selectedIndex == 4),
+                _ActionRow(icon: Icons.delete_forever, label: l.deleteConsoles, selected: _selectedIndex == 5, destructive: true),
               ],
             ),
           ),
@@ -255,26 +274,48 @@ class _OptionRow extends StatelessWidget {
 }
 
 class _ActionRow extends StatelessWidget {
-  const _ActionRow({required this.icon, required this.label, required this.selected});
+  const _ActionRow({required this.icon, required this.label, required this.selected, this.destructive = false});
 
   final IconData icon;
   final String label;
   final bool selected;
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
+    final Color bg;
+    final Color fg;
+    final Color iconColor;
+    if (selected && destructive) {
+      bg = Colors.redAccent;
+      fg = Colors.white;
+      iconColor = Colors.white;
+    } else if (selected) {
+      bg = Colors.white;
+      fg = Colors.black;
+      iconColor = Colors.black;
+    } else if (destructive) {
+      bg = Colors.red.withValues(alpha: 0.12);
+      fg = Colors.redAccent;
+      iconColor = Colors.redAccent;
+    } else {
+      bg = Colors.white10;
+      fg = Colors.white;
+      iconColor = Colors.white54;
+    }
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 120),
       margin: const EdgeInsets.symmetric(horizontal: 80, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-      decoration: BoxDecoration(color: selected ? Colors.white : Colors.white10, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
       child: Row(
         children: [
-          Icon(icon, color: selected ? Colors.black : Colors.white54, size: 22),
+          Icon(icon, color: iconColor, size: 22),
           const SizedBox(width: 20),
           Text(
             label,
-            style: TextStyle(color: selected ? Colors.black : Colors.white, fontSize: 18, fontWeight: selected ? FontWeight.bold : FontWeight.normal),
+            style: TextStyle(color: fg, fontSize: 18, fontWeight: selected ? FontWeight.bold : FontWeight.normal),
           ),
         ],
       ),

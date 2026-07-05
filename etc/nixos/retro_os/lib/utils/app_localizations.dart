@@ -33,10 +33,14 @@ class AppLocalizations {
   String get audioDevice         => _pick('Audio Device', 'Dispositivo de Áudio');
   String get restartSystem       => _pick('Restart System', 'Reiniciar Sistema');
   String get restartConfirm      => _pick('Restart the system?', 'Deseja reiniciar o sistema?');
-  String get clearCache          => _pick('Clear Cache', 'Limpar Cache');
-  String get clearCacheConfirm   => _pick('Clear Nix cache? This may take a while.', 'Limpar cache do Nix? Isso pode demorar.');
-  String get clearCacheSuccess   => _pick('Cache cleared successfully', 'Cache limpo com sucesso');
-  String get clearCacheError     => _pick('Failed to clear cache', 'Falha ao limpar cache');
+  String get clearCache               => _pick('Clear Cache', 'Limpar Cache');
+  String get clearCacheConfirm        => _pick('Clear Nix cache? This may take a while.', 'Limpar cache do Nix? Isso pode demorar.');
+  String get clearCacheSuccess        => _pick('Cache cleared successfully', 'Cache limpo com sucesso');
+  String get clearCacheError          => _pick('Failed to clear cache', 'Falha ao limpar cache');
+  String get deleteConsoles           => _pick('Delete Consoles', 'Excluir Consoles');
+  String get deleteConsolesConfirm    => _pick('Delete all consoles and games from this device?', 'Excluir todos os consoles e jogos deste dispositivo?');
+  String get deleteConsolesSuccess    => _pick('Consoles deleted successfully', 'Consoles excluídos com sucesso');
+  String get deleteConsolesError      => _pick('Failed to delete consoles', 'Falha ao excluir consoles');
 
   // ── Update System Page ────────────────────────────────────────────────────
 
@@ -71,6 +75,30 @@ class AppLocalizations {
 
   // Shutdown confirm dialog
   String get shutdownConfirm => _pick('Shut down the system?', 'Deseja desligar o sistema?');
+
+  // ── Download Provider Page ────────────────────────────────────────────────
+
+  String get downloadProvider     => _pick('Download Provider', 'Download Provider');
+  String get downloadProviderTitle => _pick('DOWNLOAD PROVIDER', 'DOWNLOAD PROVIDER');
+  String get downloadProviderIdle => _pick(
+    'Enter a provider URL to download consoles and games.\n\n'
+    'Retronix strongly recommends using a local provider for security and copyright reasons.\n'
+    'Retronix is not responsible for illegal ROMs. The user bears full responsibility for any content downloaded.',
+    'Digite a URL do provider para baixar consoles e jogos.\n\n'
+    'O Retronix recomenda fortemente o uso de um provider local por questões de segurança e direitos autorais.\n'
+    'O Retronix não se responsabiliza por ROMs ilegais. O usuário tem total responsabilidade pelo conteúdo baixado.',
+  );
+  String get downloadProviderBackHint       => _pick('Back → return', 'Voltar → retornar');
+  String get downloadProviderCancelHint     => _pick('Back → cancel download', 'Voltar → cancelar download');
+  String get downloadProviderStartDownload  => _pick('Start Download', 'Iniciar Download');
+  String get downloadProviderNoUrl          => _pick('No URL set.', 'Nenhuma URL definida.');
+  String get downloadProviderFetching       => _pick('Fetching manifest...', 'Buscando manifesto...');
+  String get downloadProviderDone           => _pick('Download complete!', 'Download concluído!');
+  String get downloadProviderCancelled      => _pick('Download cancelled.', 'Download cancelado.');
+  String downloadProviderDownloading(String name) => _pick('Downloading $name...', 'Baixando $name...');
+  String downloadProviderSkipped(String name)     => _pick('$name already exists, skipping.', '$name já existe, pulando.');
+  String downloadProviderFileDone(String name)    => _pick('$name ✓', '$name ✓');
+  String downloadProviderError(Object e)          => _pick('Error: $e', 'Erro: $e');
 
   // ── Settings dialog ───────────────────────────────────────────────────────
 

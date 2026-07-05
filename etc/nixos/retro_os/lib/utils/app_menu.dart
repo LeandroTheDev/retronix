@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../pages/download_provider_page.dart';
 import '../pages/nintendo64_settings_page.dart';
 import '../pages/system_settings_page.dart';
 import '../pages/update_system_page.dart';
@@ -33,6 +34,14 @@ Future<void> showAppSettingsDialog(BuildContext context) {
         onSelect: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const SystemSettingsPage()),
+        ),
+      ),
+      SettingsOption(
+        label: l.downloadProvider,
+        icon: Icons.cloud_download_outlined,
+        onSelect: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DownloadProviderPage()),
         ),
       ),
       SettingsOption(
