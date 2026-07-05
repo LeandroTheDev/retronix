@@ -130,11 +130,11 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     try {
       if (await consolesDir.exists()) await consolesDir.delete(recursive: true);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.deleteConsolesSuccess)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.deleteConsolesSuccess, style: const TextStyle(fontFamily: 'PressStart'))));
     } catch (e) {
       DebugLogger.log('[SystemSettingsPage] delete consoles error: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.deleteConsolesError)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.deleteConsolesError, style: const TextStyle(fontFamily: 'PressStart'))));
     }
   }
 
