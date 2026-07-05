@@ -41,11 +41,6 @@ class _NotificationWindowState extends State<NotificationWindow> {
   void initState() {
     super.initState();
     stdin.transform(utf8.decoder).transform(const LineSplitter()).listen(_onMessage);
-
-    // DEBUG: dispara conquista teste após 5s
-    Future.delayed(const Duration(seconds: 5), () {
-      _onMessage('{"title":"Conquista Teste","points":100,"seconds":4}');
-    });
   }
 
   void _onMessage(String line) {
