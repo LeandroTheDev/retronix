@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'services/gamepad_service.dart';
 import 'pages/splash_page.dart';
@@ -47,39 +44,19 @@ class RetroOsApp extends StatefulWidget {
 }
 
 class _RetroOsAppState extends State<RetroOsApp> {
-  StreamSubscription<GamepadAction>? _gamepadSub;
-
   @override
   void initState() {
     super.initState();
     LocaleService.instance.addListener(_onLocaleChange);
-    _gamepadSub = GamepadService.instance.actions.listen(_onGlobalAction);
   }
 
   @override
   void dispose() {
-    _gamepadSub?.cancel();
     LocaleService.instance.removeListener(_onLocaleChange);
     super.dispose();
   }
 
   void _onLocaleChange() => setState(() {});
-
-  void _onGlobalAction(GamepadAction action) {
-    if (action == GamepadAction.l) _openTestNotification();
-  }
-
-  Future<void> _openTestNotification() async {
-    const binary = kDebugMode
-        ? '/home/leans/Templates/retronix/etc/nixos/retro_os_notification'
-            '/build/linux/x64/release/bundle/retro_os_notification'
-        : 'retro_os_notification';
-    try {
-      await Process.start(binary, ['Conquista de Teste', '25']);
-    } catch (e) {
-      DebugLogger.log('[RetroOsApp] test notification error: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
