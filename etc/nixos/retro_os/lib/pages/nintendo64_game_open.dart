@@ -304,6 +304,11 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       await _windowChannel.invokeMethod('forceFocus');
     } else {
       await _windowChannel.invokeMethod('lowerWindow');
+      final pid = _retroarchPid;
+      if (pid != null) {
+        await Process.run('xdotool', ['search', '--pid', '$pid', 'windowfocus', '--sync']);
+        DebugLogger.log('[Nintendo64GameOpen] xdotool focused retroarch (pid: $pid)');
+      }
     }
   }
 
