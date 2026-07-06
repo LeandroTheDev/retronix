@@ -29,6 +29,9 @@ class AchievementService {
   final _unlockedController = StreamController<Achievement>.broadcast();
   Stream<Achievement> get unlocked => _unlockedController.stream;
 
+  int get totalAchievements => _achievements.length;
+  int get totalUnlocked => _evaluator.unlockedCount;
+
   List<Achievement> _achievements = [];
   Timer? _pollTimer;
   String? _currentConsole;
