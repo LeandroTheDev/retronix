@@ -16,7 +16,7 @@ Retronix assembles several components into a reproducible, kiosk-style system:
 ## Features
 
 - Kiosk mode: auto-login, hidden cursor, no screensaver, no window decorations
-- Local achievement system — RetroAchievements-style, account-free, polling RetroArch via UDP
+- Local achievement system
 - Smart display management — persists user resolution, handles TV hotplug at boot
 - Bluetooth game controller support (Xbox Series S/X via xpadneo)
 - Raspberry Pi overclocking (CPU 2000 MHz, GPU 700 MHz, RAM 3200 MHz)
@@ -79,29 +79,3 @@ The activation scripts will:
 - Write overclock settings to `/boot/firmware/config.txt`
 - Force HDMI hotplug configuration
 - Seed `/home/admin/.config/` with default configs
-
-> **Note:** config.txt changes require a reboot to take effect.
-
-## Achievement System
-
-Game achievements are defined in JSON files alongside the ROM:
-
-```
-Consoles/Nintendo 64/Games/[GameName]/game_achievements.json
-```
-
-Progress is stored in:
-
-```
-~/.local/share/retro_os/achievements/progress/[console]/[game].json
-```
-
-The achievement engine reads N64 RAM by sending `READ_CORE_RAM` commands to RetroArch's network command interface (UDP port 55355) and evaluates memory conditions every 500 ms.
-
-## Audio
-
-After modifying Flutter app dependencies, regenerate the lock JSON used by the Nix build:
-
-```bash
-dart tool/lock_to_json.dart
-```

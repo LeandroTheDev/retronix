@@ -55,11 +55,11 @@ class AchievementService {
     await stopWatching();
     _currentConsole = console;
     _currentGame = game;
-    DebugLogger.log('[AchievementService] startWatching($console, $game)');
+    DebugLogger.achLog('[AchievementService] startWatching($console, $game)');
 
     _achievements = await _loadDefinitions(console, game);
     if (_achievements.isEmpty) {
-      DebugLogger.log(
+      DebugLogger.achLog(
         '[AchievementService] no achievement definitions for $console/$game '
         '(expected at ${getGameAchievementsPath(console, game)})',
       );
@@ -67,12 +67,13 @@ class AchievementService {
     }
 
     final unlockedIds = await _loadUnlockedIds(console, game);
+    _evaluator.resetSession();
     _evaluator.restoreUnlocked(unlockedIds);
     await _ramReader.connect();
 
     _pollCount = 0;
     _schedulePoll();
-    DebugLogger.log(
+    DebugLogger.achLog(
       '[AchievementService] watching ${_achievements.length} achievement(s) for $console/$game '
       '(${unlockedIds.length} already unlocked): ${_achievements.map((a) => a.title).join(', ')}',
     );
@@ -87,7 +88,7 @@ class AchievementService {
 
   Future<void> stopWatching() async {
     if (_pollTimer != null) {
-      DebugLogger.log(
+      DebugLogger.achLog(
         '[AchievementService] stopWatching($_currentConsole, $_currentGame) after $_pollCount poll(s), '
         '${_evaluator.unlockedCount}/${_achievements.length} unlocked this session',
       );
@@ -202,7 +203,7 @@ class AchievementService {
       } else {
         readStatus = '$attemptedReads/$attemptedReads read(s) ok';
       }
-      DebugLogger.log(
+      DebugLogger.achLog(
         '[AchievementService] poll #$_pollCount: $readStatus, '
         '${_evaluator.unlockedCount}/${_achievements.length} unlocked',
       );
@@ -213,12 +214,12 @@ class AchievementService {
       (address, size) => currentSnapshot[memoryKey(address, size)],
       (address, size) => _previousSnapshot[memoryKey(address, size)],
       onProgress: (achievement, progress) =>
-          DebugLogger.log('[AchievementService] progress: ${achievement.title} $progress'),
+          DebugLogger.achLog('[AchievementService] progress: ${achievement.title} $progress'),
     );
     _previousSnapshot = currentSnapshot;
 
     for (final achievement in newlyUnlocked) {
-      DebugLogger.log('[AchievementService] unlocked: ${achievement.title} (+${achievement.points})');
+      DebugLogger.achLog('[AchievementService] unlocked: ${achievement.title} (+${achievement.points})');
       _unlockedController.add(achievement);
       await _persistUnlocked(achievement.id);
     }
@@ -249,7 +250,7 @@ class AchievementService {
       final list = json.decode(await file.readAsString()) as List;
       return list.map((e) => Achievement.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      DebugLogger.log('[AchievementService] failed to parse definitions for $console/$game: $e');
+      DebugLogger.achLog('[AchievementService] failed to parse definitions for $console/$game: $e');
       return [];
     }
   }
@@ -261,7 +262,7 @@ class AchievementService {
       final list = json.decode(await file.readAsString()) as List;
       return list.cast<String>().toSet();
     } catch (e) {
-      DebugLogger.log('[AchievementService] failed to parse progress for $console/$game: $e');
+      DebugLogger.achLog('[AchievementService] failed to parse progress for $console/$game: $e');
       return {};
     }
   }

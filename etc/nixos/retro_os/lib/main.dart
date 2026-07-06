@@ -14,6 +14,7 @@ import 'services/update_checker_service.dart';
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  DebugLogger.cleanIfOld();
   GamepadService.instance.init();
   UpdateCheckerService.instance.init();
   AchievementWindowService.instance.init();

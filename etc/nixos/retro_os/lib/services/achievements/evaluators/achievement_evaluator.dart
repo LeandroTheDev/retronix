@@ -1,4 +1,5 @@
 import '../achievement.dart';
+import '../../../utils/debug_logger.dart';
 import 'achievement_condition.dart';
 
 class _ConditionState {
@@ -49,6 +50,12 @@ class _AchievementState {
   final List<_ConditionState> core;
   final List<List<_ConditionState>> altGroups;
 
+  // Mirrors rcheevos' RC_TRIGGER_STATE_WAITING: true until the first poll
+  // where the trigger does NOT fire. If conditions are already satisfied on
+  // game load (due to uninitialised RDRAM), the fire is suppressed and hit
+  // counts are reset — same as the official runtime's startup protection.
+  bool waiting = true;
+
   // Last progress reported through the onProgress callback, so AchievementService
   // only logs when something actually changed instead of every poll.
   int lastLoggedDone = 0;
@@ -88,6 +95,14 @@ class AchievementEvaluator {
   /// log, see [AchievementService].
   int get unlockedCount => _unlocked.length;
 
+  /// Clears all hit-count state and the unlocked set — call at the start of
+  /// every new game session so stale counts from the previous session don't
+  /// carry over. Follow with [restoreUnlocked] to re-populate from disk.
+  void resetSession() {
+    _state.clear();
+    _unlocked.clear();
+  }
+
   /// Restores previously-unlocked achievement IDs (e.g. loaded from disk) so
   /// they don't fire again this session.
   void restoreUnlocked(Iterable<String> achievementIds) => _unlocked.addAll(achievementIds);
@@ -109,6 +124,7 @@ class AchievementEvaluator {
     void Function(Achievement achievement, AchievementProgress progress)? onProgress,
   }) {
     final newlyUnlocked = <Achievement>[];
+    var currentTitle = '';
 
     int? read(int address, MemorySize size, {required bool previous}) =>
         previous ? previousValue(address, size) : currentValue(address, size);
@@ -195,7 +211,15 @@ class AchievementEvaluator {
     // "just keep counting, no threshold of its own" case, not "no memory".
     int tallyForAccumulator(AchievementCondition condition, _ConditionState state, bool rawSatisfied) {
       final target = condition.targetHits;
-      if (rawSatisfied && (target == null || state.hits < target)) state.hits++;
+      if (rawSatisfied && (target == null || state.hits < target)) {
+        state.hits++;
+        final val = currentValue(condition.address, condition.size);
+        DebugLogger.achLog(
+          '[Ach] $currentTitle: AddHit addr=0x${condition.address.toRadixString(16)}'
+          ' val=0x${val?.toRadixString(16) ?? "?"}'
+          ' hits=${state.hits}/${target ?? "∞"}',
+        );
+      }
       return state.hits;
     }
 
@@ -303,7 +327,14 @@ class AchievementEvaluator {
     // same as rcheevos' PauseIf flag.
     bool groupPaused(List<AchievementCondition> conditions, List<bool?> resolved) {
       for (var i = 0; i < conditions.length; i++) {
-        if (conditions[i].isPauseIf && (resolved[i] ?? false)) return true;
+        if (conditions[i].isPauseIf && (resolved[i] ?? false)) {
+          DebugLogger.achLog(
+            '[Ach] $currentTitle: group PAUSED by cond[$i]'
+            ' addr=0x${conditions[i].address.toRadixString(16)}'
+            ' val=0x${currentValue(conditions[i].address, conditions[i].size)?.toRadixString(16) ?? "?"}',
+          );
+          return true;
+        }
       }
       return false;
     }
@@ -360,6 +391,7 @@ class AchievementEvaluator {
 
     for (final achievement in achievements) {
       if (_unlocked.contains(achievement.id)) continue;
+      currentTitle = achievement.title;
 
       final state = _state.putIfAbsent(
         achievement.id,
@@ -405,6 +437,25 @@ class AchievementEvaluator {
         }
       }
 
+      // When a new hit is added, log PauseIf condition values for diagnosis —
+      // helps catch cases where a PauseIf should have prevented accumulation
+      // but didn't (wrong address or value in the achievement definition).
+      if (coreResult.done > state.lastLoggedDone) {
+        for (var i = 0; i < achievement.conditions.length; i++) {
+          if (achievement.conditions[i].isPauseIf) {
+            final c = achievement.conditions[i];
+            final val = currentValue(c.address, c.size);
+            DebugLogger.achLog(
+              '[Ach] $currentTitle: PauseIf[$i]'
+              ' addr=0x${c.address.toRadixString(16)}'
+              ' val=0x${val?.toRadixString(16) ?? "?"}'
+              ' target=0x${c.value?.toRadixString(16) ?? "?"}'
+              ' fired=${resolvedCore[i] ?? false}',
+            );
+          }
+        }
+      }
+
       if (onProgress != null &&
           (coreResult.done != state.lastLoggedDone || (achievement.altGroups.isNotEmpty && bestAltDone != state.lastLoggedAltDone))) {
         state.lastLoggedDone = coreResult.done;
@@ -429,8 +480,20 @@ class AchievementEvaluator {
           );
         }
         if (triggersOk) {
-          _unlocked.add(achievement.id);
-          newlyUnlocked.add(achievement);
+          if (state.waiting) {
+            DebugLogger.achLog('[Ach] $currentTitle: WAITING — suppressed premature fire (${coreResult.done}/${coreResult.total}), resetting hits');
+            state.reset();
+            state.lastLoggedDone = 0;
+            state.lastLoggedAltDone = achievement.altGroups.isEmpty ? null : 0;
+          } else {
+            _unlocked.add(achievement.id);
+            newlyUnlocked.add(achievement);
+          }
+        }
+      } else {
+        if (state.waiting) {
+          DebugLogger.achLog('[Ach] $currentTitle: WAITING → active (conditions not met this poll, done=${coreResult.done}/${coreResult.total})');
+          state.waiting = false;
         }
       }
     }
