@@ -38,6 +38,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
   StreamSubscription<Achievement>? _achievementSub;
   Timer? _clockTimer;
   Timer? _statsTimer;
+  final ScrollController _achievementsScroll = ScrollController();
 
   // ── Input ──────────────────────────────────────────────────────────────────
   int? _retroarchPid;
@@ -57,6 +58,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
     _clockTimer?.cancel();
     _statsTimer?.cancel();
     _achievementSub?.cancel();
+    _achievementsScroll.dispose();
     super.dispose();
   }
 
@@ -183,6 +185,13 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       if (mounted) setState(() => _sessionUnlocked.add(a));
     });
 
+    _startHudTimers();
+  }
+
+  void _startHudTimers() {
+    _clockTimer?.cancel();
+    _statsTimer?.cancel();
+
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       final now = DateTime.now();
@@ -206,6 +215,13 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
             '${now.second.toString().padLeft(2, '0')}';
       });
     }
+  }
+
+  void _stopHudTimers() {
+    _clockTimer?.cancel();
+    _clockTimer = null;
+    _statsTimer?.cancel();
+    _statsTimer = null;
   }
 
   // ── Game launch ────────────────────────────────────────────────────────────
@@ -282,6 +298,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
 
       if (!mounted) return;
       await _windowChannel.invokeMethod('forceFocus');
+      if (!mounted) return;
       if (exitCode != 0 && exitCode != -15) {
         Navigator.pop(context, l.retroarchExitError(exitCode));
       } else {
@@ -293,10 +310,10 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       GamepadService.instance.setGameRunning(false);
       await AchievementService.instance.stopWatching();
       AchievementWindowService.instance.stopSession();
-      if (mounted) {
-        await _windowChannel.invokeMethod('forceFocus');
-        Navigator.pop(context, l.retroarchLaunchError(e));
-      }
+      if (!mounted) return;
+      await _windowChannel.invokeMethod('forceFocus');
+      if (!mounted) return;
+      Navigator.pop(context, l.retroarchLaunchError(e));
     }
   }
 
@@ -306,9 +323,19 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
     DebugLogger.log('[Nintendo64GameOpen] L+R — windowFocused: $_windowFocused');
     if (_windowFocused) {
       await _windowChannel.invokeMethod('forceFocus');
+      _startHudTimers();
     } else {
+      _stopHudTimers();
       await _windowChannel.invokeMethod('lowerWindow');
     }
+  }
+
+  void _scrollAchievements(bool down) {
+    if (!_achievementsScroll.hasClients) return;
+    final pos = _achievementsScroll.offset;
+    final max = _achievementsScroll.position.maxScrollExtent;
+    final next = (pos + (down ? 60.0 : -60.0)).clamp(0.0, max);
+    _achievementsScroll.animateTo(next, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
   }
 
   List<StreamSubscription<GamepadAction>> _watchExitHold(Process process) {
@@ -327,6 +354,10 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
         _rHeld = true;
         DebugLogger.log('[Nintendo64GameOpen] R down (lHeld=$_lHeld)');
         if (_lHeld) _toggleWindowFocus();
+      } else if (action == GamepadAction.down && _windowFocused) {
+        _scrollAchievements(true);
+      } else if (action == GamepadAction.up && _windowFocused) {
+        _scrollAchievements(false);
       }
     });
     final upSub = GamepadService.instance.buttonUp.listen((action) {
@@ -408,17 +439,16 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
             // Session / Total playtime
             Row(
               children: [
-                Expanded(child: _timeBox('SESSÃO', _fmt(_sessionDuration))),
+                Expanded(child: _timeBox(l.hudSession, _fmt(_sessionDuration))),
                 const SizedBox(width: 16),
-                Expanded(child: _timeBox('TOTAL', _fmt(Duration(seconds: totalSecs)))),
+                Expanded(child: _timeBox(l.hudTotal, _fmt(Duration(seconds: totalSecs)))),
               ],
             ),
             const SizedBox(height: 20),
 
             // Achievements
-            if (totalAch > 0) _achievementsCard(unlockedAch, totalAch),
-
-            const Spacer(),
+            if (totalAch > 0) Expanded(child: _achievementsCard(l, unlockedAch, totalAch, _achievementsScroll)),
+            if (totalAch == 0) const Spacer(),
 
             // CPU / GPU bars
             Row(
@@ -468,7 +498,10 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
     );
   }
 
-  Widget _achievementsCard(int unlocked, int total) {
+  Widget _achievementsCard(AppLocalizations l, int unlocked, int total, ScrollController scroll) {
+    final service = AchievementService.instance;
+    final all = service.achievements;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -480,43 +513,55 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
         children: [
           Row(
             children: [
-              const Text('CONQUISTAS', style: TextStyle(color: Colors.white38, fontSize: 11, letterSpacing: 2)),
+              Text(l.achievementsTitle.toUpperCase(), style: const TextStyle(color: Colors.white38, fontSize: 11, letterSpacing: 2)),
               const Spacer(),
               Text(
-                '$unlocked / $total',
+                l.achievementsUnlockedSummary(unlocked, total),
                 style: const TextStyle(color: Colors.white54, fontSize: 13, letterSpacing: 1),
               ),
             ],
           ),
-          if (_sessionUnlocked.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            ..._sessionUnlocked.take(4).map(
-              (a) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    const Icon(Icons.check_circle_outline, color: Colors.amber, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(a.title, style: const TextStyle(color: Colors.white70, fontSize: 14)),
-                    ),
-                    Text('+${a.points}pts', style: const TextStyle(color: Colors.amber, fontSize: 12)),
-                  ],
-                ),
-              ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: ListView.builder(
+              controller: scroll,
+              itemCount: all.length,
+              itemBuilder: (_, i) {
+                final a = all[i];
+                final done = service.isUnlocked(a.id);
+                final isNew = _sessionUnlocked.any((u) => u.id == a.id);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        done ? Icons.check_circle_outline : Icons.radio_button_unchecked,
+                        color: isNew ? Colors.amber : (done ? Colors.white54 : Colors.white12),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          a.title,
+                          style: TextStyle(
+                            color: done ? Colors.white70 : Colors.white24,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        l.achievementPointsGain(a.points),
+                        style: TextStyle(
+                          color: isNew ? Colors.amber : (done ? Colors.white38 : Colors.white12),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-            if (_sessionUnlocked.length > 4)
-              Text(
-                '+${_sessionUnlocked.length - 4} nesta sessão',
-                style: const TextStyle(color: Colors.white38, fontSize: 12),
-              ),
-          ] else ...[
-            const SizedBox(height: 8),
-            const Text(
-              'Nenhuma conquistada nesta sessão',
-              style: TextStyle(color: Colors.white24, fontSize: 13),
-            ),
-          ],
+          ),
         ],
       ),
     );

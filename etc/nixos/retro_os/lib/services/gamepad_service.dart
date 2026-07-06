@@ -303,7 +303,7 @@ class GamepadService {
     if (event is KeyUpEvent) {
       final action = _keyAction(event.logicalKey);
       if (action == null) return false;
-      if (_gameRunning && action != GamepadAction.start && action != GamepadAction.l && action != GamepadAction.r) return false;
+      if (_gameRunning && !_gameAllowedActions.contains(action)) return false;
       _buttonUpController.add(action);
       return true;
     }
@@ -314,13 +314,14 @@ class GamepadService {
     DebugLogger.log('[GamepadService] key event: ${event.logicalKey}');
     final action = _keyAction(event.logicalKey);
     if (action == null) return false;
-    if (_gameRunning && action != GamepadAction.start && action != GamepadAction.l && action != GamepadAction.r) return false;
+    if (_gameRunning && !_gameAllowedActions.contains(action)) return false;
     _controller.add(action);
     if (event is KeyDownEvent) _buttonDownController.add(action);
     return true;
   }
 
   static const _repeatableActions = {GamepadAction.up, GamepadAction.down, GamepadAction.left, GamepadAction.right};
+  static const _gameAllowedActions = {GamepadAction.start, GamepadAction.l, GamepadAction.r, GamepadAction.up, GamepadAction.down};
 
   // Captures vendorId/productId from the first event of each controller
   // (Gamepads.list() doesn't expose these — only available per-event, and
@@ -359,7 +360,7 @@ class GamepadService {
       if (action == null) {
         return;
       }
-      if (_gameRunning && action != GamepadAction.start && action != GamepadAction.l && action != GamepadAction.r) return;
+      if (_gameRunning && !_gameAllowedActions.contains(action)) return;
       if (event.value == 1.0) {
         _buttonDownController.add(action);
       } else if (event.value == 0.0) {

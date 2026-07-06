@@ -31,6 +31,8 @@ class AchievementService {
 
   int get totalAchievements => _achievements.length;
   int get totalUnlocked => _evaluator.unlockedCount;
+  List<Achievement> get achievements => List.unmodifiable(_achievements);
+  bool isUnlocked(String id) => _evaluator.isUnlocked(id);
 
   List<Achievement> _achievements = [];
   Timer? _pollTimer;

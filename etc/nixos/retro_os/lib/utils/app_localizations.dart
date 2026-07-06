@@ -181,6 +181,11 @@ class AppLocalizations {
   String get gameRunning     => _pick('Game is running!', 'Jogo está rodando!');
   String get holdStartToExit => _pick('Hold Start for 5 seconds to exit', 'Segure Start por 5 segundos para sair');
 
+  String get hudSession          => _pick('SESSION', 'SESSÃO');
+  String get hudTotal            => _pick('TOTAL', 'TOTAL');
+  String get hudNoneThisSession  => _pick('None unlocked this session', 'Nenhuma conquistada nesta sessão');
+  String hudMoreThisSession(int n) => _pick('+$n more this session', '+$n nesta sessão');
+
   String openingGame(String name)      => _pick('Opening $name', 'Abrindo $name');
   String romNotFound(String name)      => _pick('ROM not found for: $name', 'ROM não encontrada para: $name');
   String coreNotFoundPath(String path) => _pick('Core not found: $path', 'Core não encontrado: $path');
