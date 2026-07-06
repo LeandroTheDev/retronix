@@ -172,6 +172,15 @@ class AppLocalizations {
   String achievementsUnlockedSummary(int unlocked, int total) =>
       _pick('$unlocked / $total unlocked', '$unlocked / $total desbloqueadas');
 
+  // ── Game Details Page (extra) ─────────────────────────────────────────────
+
+  String get cancel                    => _pick('Cancel', 'Cancelar');
+  String get totalPlaytime             => _pick('Total Playtime', 'Tempo Total');
+  String get neverPlayed               => _pick('Never played', 'Nunca jogado');
+  String get resetAchievements         => _pick('Reset Achievements', 'Resetar Conquistas');
+  String get resetAchievementsConfirm  => _pick('Reset all achievement progress for this game?', 'Resetar todo o progresso de conquistas deste jogo?');
+  String get resetAchievementsButton   => _pick('Reset', 'Resetar');
+
   // ── Games Page ── (title) ─────────────────────────────────────────────────
 
   String get nintendo64Title => 'NINTENDO 64';

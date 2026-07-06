@@ -12,6 +12,7 @@ import '../utils/devices.dart';
 import '../utils/settings_service.dart';
 import '../utils/app_localizations.dart';
 import '../utils/locale_service.dart';
+import '../widgets/achievement_row.dart';
 
 const _windowChannel = MethodChannel('app/window');
 
@@ -39,6 +40,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
   Timer? _clockTimer;
   Timer? _statsTimer;
   final ScrollController _achievementsScroll = ScrollController();
+  StreamSubscription<GamepadAction>? _scrollSub;
 
   // ── Input ──────────────────────────────────────────────────────────────────
   int? _retroarchPid;
@@ -58,7 +60,9 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
     _clockTimer?.cancel();
     _statsTimer?.cancel();
     _achievementSub?.cancel();
+    _scrollSub?.cancel();
     _achievementsScroll.dispose();
+    GamepadService.instance.setDpadScrollEnabled(false);
     super.dispose();
   }
 
@@ -201,6 +205,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
             '${now.second.toString().padLeft(2, '0')}';
         _sessionDuration = now.difference(_sessionStart!);
       });
+      if (_sessionDuration.inSeconds % 60 == 0) { _savePlaytime(); }
     });
 
     // CPU read takes ~1s internally, so 3s period avoids overlapping calls
@@ -324,7 +329,15 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
     if (_windowFocused) {
       await _windowChannel.invokeMethod('forceFocus');
       _startHudTimers();
+      GamepadService.instance.setDpadScrollEnabled(true);
+      _scrollSub = GamepadService.instance.actions.listen((action) {
+        if (action == GamepadAction.down) _scrollAchievements(true);
+        else if (action == GamepadAction.up) _scrollAchievements(false);
+      });
     } else {
+      _scrollSub?.cancel();
+      _scrollSub = null;
+      GamepadService.instance.setDpadScrollEnabled(false);
       _stopHudTimers();
       await _windowChannel.invokeMethod('lowerWindow');
     }
@@ -334,7 +347,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
     if (!_achievementsScroll.hasClients) return;
     final pos = _achievementsScroll.offset;
     final max = _achievementsScroll.position.maxScrollExtent;
-    final next = (pos + (down ? 60.0 : -60.0)).clamp(0.0, max);
+    final next = (pos + (down ? 176.0 : -176.0)).clamp(0.0, max);
     _achievementsScroll.animateTo(next, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
   }
 
@@ -354,10 +367,6 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
         _rHeld = true;
         DebugLogger.log('[Nintendo64GameOpen] R down (lHeld=$_lHeld)');
         if (_lHeld) _toggleWindowFocus();
-      } else if (action == GamepadAction.down && _windowFocused) {
-        _scrollAchievements(true);
-      } else if (action == GamepadAction.up && _windowFocused) {
-        _scrollAchievements(false);
       }
     });
     final upSub = GamepadService.instance.buttonUp.listen((action) {
@@ -525,39 +534,15 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
           Expanded(
             child: ListView.builder(
               controller: scroll,
+              padding: const EdgeInsets.only(top: 4),
               itemCount: all.length,
               itemBuilder: (_, i) {
                 final a = all[i];
-                final done = service.isUnlocked(a.id);
-                final isNew = _sessionUnlocked.any((u) => u.id == a.id);
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        done ? Icons.check_circle_outline : Icons.radio_button_unchecked,
-                        color: isNew ? Colors.amber : (done ? Colors.white54 : Colors.white12),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          a.title,
-                          style: TextStyle(
-                            color: done ? Colors.white70 : Colors.white24,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        l.achievementPointsGain(a.points),
-                        style: TextStyle(
-                          color: isNew ? Colors.amber : (done ? Colors.white38 : Colors.white12),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
+                return AchievementRow(
+                  achievement: a,
+                  unlocked: service.isUnlocked(a.id),
+                  isNew: _sessionUnlocked.any((u) => u.id == a.id),
+                  l: l,
                 );
               },
             ),

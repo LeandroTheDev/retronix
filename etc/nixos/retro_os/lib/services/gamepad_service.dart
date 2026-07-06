@@ -193,6 +193,9 @@ class GamepadService {
   ValueListenable<bool> get splashDone => _splashDoneNotifier;
 
   bool _gameRunning = false;
+  bool _dpadScrollEnabled = false;
+
+  void setDpadScrollEnabled(bool value) => _dpadScrollEnabled = value;
 
   void setGameRunning(bool value) {
     _gameRunning = value;
@@ -384,7 +387,7 @@ class GamepadService {
         _stopRepeat(timerKey);
       }
     } else if (event.type == KeyType.analog) {
-      if (!_gameRunning) _handleAnalog(event.gamepadId, layout, event.key, event.value);
+      if (!_gameRunning || _dpadScrollEnabled) _handleAnalog(event.gamepadId, layout, event.key, event.value);
     }
   }
 

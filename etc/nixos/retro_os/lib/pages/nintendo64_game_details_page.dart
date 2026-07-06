@@ -6,13 +6,13 @@ import '../services/achievements/achievement.dart';
 import '../services/gamepad_service.dart';
 import '../utils/app_localizations.dart';
 import '../utils/debug_logger.dart';
+import '../utils/dialogs.dart';
 import '../utils/devices.dart';
+import '../widgets/achievement_row.dart';
 import 'nintendo64_game_open.dart';
 
 /// Shows one Nintendo 64 game before launching it: cover art, a Play button,
-/// and its achievement list (read straight from `game_achievements.json` -
-/// this is a read-only display, not the live [AchievementService] poll, so
-/// it works without RetroArch running).
+/// total playtime, a reset-achievements button, and the achievement list.
 class Nintendo64GameDetailsPage extends StatefulWidget {
   const Nintendo64GameDetailsPage({super.key, required this.gameName});
 
@@ -27,16 +27,20 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
 
   List<Achievement> _achievements = [];
   Set<String> _unlockedIds = {};
+  int _totalPlaytimeSecs = 0;
   bool _loading = true;
   late final StreamSubscription<GamepadAction> _sub;
   final _scrollController = ScrollController();
+
+  // 0 = Play, 1 = Reset Achievements
+  int _focusedButton = 0;
 
   @override
   void initState() {
     super.initState();
     _sub = GamepadService.instance.actions.listen(_handleAction);
     DebugLogger.log('[Nintendo64GameDetailsPage] initState — subscribed to gamepad stream');
-    _loadAchievements();
+    _load();
   }
 
   @override
@@ -46,7 +50,7 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
     super.dispose();
   }
 
-  Future<void> _loadAchievements() async {
+  Future<void> _load() async {
     final defFile = File(getGameAchievementsPath(_console, widget.gameName));
     var achievements = <Achievement>[];
     if (await defFile.exists()) {
@@ -54,7 +58,7 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
         final list = json.decode(await defFile.readAsString()) as List;
         achievements = list.map((e) => Achievement.fromJson(e as Map<String, dynamic>)).toList();
       } catch (e) {
-        DebugLogger.log('[Nintendo64GameDetailsPage] failed to parse achievements for ${widget.gameName}: $e');
+        DebugLogger.log('[Nintendo64GameDetailsPage] failed to parse achievements: $e');
       }
     }
 
@@ -65,7 +69,18 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
         final list = json.decode(await progressFile.readAsString()) as List;
         unlockedIds = list.cast<String>().toSet();
       } catch (e) {
-        DebugLogger.log('[Nintendo64GameDetailsPage] failed to parse progress for ${widget.gameName}: $e');
+        DebugLogger.log('[Nintendo64GameDetailsPage] failed to parse progress: $e');
+      }
+    }
+
+    var totalPlaytimeSecs = 0;
+    final playtimeFile = File(getGamePlaytimePath(_console, widget.gameName));
+    if (await playtimeFile.exists()) {
+      try {
+        final data = json.decode(await playtimeFile.readAsString()) as Map<String, dynamic>;
+        totalPlaytimeSecs = (data['total_playtime_seconds'] as int?) ?? 0;
+      } catch (e) {
+        DebugLogger.log('[Nintendo64GameDetailsPage] failed to parse playtime: $e');
       }
     }
 
@@ -73,6 +88,7 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
     setState(() {
       _achievements = achievements;
       _unlockedIds = unlockedIds;
+      _totalPlaytimeSecs = totalPlaytimeSecs;
       _loading = false;
     });
   }
@@ -80,11 +96,20 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
   void _handleAction(GamepadAction action) {
     DebugLogger.log('[Nintendo64GameDetailsPage] _handleAction: $action isCurrent=${ModalRoute.of(context)?.isCurrent}');
     if (ModalRoute.of(context)?.isCurrent != true) return;
+    final hasReset = _unlockedIds.isNotEmpty;
     switch (action) {
       case GamepadAction.back:
         Navigator.pop(context);
       case GamepadAction.confirm:
-        _playGame();
+        if (_focusedButton == 1 && hasReset) {
+          _confirmResetAchievements(AppLocalizations.of(context));
+        } else {
+          _playGame();
+        }
+      case GamepadAction.left:
+        if (hasReset && _focusedButton == 1) setState(() => _focusedButton = 0);
+      case GamepadAction.right:
+        if (hasReset && _focusedButton == 0) setState(() => _focusedButton = 1);
       case GamepadAction.up:
         _scrollController.animateTo(
           (_scrollController.offset - 176).clamp(0.0, _scrollController.position.maxScrollExtent),
@@ -109,10 +134,36 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
     );
     if (!mounted) return;
     if (error != null) {
-      // Propagate launch failures up to the games list, same as before this
-      // page existed - the games list is what owns the error snackbar.
       Navigator.pop(context, error);
+      return;
     }
+    // Reload playtime and achievements after returning from the game
+    setState(() => _focusedButton = 0);
+    _load();
+  }
+
+  Future<void> _confirmResetAchievements(AppLocalizations l) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      message: l.resetAchievementsConfirm,
+      labelYes: l.resetAchievementsButton,
+      labelNo: l.cancel,
+    );
+    if (!confirmed || !mounted) return;
+
+    final progressFile = File(getGameProgressPath(_console, widget.gameName));
+    if (await progressFile.exists()) await progressFile.delete();
+    DebugLogger.log('[Nintendo64GameDetailsPage] achievements reset for ${widget.gameName}');
+    if (mounted) setState(() => _unlockedIds = {});
+  }
+
+  String _fmtPlaytime(AppLocalizations l) {
+    if (_totalPlaytimeSecs == 0) return l.neverPlayed;
+    final d = Duration(seconds: _totalPlaytimeSecs);
+    final h = d.inHours.toString().padLeft(2, '0');
+    final m = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$h:$m:$s';
   }
 
   @override
@@ -153,8 +204,20 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
                           widget.gameName.toUpperCase(),
                           style: const TextStyle(color: Colors.white, fontSize: 24, letterSpacing: 3, fontWeight: FontWeight.bold),
                         ),
+                        const SizedBox(height: 8),
+                        // Playtime
+                        Row(
+                          children: [
+                            const Icon(Icons.timer_outlined, color: Colors.white38, size: 14),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${l.totalPlaytime}: ${_fmtPlaytime(l)}',
+                              style: const TextStyle(color: Colors.white38, fontSize: 13, letterSpacing: 1),
+                            ),
+                          ],
+                        ),
                         if (!_loading && _achievements.isNotEmpty) ...[
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           Text(
                             l.achievementsSummary(_achievements.length, totalPoints),
                             style: const TextStyle(color: Colors.white38, fontSize: 14, letterSpacing: 1),
@@ -168,7 +231,23 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
                           ],
                         ],
                         const SizedBox(height: 20),
-                        _PlayButton(label: l.play, onTap: _playGame),
+                        Row(
+                          children: [
+                            _PlayButton(
+                              label: l.play,
+                              onTap: _playGame,
+                              focused: _focusedButton == 0,
+                            ),
+                            if (!_loading && _unlockedIds.isNotEmpty) ...[
+                              const SizedBox(width: 12),
+                              _ResetButton(
+                                label: l.resetAchievements,
+                                onTap: () => _confirmResetAchievements(l),
+                                focused: _focusedButton == 1,
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -193,7 +272,7 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
     if (_achievements.isEmpty) {
       return Center(
         child: Text(l.noAchievementsFound, style: const TextStyle(color: Colors.white30, fontSize: 16)),
-      );
+    );
     }
     return ListView.builder(
       controller: _scrollController,
@@ -201,33 +280,46 @@ class _Nintendo64GameDetailsPageState extends State<Nintendo64GameDetailsPage> {
       itemCount: _achievements.length,
       itemBuilder: (context, index) {
         final a = _achievements[index];
-        return _AchievementRow(achievement: a, unlocked: _unlockedIds.contains(a.id), l: l);
+        return AchievementRow(achievement: a, unlocked: _unlockedIds.contains(a.id), l: l);
       },
     );
   }
 }
 
 class _PlayButton extends StatelessWidget {
-  const _PlayButton({required this.label, required this.onTap});
+  const _PlayButton({required this.label, required this.onTap, required this.focused});
 
   final String label;
   final VoidCallback onTap;
+  final bool focused;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(
+          color: focused ? Colors.white : Colors.white24,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: focused
+              ? [BoxShadow(color: Colors.white.withValues(alpha: 0.3), blurRadius: 12, spreadRadius: 1)]
+              : null,
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.play_arrow, color: Colors.black),
+            Icon(Icons.play_arrow, color: focused ? Colors.black : Colors.white70),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 2),
+              style: TextStyle(
+                color: focused ? Colors.black : Colors.white70,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
             ),
           ],
         ),
@@ -236,94 +328,41 @@ class _PlayButton extends StatelessWidget {
   }
 }
 
-class _AchievementRow extends StatelessWidget {
-  const _AchievementRow({required this.achievement, required this.unlocked, required this.l});
+class _ResetButton extends StatelessWidget {
+  const _ResetButton({required this.label, required this.onTap, required this.focused});
 
-  final Achievement achievement;
-  final bool unlocked;
-  final AppLocalizations l;
-
-  static const _gold = Color(0xFFFFB300);
-  static const _goldDim = Color(0x33FFB300);
+  final String label;
+  final VoidCallback onTap;
+  final bool focused;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: unlocked ? const Color(0x14FFB300) : Colors.white10,
-        borderRadius: BorderRadius.circular(8),
-        border: unlocked ? Border.all(color: _goldDim, width: 1) : null,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: unlocked ? const Color(0x22FFB300) : Colors.white10,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Icon(
-              Icons.emoji_events,
-              color: unlocked ? _gold : Colors.white30,
-              size: 26,
-            ),
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: focused ? Colors.redAccent.withValues(alpha: 0.15) : Colors.transparent,
+          border: Border.all(
+            color: focused ? Colors.redAccent : Colors.redAccent.withValues(alpha: 0.4),
           ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  achievement.title,
-                  style: TextStyle(
-                    color: unlocked ? Colors.white : Colors.white70,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (achievement.description.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    achievement.description,
-                    style: TextStyle(
-                      color: unlocked ? Colors.white54 : Colors.white30,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ],
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: focused
+              ? [BoxShadow(color: Colors.redAccent.withValues(alpha: 0.25), blurRadius: 12, spreadRadius: 1)]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.restart_alt, color: Colors.redAccent, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1),
             ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: unlocked ? _goldDim : Colors.white10,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (unlocked) ...[
-                  const Icon(Icons.check, color: _gold, size: 12),
-                  const SizedBox(width: 4),
-                ],
-                Text(
-                  l.achievementPoints(achievement.points),
-                  style: TextStyle(
-                    color: unlocked ? _gold : Colors.white54,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
