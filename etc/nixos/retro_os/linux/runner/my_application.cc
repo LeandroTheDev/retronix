@@ -4,6 +4,8 @@
 
 #include "flutter/generated_plugin_registrant.h"
 
+#define WINDOW_CHANNEL "app/window"
+
 struct _MyApplication {
   GtkApplication parent_instance;
   char** dart_entrypoint_arguments;
@@ -39,6 +41,30 @@ static void my_application_activate(GApplication* application) {
   gtk_widget_realize(GTK_WIDGET(view));
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
   gtk_widget_grab_focus(GTK_WIDGET(view));
+
+  // Method channel so Flutter can request window focus
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+  FlMethodChannel* channel = fl_method_channel_new(
+      fl_engine_get_binary_messenger(fl_view_get_engine(view)),
+      WINDOW_CHANNEL,
+      FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(
+      channel,
+      [](FlMethodChannel* channel, FlMethodCall* method_call, gpointer user_data) {
+        GtkWindow* win = GTK_WINDOW(user_data);
+        const gchar* method = fl_method_call_get_name(method_call);
+        if (strcmp(method, "forceFocus") == 0) {
+          gtk_window_present(win);
+          fl_method_call_respond_success(method_call, nullptr, nullptr);
+        } else if (strcmp(method, "lowerWindow") == 0) {
+          GdkWindow* gdk_win = gtk_widget_get_window(GTK_WIDGET(win));
+          if (gdk_win) gdk_window_lower(gdk_win);
+          fl_method_call_respond_success(method_call, nullptr, nullptr);
+        } else {
+          fl_method_call_respond_not_implemented(method_call, nullptr);
+        }
+      },
+      window, nullptr);
 }
 
 // Implements GApplication::local_command_line.

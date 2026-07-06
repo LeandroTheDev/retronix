@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/achievements/achievement_service.dart';
 import '../services/achievement_window_service.dart';
 import '../services/gamepad_service.dart';
@@ -9,6 +10,8 @@ import '../utils/devices.dart';
 import '../utils/settings_service.dart';
 import '../utils/app_localizations.dart';
 import '../utils/locale_service.dart';
+
+const _windowChannel = MethodChannel('app/window');
 
 class Nintendo64GameOpen extends StatefulWidget {
   const Nintendo64GameOpen({super.key, required this.gameName});
@@ -123,17 +126,49 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
   // controllers don't have one.
   Timer? _exitHoldTimer;
 
+  // L+R toggles window focus between the Flutter UI and RetroArch.
+  bool _windowFocused = false;
+  bool _lHeld = false;
+  bool _rHeld = false;
+
+  Future<void> _toggleWindowFocus() async {
+    _windowFocused = !_windowFocused;
+    DebugLogger.log('[Nintendo64GameOpen] L+R — windowFocused: $_windowFocused');
+    if (_windowFocused) {
+      await _windowChannel.invokeMethod('forceFocus');
+    } else {
+      await _windowChannel.invokeMethod('lowerWindow');
+    }
+  }
+
   List<StreamSubscription<GamepadAction>> _watchExitHold(Process process) {
     final downSub = GamepadService.instance.buttonDown.listen((action) {
-      if (action != GamepadAction.start) return;
-      _exitHoldTimer?.cancel();
-      _exitHoldTimer = Timer(const Duration(seconds: 5), () {
-        DebugLogger.log('[Nintendo64GameOpen] start held 5s — killing retroarch');
-        process.kill();
-      });
+      if (action == GamepadAction.start) {
+        _exitHoldTimer?.cancel();
+        _exitHoldTimer = Timer(const Duration(seconds: 5), () {
+          DebugLogger.log('[Nintendo64GameOpen] start held 5s — killing retroarch');
+          process.kill();
+        });
+      } else if (action == GamepadAction.l) {
+        _lHeld = true;
+        DebugLogger.log('[Nintendo64GameOpen] L down (rHeld=$_rHeld)');
+        if (_rHeld) _toggleWindowFocus();
+      } else if (action == GamepadAction.r) {
+        _rHeld = true;
+        DebugLogger.log('[Nintendo64GameOpen] R down (lHeld=$_lHeld)');
+        if (_lHeld) _toggleWindowFocus();
+      }
     });
     final upSub = GamepadService.instance.buttonUp.listen((action) {
       if (action == GamepadAction.start) _exitHoldTimer?.cancel();
+      if (action == GamepadAction.l) {
+        _lHeld = false;
+        DebugLogger.log('[Nintendo64GameOpen] L up');
+      }
+      if (action == GamepadAction.r) {
+        _rHeld = false;
+        DebugLogger.log('[Nintendo64GameOpen] R up');
+      }
     });
     return [downSub, upSub];
   }

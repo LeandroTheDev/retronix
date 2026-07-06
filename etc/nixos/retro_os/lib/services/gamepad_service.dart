@@ -303,7 +303,7 @@ class GamepadService {
     if (event is KeyUpEvent) {
       final action = _keyAction(event.logicalKey);
       if (action == null) return false;
-      if (_gameRunning && action != GamepadAction.start) return false;
+      if (_gameRunning && action != GamepadAction.start && action != GamepadAction.l && action != GamepadAction.r) return false;
       _buttonUpController.add(action);
       return true;
     }
@@ -314,7 +314,7 @@ class GamepadService {
     DebugLogger.log('[GamepadService] key event: ${event.logicalKey}');
     final action = _keyAction(event.logicalKey);
     if (action == null) return false;
-    if (_gameRunning && action != GamepadAction.start) return false;
+    if (_gameRunning && action != GamepadAction.start && action != GamepadAction.l && action != GamepadAction.r) return false;
     _controller.add(action);
     if (event is KeyDownEvent) _buttonDownController.add(action);
     return true;
@@ -359,7 +359,7 @@ class GamepadService {
       if (action == null) {
         return;
       }
-      if (_gameRunning && action != GamepadAction.start) return;
+      if (_gameRunning && action != GamepadAction.start && action != GamepadAction.l && action != GamepadAction.r) return;
       if (event.value == 1.0) {
         _buttonDownController.add(action);
       } else if (event.value == 0.0) {
