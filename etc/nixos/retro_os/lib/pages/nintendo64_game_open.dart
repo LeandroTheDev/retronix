@@ -281,6 +281,7 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       AchievementWindowService.instance.stopSession();
 
       if (!mounted) return;
+      await _windowChannel.invokeMethod('forceFocus');
       if (exitCode != 0 && exitCode != -15) {
         Navigator.pop(context, l.retroarchExitError(exitCode));
       } else {
@@ -292,7 +293,10 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       GamepadService.instance.setGameRunning(false);
       await AchievementService.instance.stopWatching();
       AchievementWindowService.instance.stopSession();
-      if (mounted) Navigator.pop(context, l.retroarchLaunchError(e));
+      if (mounted) {
+        await _windowChannel.invokeMethod('forceFocus');
+        Navigator.pop(context, l.retroarchLaunchError(e));
+      }
     }
   }
 
@@ -304,11 +308,6 @@ class _Nintendo64GameOpenState extends State<Nintendo64GameOpen> {
       await _windowChannel.invokeMethod('forceFocus');
     } else {
       await _windowChannel.invokeMethod('lowerWindow');
-      final pid = _retroarchPid;
-      if (pid != null) {
-        await Process.run('xdotool', ['search', '--pid', '$pid', 'windowfocus', '--sync']);
-        DebugLogger.log('[Nintendo64GameOpen] xdotool focused retroarch (pid: $pid)');
-      }
     }
   }
 

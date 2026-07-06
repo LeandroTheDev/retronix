@@ -54,11 +54,11 @@ static void my_application_activate(GApplication* application) {
         GtkWindow* win = GTK_WINDOW(user_data);
         const gchar* method = fl_method_call_get_name(method_call);
         if (strcmp(method, "forceFocus") == 0) {
+          gtk_widget_show(GTK_WIDGET(win));
           gtk_window_present(win);
           fl_method_call_respond_success(method_call, nullptr, nullptr);
         } else if (strcmp(method, "lowerWindow") == 0) {
-          GdkWindow* gdk_win = gtk_widget_get_window(GTK_WIDGET(win));
-          if (gdk_win) gdk_window_lower(gdk_win);
+          gtk_widget_hide(GTK_WIDGET(win));
           fl_method_call_respond_success(method_call, nullptr, nullptr);
         } else {
           fl_method_call_respond_not_implemented(method_call, nullptr);
