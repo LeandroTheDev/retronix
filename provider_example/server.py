@@ -19,6 +19,12 @@ CONSOLES_DIR = Path(__file__).parent / "Consoles"
 # ───────────────────────────────────────────────────────────────────────────────
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
+BIOS_EXTS = {".bin", ".mec", ".nvm"}
+
+# Maps console folder name → RetroArch system subdirectory for BIOS files
+BIOS_DEST_MAP = {
+    "Playstation 2": "PCSX2/bios",
+}
 
 
 def build_manifest() -> dict:
@@ -57,15 +63,32 @@ def build_manifest() -> dict:
 
                 games.append(game_entry)
 
-        consoles.append(
-            {
-                "name": console_name,
-                "image": _to_url(console_image) if console_image else None,
-                "games": games,
-            }
-        )
+        console_entry: dict = {
+            "name": console_name,
+            "image": _to_url(console_image) if console_image else None,
+            "games": games,
+        }
+
+        bios_dest = BIOS_DEST_MAP.get(console_name)
+        if bios_dest:
+            bios_files = _find_bios_files(console_dir)
+            if bios_files:
+                console_entry["bios_dest"] = bios_dest
+                console_entry["bios"] = [_to_url(f) for f in bios_files]
+
+        consoles.append(console_entry)
 
     return {"consoles": consoles}
+
+
+def _find_bios_files(console_dir: Path) -> list[Path]:
+    bios_dir = console_dir / ".bios"
+    if not bios_dir.is_dir():
+        return []
+    return sorted(
+        entry for entry in bios_dir.rglob("*")
+        if entry.is_file() and entry.suffix.lower() in BIOS_EXTS
+    )
 
 
 def _find_image(directory: Path, stem: str) -> Path | None:
