@@ -70,6 +70,15 @@
     };
   };
 
+  # bwrap setuid — needed because the Pi kernel disables unprivileged user
+  # namespaces, so umu-launcher/Proton cannot sandbox itself otherwise.
+  security.wrappers.bwrap = {
+    source = "${pkgs.bubblewrap}/bin/bwrap";
+    owner  = "root";
+    group  = "root";
+    setuid = true;
+  };
+
   # Goodies for administrators (no passwords)
   security.sudo.wheelNeedsPassword = false;
   security.pam.services.su = {

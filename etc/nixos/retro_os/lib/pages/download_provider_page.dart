@@ -26,7 +26,7 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
   int _selected     = _kUrlField;
   bool _downloading  = false;
   bool _cancelled    = false;
-  HttpClient? _activeClient;
+  final _activeClients = <HttpClient>{};
 
   String get _consolesDir {
     final home = Platform.environment['HOME'] ?? '/home/admin';
@@ -59,7 +59,8 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
           _cancelled   = true;
           _downloading = false;
         });
-        _activeClient?.close(force: true);
+        for (final c in _activeClients) c.close(force: true);
+        _activeClients.clear();
         _appendLog(AppLocalizations.of(context).downloadProviderCancelled);
       }
       return;
@@ -111,49 +112,50 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
       final manifest = await _fetchManifest();
       final consoles = (manifest['consoles'] as List).cast<Map<String, dynamic>>();
 
+      // Collect all tasks upfront so they can run in parallel.
+      final tasks = <({String url, String label, String? localPath})>[];
       for (final console in consoles) {
-        if (_cancelled) break;
         final consoleName = console['name'] as String;
-
-        await _downloadAsset(console['image'] as String?, consoleName);
+        final imgUrl = console['image'] as String?;
+        if (imgUrl != null) tasks.add((url: imgUrl, label: consoleName, localPath: null));
 
         final biosDest = console['bios_dest'] as String?;
         if (biosDest != null && console.containsKey('bios')) {
-          final biosUrls = (console['bios'] as List).cast<String>();
-          for (final biosUrl in biosUrls) {
-            if (_cancelled) break;
-            await _downloadAsset(
-              biosUrl,
-              '$consoleName BIOS',
-              localPathOverride: _biosLocalPath(biosUrl, biosDest),
-            );
+          for (final biosUrl in (console['bios'] as List).cast<String>()) {
+            tasks.add((url: biosUrl, label: '$consoleName BIOS', localPath: _biosLocalPath(biosUrl, biosDest)));
           }
         }
 
-        final games = (console['games'] as List).cast<Map<String, dynamic>>();
-        for (final game in games) {
-          if (_cancelled) break;
+        for (final game in (console['games'] as List).cast<Map<String, dynamic>>()) {
           final gameName = game['name'] as String;
-
-          await _downloadAsset(game['image'] as String?, '$consoleName › $gameName image');
-          if (game.containsKey('game_info')) {
-            await _downloadAsset(game['game_info'] as String?, '$consoleName › $gameName info');
-          }
+          final gImg = game['image'] as String?;
+          if (gImg != null) tasks.add((url: gImg, label: '$consoleName › $gameName image', localPath: null));
+          final gInfo = game['game_info'] as String?;
+          if (gInfo != null) tasks.add((url: gInfo, label: '$consoleName › $gameName info', localPath: null));
           if (game.containsKey('game_files')) {
-            final gameFiles = (game['game_files'] as List).cast<String>();
-            for (final fileUrl in gameFiles) {
-              if (_cancelled) break;
+            for (final fileUrl in (game['game_files'] as List).cast<String>()) {
               final fileName = Uri.decodeComponent(fileUrl.split('/').last);
-              await _downloadAsset(fileUrl, '$consoleName › $gameName › $fileName');
+              tasks.add((url: fileUrl, label: '$consoleName › $gameName › $fileName', localPath: null));
             }
           } else {
-            await _downloadAsset(game['rom'] as String?, '$consoleName › $gameName ROM');
+            final rom = game['rom'] as String?;
+            if (rom != null) tasks.add((url: rom, label: '$consoleName › $gameName ROM', localPath: null));
           }
-          if (game.containsKey('achievements')) {
-            await _downloadAsset(game['achievements'] as String?, '$consoleName › $gameName achievements');
-          }
+          final ach = game['achievements'] as String?;
+          if (ach != null) tasks.add((url: ach, label: '$consoleName › $gameName achievements', localPath: null));
         }
       }
+
+      const _kWorkers = 4;
+      final sem = _Semaphore(_kWorkers);
+      await Future.wait(tasks.map((t) async {
+        await sem.acquire();
+        try {
+          await _downloadAsset(t.url, t.label, localPathOverride: t.localPath);
+        } finally {
+          sem.release();
+        }
+      }));
 
       if (!_cancelled) _appendLog(l.downloadProviderDone);
     } catch (e) {
@@ -193,7 +195,7 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
 
     final uri = Uri.parse('$_providerUrl$relativeUrl');
     final client = HttpClient();
-    _activeClient = client;
+    _activeClients.add(client);
     try {
       final request = await client.getUrl(uri);
       if (existingSize > 0) {
@@ -230,7 +232,7 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
       _appendLog(l.downloadProviderFileDone(label));
     } finally {
       client.close();
-      _activeClient = null;
+      _activeClients.remove(client);
     }
   }
 
@@ -385,6 +387,29 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
         ],
       ),
     );
+  }
+}
+
+// ── Semaphore ─────────────────────────────────────────────────────────────────
+
+class _Semaphore {
+  _Semaphore(this._count);
+  int _count;
+  final _waiters = <Completer<void>>[];
+
+  Future<void> acquire() async {
+    if (_count > 0) { _count--; return; }
+    final c = Completer<void>();
+    _waiters.add(c);
+    await c.future;
+  }
+
+  void release() {
+    if (_waiters.isNotEmpty) {
+      _waiters.removeAt(0).complete();
+    } else {
+      _count++;
+    }
   }
 }
 
