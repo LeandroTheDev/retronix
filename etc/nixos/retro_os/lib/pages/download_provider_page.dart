@@ -136,7 +136,19 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
           final gameName = game['name'] as String;
 
           await _downloadAsset(game['image'] as String?, '$consoleName › $gameName image');
-          await _downloadAsset(game['rom']   as String?, '$consoleName › $gameName ROM');
+          if (game.containsKey('game_info')) {
+            await _downloadAsset(game['game_info'] as String?, '$consoleName › $gameName info');
+          }
+          if (game.containsKey('game_files')) {
+            final gameFiles = (game['game_files'] as List).cast<String>();
+            for (final fileUrl in gameFiles) {
+              if (_cancelled) break;
+              final fileName = Uri.decodeComponent(fileUrl.split('/').last);
+              await _downloadAsset(fileUrl, '$consoleName › $gameName › $fileName');
+            }
+          } else {
+            await _downloadAsset(game['rom'] as String?, '$consoleName › $gameName ROM');
+          }
           if (game.containsKey('achievements')) {
             await _downloadAsset(game['achievements'] as String?, '$consoleName › $gameName achievements');
           }
