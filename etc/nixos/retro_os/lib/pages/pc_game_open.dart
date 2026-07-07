@@ -241,6 +241,12 @@ class _PcGameOpenState extends State<PcGameOpen> {
     // and other system vars remain intact (box64, umu-run must be findable).
     final env = Map<String, String>.from(Platform.environment)..addAll(info.env);
 
+    // The Pi kernel does not support unprivileged user namespaces, so bwrap
+    // cannot create them.  These two vars tell pressure-vessel to skip
+    // namespace isolation entirely instead of calling bwrap at all.
+    env['PRESSURE_VESSEL_UNSHARE_USER'] = '0';
+    env['STEAM_RUNTIME'] = '0';
+
     DebugLogger.log('[PcGameOpen] command: $resolvedCommand');
     DebugLogger.log('[PcGameOpen] workingDirectory: $gameRoot');
     DebugLogger.log('[PcGameOpen] env overrides: ${info.env}');
