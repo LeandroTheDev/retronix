@@ -51,14 +51,27 @@ def build_manifest() -> dict:
 
                 game_name = game_dir.name
                 game_image = _find_image(game_dir, "game_image")
-                rom_path = _find_rom(game_dir / "Game")
                 achievements_path = game_dir / "game_achievements.json"
+                game_info_path = game_dir / "game_info.json"
 
-                game_entry = {
-                    "name": game_name,
-                    "image": _to_url(game_image) if game_image else None,
-                    "rom": _to_url(rom_path) if rom_path else None,
-                }
+                if game_info_path.exists():
+                    # PC game: expose all files in Game/ + game_info.json
+                    game_files = _find_all_game_files(game_dir / "Game")
+                    game_entry = {
+                        "name": game_name,
+                        "image": _to_url(game_image) if game_image else None,
+                        "game_info": _to_url(game_info_path),
+                        "game_files": [_to_url(f) for f in game_files],
+                    }
+                else:
+                    # ROM-based game: single file
+                    rom_path = _find_rom(game_dir / "Game")
+                    game_entry = {
+                        "name": game_name,
+                        "image": _to_url(game_image) if game_image else None,
+                        "rom": _to_url(rom_path) if rom_path else None,
+                    }
+
                 if achievements_path.exists():
                     game_entry["achievements"] = _to_url(achievements_path)
 
@@ -107,6 +120,12 @@ def _find_rom(game_subdir: Path) -> Path | None:
         if entry.is_file():
             return entry
     return None
+
+
+def _find_all_game_files(game_subdir: Path) -> list[Path]:
+    if not game_subdir.is_dir():
+        return []
+    return sorted(entry for entry in game_subdir.rglob("*") if entry.is_file())
 
 
 def _to_url(path: Path) -> str:
