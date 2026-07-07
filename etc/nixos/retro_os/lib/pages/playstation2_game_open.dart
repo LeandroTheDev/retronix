@@ -262,15 +262,9 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
       DebugLogger.log('[Playstation2GameOpen] core: $corePath');
       DebugLogger.log('[Playstation2GameOpen] ROM: $romPath');
 
-      // Play! core uses GLX internally — force full X11 mode so its context doesn't
-      // conflict with RetroArch's Wayland/EGL display.
-      final env = Map<String, String>.from(Platform.environment);
-      env['DISPLAY'] ??= ':0';
-      env.remove('WAYLAND_DISPLAY');
       final process = await Process.start(
         'retroarch',
         ['-L', corePath, '--appendconfig=$overridePath', '--verbose', romPath],
-        environment: env,
       );
       DebugLogger.log('[Playstation2GameOpen] retroarch launched (pid: ${process.pid})');
       _retroarchPid = process.pid;
@@ -290,8 +284,8 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
 
       void onRetroarchLine(String line, String src) {
         DebugLogger.log('[retroarch:$src] $line');
-        if (_showLoadingUi && line.contains('InitializeImpl')) {
-          DebugLogger.log('[Playstation2GameOpen] Play! ready — dropping loading UI');
+        if (_showLoadingUi && line.contains('Created an OpenGL context')) {
+          DebugLogger.log('[Playstation2GameOpen] OpenGL ready — dropping loading UI');
           if (mounted) setState(() => _showLoadingUi = false);
           _startHud();
         }
