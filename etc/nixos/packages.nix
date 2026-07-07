@@ -1,6 +1,16 @@
 { pkgs, lib, ... }:
 
+let
+  pkgs-x86 = import pkgs.path {
+    system = "x86_64-linux";
+    config = pkgs.config;
+  };
+in
 {
+  # binfmt registers x86_64 as plataforma suportada — o Nix pode baixar
+  # binários x86_64 do cache e o kernel sabe executá-los via Box64/QEMU.
+  boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
+
   environment.systemPackages = with pkgs; [
     retroarch
     libretro.mupen64plus
@@ -24,8 +34,8 @@
     xdotool
     unclutter
     bluez
-    wine
     box64
-    umu-launcher
+    pkgs-x86.wine
+    pkgs-x86.umu-launcher
   ];
 }
