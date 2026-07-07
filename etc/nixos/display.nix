@@ -186,6 +186,10 @@ in
         until ${pkgs.xrandr}/bin/xrandr --query &>/dev/null; do
           sleep 2
         done
+        # Set user D-Bus/runtime vars once — the service runs as admin so
+        # id -u returns the correct UID for the user session.
+        export XDG_RUNTIME_DIR=/run/user/$(${pkgs.coreutils}/bin/id -u)
+        export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
         while true; do
           sleep 5
           # An active output has a resolution token like 1920x1080+0+0 on the
@@ -199,6 +203,9 @@ in
             # saved resolution (or fall back to xrandr --auto if none stored).
             sleep 3
             ${apply_saved_resolution}
+            # Restart WirePlumber so it re-enumerates the HDMI audio sink that
+            # the kernel exposes only after the HDMI link is established.
+            ${pkgs.systemd}/bin/systemctl --user restart wireplumber 2>/dev/null || true
           fi
         done
       '';
