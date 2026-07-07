@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'debug_logger.dart';
+import 'game_info.dart';
 
 String _consolesRoot() {
   String root;
@@ -120,6 +122,24 @@ String getGamePlaytimePath(String console, String game) {
     base = '${File(Platform.resolvedExecutable).parent.path}/progress';
   }
   return '$base/$console/$game.json';
+}
+
+// Root directory of a game (where game_info.json lives for PC games).
+String getGameRootPath(String console, String game) =>
+    '${_consolesRoot()}/$console/Games/$game';
+
+// Reads game_info.json from the game root. Returns null if absent or malformed.
+Future<GameInfo?> getGameInfo(String console, String game) async {
+  final path = '${getGameRootPath(console, game)}/game_info.json';
+  final file = File(path);
+  if (!await file.exists()) return null;
+  try {
+    final data = json.decode(await file.readAsString()) as Map<String, dynamic>;
+    return GameInfo.fromJson(data);
+  } catch (e) {
+    DebugLogger.log('[devices] getGameInfo($console, $game): failed to parse: $e');
+    return null;
+  }
 }
 
 const _ps1ExtPriority = ['.cue', '.chd', '.iso', '.bin'];

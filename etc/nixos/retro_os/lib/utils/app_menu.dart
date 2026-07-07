@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../pages/download_provider_page.dart';
 import '../pages/nintendo64_settings_page.dart';
+import '../pages/pc_settings_page.dart';
 import '../pages/playstation1_settings_page.dart';
 import '../pages/playstation2_settings_page.dart';
 import '../pages/system_settings_page.dart';
@@ -44,6 +45,14 @@ Future<void> showAppSettingsDialog(BuildContext context) {
         onSelect: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const Playstation1SettingsPage()),
+        ),
+      ),
+      SettingsOption(
+        label: l.settingsPC,
+        icon: Icons.computer,
+        onSelect: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PcSettingsPage()),
         ),
       ),
       SettingsOption(

@@ -3,83 +3,97 @@ import 'package:flutter/material.dart';
 import '../services/gamepad_service.dart';
 import '../utils/debug_logger.dart';
 import '../utils/devices.dart';
-import '../utils/app_menu.dart';
 import '../utils/app_localizations.dart';
+import '../utils/app_menu.dart';
+import '../utils/snackbar.dart';
 import '../utils/sound.dart';
 import '../widgets/console_image.dart';
-import 'nintendo64_games_page.dart';
-import 'pc_games_page.dart';
-import 'playstation1_games_page.dart';
-import 'playstation2_games_page.dart';
+import 'pc_game_details_page.dart';
 
-class ConsoleSelectorPage extends StatefulWidget {
-  const ConsoleSelectorPage({super.key});
+class PcGamesPage extends StatefulWidget {
+  const PcGamesPage({super.key});
 
   @override
-  State<ConsoleSelectorPage> createState() => _ConsoleSelectorPageState();
+  State<PcGamesPage> createState() => _PcGamesPageState();
 }
 
-class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
-  List<String> _consoles = [];
+class _PcGamesPageState extends State<PcGamesPage> {
+  List<String> _games = [];
   int _selectedIndex = 0;
   bool _loading = true;
   late final StreamSubscription<GamepadAction> _sub;
+  final _scrollController = ScrollController();
+
+  static const _itemHeight = 88.0;
 
   @override
   void initState() {
     super.initState();
     _sub = GamepadService.instance.actions.listen(_handleAction);
-    _loadConsoles();
+    _loadGames();
   }
 
   @override
   void dispose() {
     _sub.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadConsoles() async {
-    final consoles = await getAvailableConsoles();
-    DebugLogger.log(
-      '[ConsoleSelectorPage] setState from _loadConsoles: consoles=$consoles loading=false',
-    );
+  Future<void> _loadGames() async {
+    final games = await getAvailableGames('PC');
+    if (!mounted) return;
     setState(() {
-      _consoles = consoles;
+      _games = games;
       _loading = false;
     });
   }
 
   void _handleAction(GamepadAction action) {
-    // DebugLogger.log('[ConsoleSelectorPage] _handleAction received: $action');
     if (ModalRoute.of(context)?.isCurrent != true) return;
-    if (action == GamepadAction.back || action == GamepadAction.start) {
+    if (action == GamepadAction.back) {
+      DebugLogger.log('[PcGamesPage] popping');
+      Navigator.pop(context);
+      return;
+    }
+    if (action == GamepadAction.start) {
       showAppSettingsDialog(context);
       return;
     }
-    if (_consoles.isEmpty) return;
+    if (_games.isEmpty) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, _consoles.length - 1));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, _games.length - 1));
+        _scrollToSelected();
       case GamepadAction.down:
-        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, _consoles.length - 1));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, _games.length - 1));
+        _scrollToSelected();
       case GamepadAction.confirm:
-        _navigate();
+        _openGameDetails();
       default:
         break;
     }
   }
 
-  void _navigate() {
-    final console = _consoles[_selectedIndex];
-    switch (console) {
-      case 'Nintendo 64':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const Nintendo64GamesPage()));
-      case 'Playstation 1':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const Playstation1GamesPage()));
-      case 'Playstation 2':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const Playstation2GamesPage()));
-      case 'PC':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const PcGamesPage()));
+  void _scrollToSelected() {
+    final offset = (_selectedIndex * _itemHeight) -
+        (_scrollController.position.viewportDimension / 2) +
+        (_itemHeight / 2);
+    _scrollController.animateTo(
+      offset.clamp(0.0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+    );
+  }
+
+  Future<void> _openGameDetails() async {
+    final game = _games[_selectedIndex];
+    final error = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => PcGameDetailsPage(gameName: game)),
+    );
+    if (error != null && mounted) {
+      showErrorSnackBar(context, error);
     }
   }
 
@@ -88,24 +102,20 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
     final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
+      body: Column(
         children: [
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 80, bottom: 48),
-                child: Text(
-                  l.selectConsole,
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 18,
-                    letterSpacing: 6,
-                  ),
-                ),
+          Padding(
+            padding: const EdgeInsets.only(top: 80, bottom: 48),
+            child: Text(
+              l.pcTitle,
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 18,
+                letterSpacing: 6,
               ),
-              Expanded(child: _buildBody(l)),
-            ],
+            ),
           ),
+          Expanded(child: _buildBody(l)),
         ],
       ),
     );
@@ -115,37 +125,39 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator(color: Colors.white));
     }
-    if (_consoles.isEmpty) {
+    if (_games.isEmpty) {
       return Center(
         child: Text(
-          l.noConsoleFound,
+          l.noGameFound,
           style: const TextStyle(color: Colors.white30, fontSize: 16),
         ),
       );
     }
     return ListView.builder(
-      itemCount: _consoles.length,
-      itemBuilder: (context, index) => _ConsoleItem(
-        name: _consoles[index],
+      controller: _scrollController,
+      itemCount: _games.length,
+      itemExtent: _itemHeight,
+      itemBuilder: (context, index) => _GameItem(
+        name: _games[index],
         selected: index == _selectedIndex,
       ),
     );
   }
 }
 
-class _ConsoleItem extends StatelessWidget {
-  const _ConsoleItem({required this.name, required this.selected});
+class _GameItem extends StatelessWidget {
+  const _GameItem({required this.name, required this.selected});
 
   final String name;
   final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    final imagePath = getConsoleImagePath(name);
+    final imagePath = getGameImagePath('PC', name);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
-      margin: const EdgeInsets.symmetric(horizontal: 80, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 80, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         color: selected ? Colors.white : Colors.white10,
@@ -159,13 +171,13 @@ class _ConsoleItem extends StatelessWidget {
               path: imagePath,
               width: 56,
               height: 56,
-              fit: BoxFit.contain,
+              fit: BoxFit.cover,
               placeholder: Container(
                 width: 56,
                 height: 56,
                 color: selected ? Colors.black12 : Colors.white10,
                 child: Icon(
-                  Icons.sports_esports,
+                  Icons.computer,
                   color: selected ? Colors.black38 : Colors.white30,
                 ),
               ),
@@ -177,9 +189,9 @@ class _ConsoleItem extends StatelessWidget {
               name,
               style: TextStyle(
                 color: selected ? Colors.black : Colors.white,
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                letterSpacing: 2,
+                letterSpacing: 1,
               ),
             ),
           ),

@@ -72,6 +72,7 @@ class AppLocalizations {
   String get settingsNintendo64   => _pick('Nintendo 64 Settings', 'Configurações: Nintendo 64');
   String get settingsPlaystation2 => _pick('PlayStation 2 Settings', 'Configurações: PlayStation 2');
   String get settingsPlaystation1 => _pick('PlayStation 1 Settings', 'Configurações: PlayStation 1');
+  String get settingsPC           => _pick('PC Settings', 'Configurações: PC');
   String get aboutSystem        => _pick('About System', 'Sobre o sistema');
   String get shutdown           => _pick('Shutdown', 'Desligar');
 
@@ -188,6 +189,14 @@ class AppLocalizations {
   String get nintendo64Title    => 'NINTENDO 64';
   String get playstation2Title  => 'PLAYSTATION 2';
   String get playstation1Title  => 'PLAYSTATION 1';
+  String get pcTitle            => 'PC';
+
+  // ── PC Settings Page ──────────────────────────────────────────────────────
+
+  String get pcSettingsTitle      => _pick('PC — SETTINGS', 'PC — CONFIGURAÇÕES');
+  String pcGameInfoNotFound(String name) => _pick('game_info.json not found for: $name', 'game_info.json não encontrado para: $name');
+  String pcLaunchError(Object e)  => _pick('Failed to launch: $e', 'Falha ao iniciar: $e');
+  String pcExitError(int code)    => _pick('Process exited with error (code $code)', 'Processo encerrou com erro (código $code)');
 
   // ── Playstation 2 Settings Page ───────────────────────────────────────────
 

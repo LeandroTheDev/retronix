@@ -4,7 +4,6 @@
   environment.systemPackages = with pkgs; [
     retroarch
     libretro.mupen64plus
-    libretro.play
     vulkan-loader
     libretro.pcsx-rearmed
     vim
@@ -25,5 +24,8 @@
     xdotool
     unclutter
     bluez
+    wine
+    box64
+    umu-launcher
   ];
 }
