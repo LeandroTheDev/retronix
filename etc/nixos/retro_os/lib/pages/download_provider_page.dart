@@ -236,7 +236,8 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
     final encoded = relativeUrl.substring('/files/'.length);
     final parts   = encoded.split('/').map(Uri.decodeComponent).toList();
     final filename = parts.last;
-    return '$_retroarchSystemDir/$biosDest/$filename';
+    final dir = biosDest.isEmpty ? _retroarchSystemDir : '$_retroarchSystemDir/$biosDest';
+    return '$dir/$filename';
   }
 
   static String _formatBytes(int bytes) {

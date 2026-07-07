@@ -585,6 +585,11 @@ class SettingsService {
       'video_windowed_position_width = "$screenW"',
       'video_windowed_position_height = "$screenH"',
       'video_window_show_decorations = "false"',
+      // Play! core requests OpenGL 3.2 core profile via HW render. Under X11
+      // the GLX path fails with GLXBadFBConfig on RPi4/V3D because Mesa's GLX
+      // implementation doesn't expose core-profile FBConfigs. EGL (DRI3 path)
+      // does, so we force the EGL context driver here.
+      'video_context_driver = "egl"',
     ];
 
     final path = _retroarchOverridePath();
