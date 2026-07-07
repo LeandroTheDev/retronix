@@ -23,9 +23,10 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
 
   String _providerUrl = '';
   final _logs = <String>[];
-  int _selected    = _kUrlField;
-  bool _downloading = false;
-  bool _cancelled   = false;
+  int _selected     = _kUrlField;
+  bool _downloading  = false;
+  bool _cancelled    = false;
+  HttpClient? _activeClient;
 
   String get _consolesDir {
     final home = Platform.environment['HOME'] ?? '/home/admin';
@@ -54,7 +55,11 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     if (_downloading) {
       if (action == GamepadAction.back) {
-        setState(() => _cancelled = true);
+        setState(() {
+          _cancelled   = true;
+          _downloading = false;
+        });
+        _activeClient?.close(force: true);
         _appendLog(AppLocalizations.of(context).downloadProviderCancelled);
       }
       return;
@@ -142,7 +147,7 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
     } catch (e) {
       if (mounted) _appendLog(AppLocalizations.of(context).downloadProviderError(e));
     } finally {
-      if (mounted) setState(() => _downloading = false);
+      if (mounted) setState(() { _downloading = false; _cancelled = false; });
     }
   }
 
@@ -176,6 +181,7 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
 
     final uri = Uri.parse('$_providerUrl$relativeUrl');
     final client = HttpClient();
+    _activeClient = client;
     try {
       final request = await client.getUrl(uri);
       if (existingSize > 0) {
@@ -201,11 +207,18 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
 
       final mode = response.statusCode == 206 ? FileMode.append : FileMode.write;
       final sink = file.openWrite(mode: mode);
-      await response.pipe(sink);
+      try {
+        await response.pipe(sink);
+      } catch (_) {
+        await sink.close();
+        if (_cancelled && file.existsSync()) await file.delete();
+        return;
+      }
 
       _appendLog(l.downloadProviderFileDone(label));
     } finally {
       client.close();
+      _activeClient = null;
     }
   }
 
