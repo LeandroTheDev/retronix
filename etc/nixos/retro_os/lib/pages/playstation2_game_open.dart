@@ -262,9 +262,16 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
       DebugLogger.log('[Playstation2GameOpen] core: $corePath');
       DebugLogger.log('[Playstation2GameOpen] ROM: $romPath');
 
+      // V3D under X11/GLX only exposes OpenGL 2.1 and can't create a 3.2 core
+      // profile context (GLXBadFBConfig). Zink (Mesa's OpenGL-over-Vulkan layer)
+      // provides OpenGL 4.6 via v3dv and bypasses the GLX limitation entirely.
       final process = await Process.start(
         'retroarch',
         ['-L', corePath, '--appendconfig=$overridePath', '--verbose', romPath],
+        environment: {
+          ...Platform.environment,
+          'MESA_LOADER_DRIVER_OVERRIDE': 'zink',
+        },
       );
       DebugLogger.log('[Playstation2GameOpen] retroarch launched (pid: ${process.pid})');
       _retroarchPid = process.pid;

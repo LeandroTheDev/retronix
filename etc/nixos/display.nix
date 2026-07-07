@@ -108,9 +108,10 @@ in
 {
   hardware.graphics = {
     enable = true;
-    # mesa provides the open-source OpenGL/Vulkan drivers; without it the RPi's
-    # modesetting driver falls back to software rendering and Flutter's GL
-    # surface fails to initialize.
+    # mesa provides the open-source OpenGL/Vulkan drivers (v3d for OpenGL,
+    # v3dv for Vulkan). v3dv is required for Zink (OpenGL-over-Vulkan), which
+    # is what the Play! PS2 core falls back to — V3D only exposes OpenGL 3.1
+    # via GLX, but Play! needs 3.2 core profile.
     extraPackages = with pkgs; [ mesa ];
   };
 
