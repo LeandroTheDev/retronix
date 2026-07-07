@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../pages/download_provider_page.dart';
 import '../pages/nintendo64_settings_page.dart';
+import '../pages/playstation2_settings_page.dart';
 import '../pages/system_settings_page.dart';
 import '../pages/update_system_page.dart';
 import '../pages/about_system_page.dart';
@@ -26,6 +27,14 @@ Future<void> showAppSettingsDialog(BuildContext context) {
         onSelect: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const Nintendo64SettingsPage()),
+        ),
+      ),
+      SettingsOption(
+        label: l.settingsPlaystation2,
+        icon: Icons.sports_esports,
+        onSelect: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const Playstation2SettingsPage()),
         ),
       ),
       SettingsOption(

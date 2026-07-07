@@ -32,6 +32,11 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
     return '$home/.local/share/retro_os/Consoles';
   }
 
+  String get _retroarchSystemDir {
+    final home = Platform.environment['HOME'] ?? '/home/admin';
+    return '$home/.config/retroarch/system';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -107,6 +112,19 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
 
         await _downloadAsset(console['image'] as String?, consoleName);
 
+        final biosDest = console['bios_dest'] as String?;
+        if (biosDest != null && console.containsKey('bios')) {
+          final biosUrls = (console['bios'] as List).cast<String>();
+          for (final biosUrl in biosUrls) {
+            if (_cancelled) break;
+            await _downloadAsset(
+              biosUrl,
+              '$consoleName BIOS',
+              localPathOverride: _biosLocalPath(biosUrl, biosDest),
+            );
+          }
+        }
+
         final games = (console['games'] as List).cast<Map<String, dynamic>>();
         for (final game in games) {
           if (_cancelled) break;
@@ -144,11 +162,11 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
     }
   }
 
-  Future<void> _downloadAsset(String? relativeUrl, String label) async {
+  Future<void> _downloadAsset(String? relativeUrl, String label, {String? localPathOverride}) async {
     if (relativeUrl == null || _cancelled) return;
     final l = AppLocalizations.of(context);
 
-    final localPath = _localPath(relativeUrl);
+    final localPath = localPathOverride ?? _localPath(relativeUrl);
     if (localPath == null) return;
 
     final file = File(localPath);
@@ -197,6 +215,15 @@ class _DownloadProviderPageState extends State<DownloadProviderPage> {
     final encoded = relativeUrl.substring('/files/'.length);
     final parts   = encoded.split('/').map(Uri.decodeComponent).toList();
     return '$_consolesDir/${parts.join('/')}';
+  }
+
+  /// Maps a BIOS /files/... URL to the RetroArch system path (filename only, flattened).
+  String? _biosLocalPath(String relativeUrl, String biosDest) {
+    if (!relativeUrl.startsWith('/files/')) return null;
+    final encoded = relativeUrl.substring('/files/'.length);
+    final parts   = encoded.split('/').map(Uri.decodeComponent).toList();
+    final filename = parts.last;
+    return '$_retroarchSystemDir/$biosDest/$filename';
   }
 
   static String _formatBytes(int bytes) {

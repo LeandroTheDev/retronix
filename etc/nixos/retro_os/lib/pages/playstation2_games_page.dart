@@ -8,16 +8,16 @@ import '../utils/app_menu.dart';
 import '../utils/snackbar.dart';
 import '../utils/sound.dart';
 import '../widgets/console_image.dart';
-import 'nintendo64_game_details_page.dart';
+import 'playstation2_game_details_page.dart';
 
-class Nintendo64GamesPage extends StatefulWidget {
-  const Nintendo64GamesPage({super.key});
+class Playstation2GamesPage extends StatefulWidget {
+  const Playstation2GamesPage({super.key});
 
   @override
-  State<Nintendo64GamesPage> createState() => _Nintendo64GamesPageState();
+  State<Playstation2GamesPage> createState() => _Playstation2GamesPageState();
 }
 
-class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
+class _Playstation2GamesPageState extends State<Playstation2GamesPage> {
   List<String> _games = [];
   int _selectedIndex = 0;
   bool _loading = true;
@@ -41,7 +41,7 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
   }
 
   Future<void> _loadGames() async {
-    final games = await getAvailableGames('Nintendo 64');
+    final games = await getAvailableGames('Playstation 2');
     if (!mounted) return;
     setState(() {
       _games = games;
@@ -51,9 +51,9 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
 
   void _handleAction(GamepadAction action) {
     if (ModalRoute.of(context)?.isCurrent != true) return;
-    // DebugLogger.log('[Nintendo64GamesPage] action: $action | loading: $_loading | games: ${_games.length}');
+    // DebugLogger.log('[Playstation2GamesPage] action: $action | loading: $_loading | games: ${_games.length}');
     if (action == GamepadAction.back) {
-      DebugLogger.log('[Nintendo64GamesPage] popping');
+      DebugLogger.log('[Playstation2GamesPage] popping');
       Navigator.pop(context);
       return;
     }
@@ -91,7 +91,7 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
     final game = _games[_selectedIndex];
     final error = await Navigator.push<String>(
       context,
-      MaterialPageRoute(builder: (_) => Nintendo64GameDetailsPage(gameName: game)),
+      MaterialPageRoute(builder: (_) => Playstation2GameDetailsPage(gameName: game)),
     );
     if (error != null && mounted) {
       showErrorSnackBar(context, error);
@@ -108,7 +108,7 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
           Padding(
             padding: const EdgeInsets.only(top: 80, bottom: 48),
             child: Text(
-              l.nintendo64Title,
+              l.playstation2Title,
               style: const TextStyle(
                 color: Colors.white54,
                 fontSize: 18,
@@ -139,7 +139,7 @@ class _Nintendo64GamesPageState extends State<Nintendo64GamesPage> {
       itemCount: _games.length,
       itemExtent: _itemHeight,
       itemBuilder: (context, index) => _GameItem(
-        console: 'Nintendo 64',
+        console: 'Playstation 2',
         name: _games[index],
         selected: index == _selectedIndex,
       ),

@@ -69,7 +69,8 @@ class AppLocalizations {
   String get noConsoleFound => _pick('No console found.', 'Nenhum console encontrado.');
 
   // Settings menu entries
-  String get settingsNintendo64 => _pick('Nintendo 64 Settings', 'Configurações: Nintendo 64');
+  String get settingsNintendo64   => _pick('Nintendo 64 Settings', 'Configurações: Nintendo 64');
+  String get settingsPlaystation2 => _pick('PlayStation 2 Settings', 'Configurações: PlayStation 2');
   String get aboutSystem        => _pick('About System', 'Sobre o sistema');
   String get shutdown           => _pick('Shutdown', 'Desligar');
 
@@ -183,7 +184,27 @@ class AppLocalizations {
 
   // ── Games Page ── (title) ─────────────────────────────────────────────────
 
-  String get nintendo64Title => 'NINTENDO 64';
+  String get nintendo64Title    => 'NINTENDO 64';
+  String get playstation2Title  => 'PLAYSTATION 2';
+
+  // ── Playstation 2 Settings Page ───────────────────────────────────────────
+
+  String get playstation2SettingsTitle  => _pick('PLAYSTATION 2 — SETTINGS', 'PLAYSTATION 2 — CONFIGURAÇÕES');
+  String get ps2UpscaleMultiplier       => _pick('Upscale Multiplier', 'Multiplicador de Escala');
+  String get ps2BilinearFilter          => _pick('Texture Filter', 'Filtro de Textura');
+  String get ps2Fxaa                    => 'FXAA (Anti-Aliasing)';
+  String get ps2Renderer                => _pick('Renderer', 'Renderizador');
+  String get ps2BlendingAccuracy        => _pick('Blending Accuracy', 'Precisão de Blending');
+
+  List<String> get ps2AspectLabels =>
+      ['4:3', '16:9', _pick('Fill Screen', 'Preencher Tela')];
+  List<String> get ps2UpscaleLabels =>
+      [_pick('Native (1x)', 'Nativo (1x)'), '2x', '3x', '4x', '6x', '8x'];
+  List<String> get ps2BilinearLabels =>
+      [_pick('Nearest (pixelated)', 'Nearest (pixelado)'), _pick('Bilinear (PS2)', 'Bilinear (PS2)'), _pick('Bilinear (Forced)', 'Bilinear (Forçado)')];
+  List<String> get ps2FxaaLabels        => [off, on];
+  List<String> get ps2RendererLabels    => ['Auto', 'OpenGL', 'Vulkan', 'Software'];
+  List<String> get ps2BlendingLabels    => ['Minimum', 'Basic', 'Medium', 'High', 'Full', 'Ultra'];
 
   // ── Game Open ─────────────────────────────────────────────────────────────
 

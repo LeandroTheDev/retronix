@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/gamepad_service.dart';
-import 'dart:io';
 import '../utils/debug_logger.dart';
 import '../utils/devices.dart';
 import '../utils/app_menu.dart';
 import '../utils/app_localizations.dart';
 import '../utils/sound.dart';
+import '../widgets/console_image.dart';
 import 'nintendo64_games_page.dart';
+import 'playstation2_games_page.dart';
 
 class ConsoleSelectorPage extends StatefulWidget {
   const ConsoleSelectorPage({super.key});
@@ -68,11 +69,11 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
 
   void _navigate() {
     final console = _consoles[_selectedIndex];
-    if (console == 'Nintendo 64') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const Nintendo64GamesPage()),
-      );
+    switch (console) {
+      case 'Nintendo 64':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const Nintendo64GamesPage()));
+      case 'Playstation 2':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const Playstation2GamesPage()));
     }
   }
 
@@ -148,17 +149,21 @@ class _ConsoleItem extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: imagePath != null
-                ? Image.file(File(imagePath), width: 56, height: 56, fit: BoxFit.contain)
-                : Container(
-                    width: 56,
-                    height: 56,
-                    color: selected ? Colors.black12 : Colors.white10,
-                    child: Icon(
-                      Icons.sports_esports,
-                      color: selected ? Colors.black38 : Colors.white30,
-                    ),
-                  ),
+            child: ConsoleImage(
+              path: imagePath,
+              width: 56,
+              height: 56,
+              fit: BoxFit.contain,
+              placeholder: Container(
+                width: 56,
+                height: 56,
+                color: selected ? Colors.black12 : Colors.white10,
+                child: Icon(
+                  Icons.sports_esports,
+                  color: selected ? Colors.black38 : Colors.white30,
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 20),
           Expanded(

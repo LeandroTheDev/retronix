@@ -4,6 +4,7 @@
   environment.systemPackages = with pkgs; [
     retroarch
     libretro.mupen64plus
+    libretro.pcsx2
     vim
     wget
     sudo

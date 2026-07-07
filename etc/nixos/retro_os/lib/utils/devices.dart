@@ -62,7 +62,7 @@ Future<List<String>> getAvailableGames(String console) async {
   return games;
 }
 
-const _imageExtensions = ['png', 'jpg', 'jpeg', 'webp'];
+const _imageExtensions = ['png', 'jpg', 'jpeg', 'webp', 'svg'];
 
 String? _findImage(String basePath) {
   for (final ext in _imageExtensions) {

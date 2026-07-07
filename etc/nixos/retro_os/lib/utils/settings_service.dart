@@ -3,6 +3,12 @@ import 'dart:io';
 import 'dart:ui';
 import 'debug_logger.dart';
 
+const _ps2CoreCandidates = [
+  '/run/current-system/sw/lib/retroarch/cores/pcsx2_libretro.so',  // NixOS
+  '/usr/lib/libretro/pcsx2_libretro.so',                           // Arch Linux
+  '/usr/share/libretro/cores/pcsx2_libretro.so',                   // Debian/Ubuntu
+];
+
 const _n64CoreCandidates = [
   '/run/current-system/sw/lib/retroarch/cores/mupen64plus_next_libretro.so', // NixOS
   '/usr/lib/libretro/mupen64plus_next_libretro.so',                          // Arch Linux
@@ -266,6 +272,188 @@ class SettingsService {
     await _save();
   }
 
+  // ── PS2 Core path ─────────────────────────────────────────────────────────
+
+  Future<String> ps2CorePath() async {
+    await _ensureLoaded();
+    if (_data['ps2_core_path'] is String) return _data['ps2_core_path'] as String;
+    for (final candidate in _ps2CoreCandidates) {
+      if (File(candidate).existsSync()) return candidate;
+    }
+    return _ps2CoreCandidates.first;
+  }
+
+  Future<void> setPs2CorePath(String path) async {
+    await _ensureLoaded();
+    _data['ps2_core_path'] = path;
+    await _save();
+  }
+
+  // ── PS2 Core options ──────────────────────────────────────────────────────
+
+  String _ps2OptFilePath() {
+    if (Platform.isLinux) {
+      return '${Platform.environment['HOME']}/.config/retroarch/config/LRPS2/LRPS2.opt';
+    } else if (Platform.isWindows) {
+      final appData = Platform.environment['APPDATA'] ??
+          '${Platform.environment['USERPROFILE']}\\AppData\\Roaming';
+      return '$appData\\RetroArch\\config\\LRPS2\\LRPS2.opt';
+    }
+    return '${File(Platform.resolvedExecutable).parent.path}/LRPS2.opt';
+  }
+
+  // ps2_upscale_multiplier: '1' | '2' | '3' | '4' | '6' | '8'
+  Future<String> ps2UpscaleMultiplier() async {
+    await _ensureLoaded();
+    return (_data['ps2_upscale_multiplier'] as String?) ?? '1';
+  }
+
+  Future<void> setPs2UpscaleMultiplier(String value) async {
+    await _ensureLoaded();
+    _data['ps2_upscale_multiplier'] = value;
+    await _save();
+  }
+
+  // ps2_bilinear_filtering: 'nearest' | 'bilinear-ps2' | 'bilinear-forced'
+  Future<String> ps2BilinearFiltering() async {
+    await _ensureLoaded();
+    return (_data['ps2_bilinear_filtering'] as String?) ?? 'nearest';
+  }
+
+  Future<void> setPs2BilinearFiltering(String value) async {
+    await _ensureLoaded();
+    _data['ps2_bilinear_filtering'] = value;
+    await _save();
+  }
+
+  // ps2_fxaa: 'false' | 'true'
+  Future<String> ps2Fxaa() async {
+    await _ensureLoaded();
+    return (_data['ps2_fxaa'] as String?) ?? 'false';
+  }
+
+  Future<void> setPs2Fxaa(String value) async {
+    await _ensureLoaded();
+    _data['ps2_fxaa'] = value;
+    await _save();
+  }
+
+  // ps2_renderer: 'Auto' | 'OpenGL' | 'Vulkan' | 'Software'
+  Future<String> ps2Renderer() async {
+    await _ensureLoaded();
+    return (_data['ps2_renderer'] as String?) ?? 'Auto';
+  }
+
+  Future<void> setPs2Renderer(String value) async {
+    await _ensureLoaded();
+    _data['ps2_renderer'] = value;
+    await _save();
+  }
+
+  // ps2_blending_accuracy: 'Minimum' | 'Basic' | 'Medium' | 'High' | 'Full' | 'Ultra'
+  Future<String> ps2BlendingAccuracy() async {
+    await _ensureLoaded();
+    return (_data['ps2_blending_accuracy'] as String?) ?? 'Basic';
+  }
+
+  Future<void> setPs2BlendingAccuracy(String value) async {
+    await _ensureLoaded();
+    _data['ps2_blending_accuracy'] = value;
+    await _save();
+  }
+
+  Future<void> applyPs2CoreOptions() async {
+    final upscale  = await ps2UpscaleMultiplier();
+    final bilinear = await ps2BilinearFiltering();
+    final fxaa     = await ps2Fxaa();
+    final renderer = await ps2Renderer();
+    final blending = await ps2BlendingAccuracy();
+
+    final content = [
+      'pcsx2_upscale_multiplier = "$upscale"',
+      'pcsx2_bilinear_filtering = "$bilinear"',
+      'pcsx2_fxaa = "$fxaa"',
+      'pcsx2_renderer = "$renderer"',
+      'pcsx2_blending_accuracy = "$blending"',
+    ].join('\n');
+
+    final file = File(_ps2OptFilePath());
+    await file.parent.create(recursive: true);
+    await file.writeAsString(content);
+    DebugLogger.log('[SettingsService] wrote PS2 core options to ${_ps2OptFilePath()}');
+  }
+
+  // ── PS2 Settings ──────────────────────────────────────────────────────────
+
+  // ps2_aspect: '4:3' | '16:9' | 'fill'
+  Future<String> ps2Aspect() async {
+    await _ensureLoaded();
+    return (_data['ps2_aspect'] as String?) ?? '4:3';
+  }
+
+  Future<void> setPs2Aspect(String value) async {
+    await _ensureLoaded();
+    _data['ps2_aspect'] = value;
+    await _save();
+  }
+
+  // ps2_fps_show: 'false' | 'true'
+  Future<String> ps2FpsShow() async {
+    await _ensureLoaded();
+    return (_data['ps2_fps_show'] as String?) ?? 'false';
+  }
+
+  Future<void> setPs2FpsShow(String value) async {
+    await _ensureLoaded();
+    _data['ps2_fps_show'] = value;
+    await _save();
+  }
+
+  // ps2_audio_volume: extra gain in dB — '0' | '3' | '6' | ... | '18'
+  Future<String> ps2AudioVolume() async {
+    await _ensureLoaded();
+    return (_data['ps2_audio_volume'] as String?) ?? '0';
+  }
+
+  Future<void> setPs2AudioVolume(String value) async {
+    await _ensureLoaded();
+    _data['ps2_audio_volume'] = value;
+    await _save();
+  }
+
+  Future<String> applyPs2RetroarchOverrides() async {
+    final aspect = await ps2Aspect();
+    final aspectRatioIndex = aspect == 'fill' ? '24' : '22';
+    final device = await audioDevice();
+    final fpsShow = await ps2FpsShow();
+    final audioVolume = await ps2AudioVolume();
+
+    final display = PlatformDispatcher.instance.displays.firstOrNull;
+    final dpr = display?.devicePixelRatio ?? 1.0;
+    final screenW = display != null ? (display.size.width / dpr).round() : 1920;
+    final screenH = display != null ? (display.size.height / dpr).round() : 1080;
+
+    final lines = [
+      'aspect_ratio_index = "$aspectRatioIndex"',
+      'audio_device = "$device"',
+      'fps_show = "$fpsShow"',
+      'audio_volume = "$audioVolume"',
+      'network_cmd_enable = "true"',
+      'video_fullscreen = "false"',
+      'video_windowed_fullscreen = "false"',
+      'video_windowed_position_width = "$screenW"',
+      'video_windowed_position_height = "$screenH"',
+      'video_window_show_decorations = "false"',
+    ];
+
+    final path = _retroarchOverridePath();
+    final file = File(path);
+    await file.parent.create(recursive: true);
+    await file.writeAsString('${lines.join('\n')}\n');
+    DebugLogger.log('[SettingsService] wrote PS2 RetroArch overrides to $path');
+    return path;
+  }
+
   // ── Reset ─────────────────────────────────────────────────────────────────
 
   Future<void> resetN64Graphics() async {
@@ -281,6 +469,21 @@ class SettingsService {
       ..remove('n64_overscan_amount')
       ..remove('n64_fps_show')
       ..remove('n64_audio_volume');
+    await _save();
+  }
+
+  Future<void> resetPs2() async {
+    await _ensureLoaded();
+    _data
+      ..remove('ps2_core_path')
+      ..remove('ps2_upscale_multiplier')
+      ..remove('ps2_bilinear_filtering')
+      ..remove('ps2_fxaa')
+      ..remove('ps2_renderer')
+      ..remove('ps2_blending_accuracy')
+      ..remove('ps2_aspect')
+      ..remove('ps2_fps_show')
+      ..remove('ps2_audio_volume');
     await _save();
   }
 
