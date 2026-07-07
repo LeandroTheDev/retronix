@@ -16,16 +16,16 @@ import '../widgets/achievement_row.dart';
 
 const _windowChannel = MethodChannel('app/window');
 
-class Playstation2GameOpen extends StatefulWidget {
-  const Playstation2GameOpen({super.key, required this.gameName});
+class Playstation1GameOpen extends StatefulWidget {
+  const Playstation1GameOpen({super.key, required this.gameName});
 
   final String gameName;
 
   @override
-  State<Playstation2GameOpen> createState() => _Playstation2GameOpenState();
+  State<Playstation1GameOpen> createState() => _Playstation1GameOpenState();
 }
 
-class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
+class _Playstation1GameOpenState extends State<Playstation1GameOpen> {
   bool _showLoadingUi = true;
 
   // ── HUD state ──────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
 
   // ── Playtime persistence ───────────────────────────────────────────────────
   Future<int> _loadSavedPlaytime() async {
-    final file = File(getGamePlaytimePath('Playstation 2', widget.gameName));
+    final file = File(getGamePlaytimePath('Playstation 1', widget.gameName));
     if (!await file.exists()) return 0;
     try {
       final data = json.decode(await file.readAsString()) as Map<String, dynamic>;
@@ -85,10 +85,10 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
     if (start == null) return;
     final sessionSecs = DateTime.now().difference(start).inSeconds;
     final total = _savedPlaytimeSecs + sessionSecs;
-    final file = File(getGamePlaytimePath('Playstation 2', widget.gameName));
+    final file = File(getGamePlaytimePath('Playstation 1', widget.gameName));
     await file.parent.create(recursive: true);
     await file.writeAsString(json.encode({'total_playtime_seconds': total}));
-    DebugLogger.log('[Playstation2GameOpen] saved playtime: ${total}s total');
+    DebugLogger.log('[Playstation1GameOpen] saved playtime: ${total}s total');
   }
 
   // ── System stats ───────────────────────────────────────────────────────────
@@ -193,7 +193,7 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
     });
 
     _startHudTimers();
-    // Lower Flutter so the game (PS2 BIOS + game) is immediately visible.
+    // Lower Flutter so the game (PS1 BIOS + game) is immediately visible.
     // L+R brings the HUD back to the front.
     await _windowChannel.invokeMethod('lowerWindow');
   }
@@ -237,52 +237,46 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
 
   // ── Game launch ────────────────────────────────────────────────────────────
   Future<void> _openGame() async {
-    DebugLogger.log('[Playstation2GameOpen] opening game: ${widget.gameName}');
+    DebugLogger.log('[Playstation1GameOpen] opening game: ${widget.gameName}');
 
-    final romPath = await getGameFilePath('Playstation 2', widget.gameName);
+    final romPath = await getGameFilePath('Playstation 1', widget.gameName);
     final l = AppLocalizations(LocaleService.instance.locale);
 
     if (romPath == null) {
-      DebugLogger.log('[Playstation2GameOpen] ROM not found for: ${widget.gameName}');
+      DebugLogger.log('[Playstation1GameOpen] ROM not found for: ${widget.gameName}');
       if (mounted) Navigator.pop(context, l.romNotFound(widget.gameName));
       return;
     }
 
-    final corePath = await SettingsService.instance.ps2CorePath();
+    final corePath = await SettingsService.instance.ps1CorePath();
     if (!File(corePath).existsSync()) {
-      DebugLogger.log('[Playstation2GameOpen] core not found: $corePath');
+      DebugLogger.log('[Playstation1GameOpen] core not found: $corePath');
       if (mounted) Navigator.pop(context, l.coreNotFoundPath(corePath));
       return;
     }
 
     try {
-      await SettingsService.instance.applyPs2CoreOptions();
-      final overridePath = await SettingsService.instance.applyPs2RetroarchOverrides();
+      await SettingsService.instance.applyPs1CoreOptions();
+      final overridePath = await SettingsService.instance.applyPs1RetroarchOverrides();
 
-      DebugLogger.log('[Playstation2GameOpen] core: $corePath');
-      DebugLogger.log('[Playstation2GameOpen] ROM: $romPath');
+      DebugLogger.log('[Playstation1GameOpen] core: $corePath');
+      DebugLogger.log('[Playstation1GameOpen] ROM: $romPath');
 
-      // Play! core uses GLX internally — force full X11 mode so its context doesn't
-      // conflict with RetroArch's Wayland/EGL display.
-      final env = Map<String, String>.from(Platform.environment);
-      env['DISPLAY'] ??= ':0';
-      env.remove('WAYLAND_DISPLAY');
       final process = await Process.start(
         'retroarch',
         ['-L', corePath, '--appendconfig=$overridePath', '--verbose', romPath],
-        environment: env,
       );
-      DebugLogger.log('[Playstation2GameOpen] retroarch launched (pid: ${process.pid})');
+      DebugLogger.log('[Playstation1GameOpen] retroarch launched (pid: ${process.pid})');
       _retroarchPid = process.pid;
       GamepadService.instance.setGameRunning(true);
 
-      await AchievementService.instance.startWatching('Playstation 2', widget.gameName);
+      await AchievementService.instance.startWatching('Playstation 1', widget.gameName);
       AchievementWindowService.instance.startSession(process.pid);
 
-      // Fallback: drop loading UI after 15s if no ready signal arrives
-      _hudFallbackTimer = Timer(const Duration(seconds: 15), () {
+      // Fallback: drop loading UI after 8s if no ready signal arrives
+      _hudFallbackTimer = Timer(const Duration(seconds: 8), () {
         if (mounted && _showLoadingUi) {
-          DebugLogger.log('[Playstation2GameOpen] fallback timer — dropping loading UI');
+          DebugLogger.log('[Playstation1GameOpen] fallback timer — dropping loading UI');
           if (mounted) setState(() => _showLoadingUi = false);
           _startHud();
         }
@@ -290,8 +284,8 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
 
       void onRetroarchLine(String line, String src) {
         DebugLogger.log('[retroarch:$src] $line');
-        if (_showLoadingUi && line.contains('InitializeImpl')) {
-          DebugLogger.log('[Playstation2GameOpen] Play! ready — dropping loading UI');
+        if (_showLoadingUi && line.contains('Using BIOS')) {
+          DebugLogger.log('[Playstation1GameOpen] BIOS ready — dropping loading UI');
           if (mounted) setState(() => _showLoadingUi = false);
           _startHud();
         }
@@ -312,7 +306,7 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
       _hudFallbackTimer?.cancel();
       await _savePlaytime();
       GamepadService.instance.setGameRunning(false);
-      DebugLogger.log('[Playstation2GameOpen] retroarch exited with code: $exitCode');
+      DebugLogger.log('[Playstation1GameOpen] retroarch exited with code: $exitCode');
       await AchievementService.instance.stopWatching();
       AchievementWindowService.instance.stopSession();
 
@@ -325,7 +319,7 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
         Navigator.pop(context);
       }
     } catch (e) {
-      DebugLogger.log('[Playstation2GameOpen] failed to launch retroarch: $e');
+      DebugLogger.log('[Playstation1GameOpen] failed to launch retroarch: $e');
       _hudFallbackTimer?.cancel();
       await _savePlaytime();
       GamepadService.instance.setGameRunning(false);
@@ -341,7 +335,7 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
   // ── Input ──────────────────────────────────────────────────────────────────
   Future<void> _toggleWindowFocus() async {
     _windowFocused = !_windowFocused;
-    DebugLogger.log('[Playstation2GameOpen] L+R — windowFocused: $_windowFocused');
+    DebugLogger.log('[Playstation1GameOpen] L+R — windowFocused: $_windowFocused');
     if (_windowFocused) {
       await _windowChannel.invokeMethod('forceFocus');
       _startHudTimers();
@@ -372,16 +366,16 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
       if (action == GamepadAction.start) {
         _exitHoldTimer?.cancel();
         _exitHoldTimer = Timer(const Duration(seconds: 5), () {
-          DebugLogger.log('[Playstation2GameOpen] start held 5s — killing retroarch');
+          DebugLogger.log('[Playstation1GameOpen] start held 5s — killing retroarch');
           process.kill();
         });
       } else if (action == GamepadAction.l) {
         _lHeld = true;
-        DebugLogger.log('[Playstation2GameOpen] L down (rHeld=$_rHeld)');
+        DebugLogger.log('[Playstation1GameOpen] L down (rHeld=$_rHeld)');
         if (_rHeld) _toggleWindowFocus();
       } else if (action == GamepadAction.r) {
         _rHeld = true;
-        DebugLogger.log('[Playstation2GameOpen] R down (lHeld=$_lHeld)');
+        DebugLogger.log('[Playstation1GameOpen] R down (lHeld=$_lHeld)');
         if (_lHeld) _toggleWindowFocus();
       }
     });
@@ -389,11 +383,11 @@ class _Playstation2GameOpenState extends State<Playstation2GameOpen> {
       if (action == GamepadAction.start) _exitHoldTimer?.cancel();
       if (action == GamepadAction.l) {
         _lHeld = false;
-        DebugLogger.log('[Playstation2GameOpen] L up');
+        DebugLogger.log('[Playstation1GameOpen] L up');
       }
       if (action == GamepadAction.r) {
         _rHeld = false;
-        DebugLogger.log('[Playstation2GameOpen] R up');
+        DebugLogger.log('[Playstation1GameOpen] R up');
       }
     });
     return [downSub, upSub];

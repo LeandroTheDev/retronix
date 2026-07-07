@@ -122,6 +122,8 @@ String getGamePlaytimePath(String console, String game) {
   return '$base/$console/$game.json';
 }
 
+const _ps1ExtPriority = ['.cue', '.chd', '.iso', '.bin'];
+
 // Path to the ROM file inside <console>/Games/<game>/Game/
 Future<String?> getGameFilePath(String console, String game) async {
   final path = '${_consolesRoot()}/$console/Games/$game/Game';
@@ -134,7 +136,17 @@ Future<String?> getGameFilePath(String console, String game) async {
 
   final entries = await directory.list().toList();
   final files = entries.whereType<File>().toList();
-  final result = files.isEmpty ? null : files.first.path;
+
+  String? result;
+  if (console == 'Playstation 1' && files.length > 1) {
+    for (final ext in _ps1ExtPriority) {
+      final match = files.where((f) => f.path.toLowerCase().endsWith(ext)).firstOrNull;
+      if (match != null) { result = match.path; break; }
+    }
+    result ??= files.first.path;
+  } else {
+    result = files.isEmpty ? null : files.first.path;
+  }
 
   DebugLogger.log('[devices] getGameFilePath($console, $game): ${result ?? "no file found"} in $path');
   return result;

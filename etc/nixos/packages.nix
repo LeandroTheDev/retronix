@@ -1,10 +1,11 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 {
   environment.systemPackages = with pkgs; [
     retroarch
     libretro.mupen64plus
-    libretro.pcsx2
+    libretro.play
+    libretro.pcsx-rearmed
     vim
     wget
     sudo

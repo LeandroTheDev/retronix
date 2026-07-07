@@ -7,35 +7,39 @@ import '../utils/settings_service.dart';
 import '../utils/app_localizations.dart';
 import '../utils/sound.dart';
 
-class Playstation2SettingsPage extends StatefulWidget {
-  const Playstation2SettingsPage({super.key});
+class Playstation1SettingsPage extends StatefulWidget {
+  const Playstation1SettingsPage({super.key});
 
   @override
-  State<Playstation2SettingsPage> createState() => _Playstation2SettingsPageState();
+  State<Playstation1SettingsPage> createState() => _Playstation1SettingsPageState();
 }
 
-class _Playstation2SettingsPageState extends State<Playstation2SettingsPage> {
+class _Playstation1SettingsPageState extends State<Playstation1SettingsPage> {
   late final StreamSubscription<GamepadAction> _sub;
   int _selectedIndex = 0;
   bool _loading = true;
 
-  final _upscaleOptions      = const ['1x', '2x', '4x', '8x'];
-  final _presentationOptions = const ['Fit Screen', 'Fill Screen', 'Original Size'];
-  final _bilinearOptions     = const ['false', 'true'];
-  final _fpsShowOptions      = const ['false', 'true'];
-  final _audioVolumeOptions  = const ['0', '3', '6', '9', '12', '15', '18'];
+  final _ditheringOptions   = const ['enabled', 'disabled'];
+  final _smoothOptions      = const ['disabled', 'enabled'];
+  final _hiResOptions       = const ['disabled', 'enabled'];
+  final _frameskipOptions   = const ['disabled', 'auto'];
+  final _aspectOptions      = const ['4:3', 'fill'];
+  final _fpsShowOptions     = const ['false', 'true'];
+  final _audioVolumeOptions = const ['0', '3', '6', '9', '12', '15', '18'];
 
-  int _upscaleIdx      = 0;
-  int _presentationIdx = 0;
-  int _bilinearIdx     = 0;
-  int _fpsShowIdx      = 0;
-  int _audioVolumeIdx  = 0;
+  int _ditheringIdx   = 0;
+  int _smoothIdx      = 0;
+  int _hiResIdx       = 0;
+  int _frameskipIdx   = 0;
+  int _aspectIdx      = 0;
+  int _fpsShowIdx     = 0;
+  int _audioVolumeIdx = 0;
 
   String _corePath   = '';
   bool   _coreExists = true;
 
-  // 0-4 = option rows, 5 = restore defaults
-  final _rowKeys = List.generate(6, (_) => GlobalKey());
+  // 0-6 = option rows, 7 = restore defaults
+  final _rowKeys = List.generate(8, (_) => GlobalKey());
 
   @override
   void initState() {
@@ -51,22 +55,26 @@ class _Playstation2SettingsPageState extends State<Playstation2SettingsPage> {
   }
 
   Future<void> _load() async {
-    final upscale      = await SettingsService.instance.ps2UpscaleMultiplier();
-    final presentation = await SettingsService.instance.ps2PresentationMode();
-    final bilinear     = await SettingsService.instance.ps2BilinearFiltering();
-    final fpsShow      = await SettingsService.instance.ps2FpsShow();
-    final audioVol     = await SettingsService.instance.ps2AudioVolume();
-    final core         = await SettingsService.instance.ps2CorePath();
+    final dithering   = await SettingsService.instance.ps1Dithering();
+    final smooth      = await SettingsService.instance.ps1NeonEnhancement();
+    final hiRes       = await SettingsService.instance.ps1EnhanceResolution();
+    final frameskip   = await SettingsService.instance.ps1FrameskipType();
+    final aspect      = await SettingsService.instance.ps1Aspect();
+    final fpsShow     = await SettingsService.instance.ps1FpsShow();
+    final audioVol    = await SettingsService.instance.ps1AudioVolume();
+    final core        = await SettingsService.instance.ps1CorePath();
     if (!mounted) return;
     setState(() {
-      _upscaleIdx      = _upscaleOptions.indexOf(upscale).clamp(0, _upscaleOptions.length - 1);
-      _presentationIdx = _presentationOptions.indexOf(presentation).clamp(0, _presentationOptions.length - 1);
-      _bilinearIdx     = _bilinearOptions.indexOf(bilinear).clamp(0, _bilinearOptions.length - 1);
-      _fpsShowIdx      = _fpsShowOptions.indexOf(fpsShow).clamp(0, _fpsShowOptions.length - 1);
-      _audioVolumeIdx  = _audioVolumeOptions.indexOf(audioVol).clamp(0, _audioVolumeOptions.length - 1);
-      _corePath        = core;
-      _coreExists      = File(core).existsSync();
-      _loading         = false;
+      _ditheringIdx   = _ditheringOptions.indexOf(dithering).clamp(0, _ditheringOptions.length - 1);
+      _smoothIdx      = _smoothOptions.indexOf(smooth).clamp(0, _smoothOptions.length - 1);
+      _hiResIdx       = _hiResOptions.indexOf(hiRes).clamp(0, _hiResOptions.length - 1);
+      _frameskipIdx   = _frameskipOptions.indexOf(frameskip).clamp(0, _frameskipOptions.length - 1);
+      _aspectIdx      = _aspectOptions.indexOf(aspect).clamp(0, _aspectOptions.length - 1);
+      _fpsShowIdx     = _fpsShowOptions.indexOf(fpsShow).clamp(0, _fpsShowOptions.length - 1);
+      _audioVolumeIdx = _audioVolumeOptions.indexOf(audioVol).clamp(0, _audioVolumeOptions.length - 1);
+      _corePath       = core;
+      _coreExists     = File(core).existsSync();
+      _loading        = false;
     });
   }
 
@@ -74,17 +82,17 @@ class _Playstation2SettingsPageState extends State<Playstation2SettingsPage> {
     if (ModalRoute.of(context)?.isCurrent != true) return;
     switch (action) {
       case GamepadAction.up:
-        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, 5));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, 7));
         _scrollToSelected();
       case GamepadAction.down:
-        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, 5));
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, 7));
         _scrollToSelected();
       case GamepadAction.left:
         _cycleValue(-1);
       case GamepadAction.right:
         _cycleValue(1);
       case GamepadAction.confirm:
-        if (_selectedIndex == 5) _resetAll();
+        if (_selectedIndex == 7) _resetAll();
       case GamepadAction.back:
         Navigator.pop(context);
       default:
@@ -95,30 +103,40 @@ class _Playstation2SettingsPageState extends State<Playstation2SettingsPage> {
   void _cycleValue(int dir) {
     switch (_selectedIndex) {
       case 0:
-        final next = (_upscaleIdx + dir).clamp(0, _upscaleOptions.length - 1);
-        if (next == _upscaleIdx) return;
-        setState(() => _upscaleIdx = next);
-        SettingsService.instance.setPs2UpscaleMultiplier(_upscaleOptions[next]);
+        final next = (_ditheringIdx + dir).clamp(0, _ditheringOptions.length - 1);
+        if (next == _ditheringIdx) return;
+        setState(() => _ditheringIdx = next);
+        SettingsService.instance.setPs1Dithering(_ditheringOptions[next]);
       case 1:
-        final next = (_presentationIdx + dir).clamp(0, _presentationOptions.length - 1);
-        if (next == _presentationIdx) return;
-        setState(() => _presentationIdx = next);
-        SettingsService.instance.setPs2PresentationMode(_presentationOptions[next]);
+        final next = (_smoothIdx + dir).clamp(0, _smoothOptions.length - 1);
+        if (next == _smoothIdx) return;
+        setState(() => _smoothIdx = next);
+        SettingsService.instance.setPs1NeonEnhancement(_smoothOptions[next]);
       case 2:
-        final next = (_bilinearIdx + dir).clamp(0, _bilinearOptions.length - 1);
-        if (next == _bilinearIdx) return;
-        setState(() => _bilinearIdx = next);
-        SettingsService.instance.setPs2BilinearFiltering(_bilinearOptions[next]);
+        final next = (_hiResIdx + dir).clamp(0, _hiResOptions.length - 1);
+        if (next == _hiResIdx) return;
+        setState(() => _hiResIdx = next);
+        SettingsService.instance.setPs1EnhanceResolution(_hiResOptions[next]);
       case 3:
+        final next = (_frameskipIdx + dir).clamp(0, _frameskipOptions.length - 1);
+        if (next == _frameskipIdx) return;
+        setState(() => _frameskipIdx = next);
+        SettingsService.instance.setPs1FrameskipType(_frameskipOptions[next]);
+      case 4:
+        final next = (_aspectIdx + dir).clamp(0, _aspectOptions.length - 1);
+        if (next == _aspectIdx) return;
+        setState(() => _aspectIdx = next);
+        SettingsService.instance.setPs1Aspect(_aspectOptions[next]);
+      case 5:
         final next = (_fpsShowIdx + dir).clamp(0, _fpsShowOptions.length - 1);
         if (next == _fpsShowIdx) return;
         setState(() => _fpsShowIdx = next);
-        SettingsService.instance.setPs2FpsShow(_fpsShowOptions[next]);
-      case 4:
+        SettingsService.instance.setPs1FpsShow(_fpsShowOptions[next]);
+      case 6:
         final next = (_audioVolumeIdx + dir).clamp(0, _audioVolumeOptions.length - 1);
         if (next == _audioVolumeIdx) return;
         setState(() => _audioVolumeIdx = next);
-        SettingsService.instance.setPs2AudioVolume(_audioVolumeOptions[next]);
+        SettingsService.instance.setPs1AudioVolume(_audioVolumeOptions[next]);
     }
   }
 
@@ -134,8 +152,8 @@ class _Playstation2SettingsPageState extends State<Playstation2SettingsPage> {
   }
 
   Future<void> _resetAll() async {
-    await SettingsService.instance.resetPs2();
-    DebugLogger.log('[Playstation2SettingsPage] settings reset to defaults');
+    await SettingsService.instance.resetPs1();
+    DebugLogger.log('[Playstation1SettingsPage] settings reset to defaults');
     await _load();
   }
 
@@ -150,7 +168,7 @@ class _Playstation2SettingsPageState extends State<Playstation2SettingsPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(80, 80, 80, 48),
             child: Text(
-              l.playstation2SettingsTitle,
+              l.playstation1SettingsTitle,
               style: const TextStyle(color: Colors.white54, fontSize: 16, letterSpacing: 5),
             ),
           ),
@@ -165,54 +183,76 @@ class _Playstation2SettingsPageState extends State<Playstation2SettingsPage> {
                   KeyedSubtree(
                     key: _rowKeys[0],
                     child: _OptionRow(
-                      icon: Icons.tv,
-                      label: l.ps2UpscaleMultiplier,
-                      value: l.ps2UpscaleLabels[_upscaleIdx],
+                      icon: Icons.grain,
+                      label: l.ps1Dithering,
+                      value: l.ps1DitheringLabels[_ditheringIdx],
                       selected: _selectedIndex == 0,
-                      canLeft:  _upscaleIdx > 0,
-                      canRight: _upscaleIdx < _upscaleOptions.length - 1,
+                      canLeft:  _ditheringIdx > 0,
+                      canRight: _ditheringIdx < _ditheringOptions.length - 1,
                     ),
                   ),
                   KeyedSubtree(
                     key: _rowKeys[1],
                     child: _OptionRow(
-                      icon: Icons.aspect_ratio,
-                      label: l.ps2PresentationMode,
-                      value: l.ps2PresentationLabels[_presentationIdx],
+                      icon: Icons.auto_fix_high,
+                      label: l.ps1SmoothSprites,
+                      value: l.ps1SmoothLabels[_smoothIdx],
                       selected: _selectedIndex == 1,
-                      canLeft:  _presentationIdx > 0,
-                      canRight: _presentationIdx < _presentationOptions.length - 1,
+                      canLeft:  _smoothIdx > 0,
+                      canRight: _smoothIdx < _smoothOptions.length - 1,
                     ),
                   ),
                   KeyedSubtree(
                     key: _rowKeys[2],
                     child: _OptionRow(
-                      icon: Icons.texture,
-                      label: l.ps2BilinearFilter,
-                      value: l.ps2BilinearLabels[_bilinearIdx],
+                      icon: Icons.hd,
+                      label: l.ps1HiResSprites,
+                      value: l.ps1HiResLabels[_hiResIdx],
                       selected: _selectedIndex == 2,
-                      canLeft:  _bilinearIdx > 0,
-                      canRight: _bilinearIdx < _bilinearOptions.length - 1,
+                      canLeft:  _hiResIdx > 0,
+                      canRight: _hiResIdx < _hiResOptions.length - 1,
                     ),
                   ),
                   KeyedSubtree(
                     key: _rowKeys[3],
                     child: _OptionRow(
-                      icon: Icons.query_stats,
-                      label: l.showFps,
-                      value: l.fpsShowLabels[_fpsShowIdx],
+                      icon: Icons.skip_next,
+                      label: l.ps1Frameskip,
+                      value: l.ps1FrameskipLabels[_frameskipIdx],
                       selected: _selectedIndex == 3,
-                      canLeft:  _fpsShowIdx > 0,
-                      canRight: _fpsShowIdx < _fpsShowOptions.length - 1,
+                      canLeft:  _frameskipIdx > 0,
+                      canRight: _frameskipIdx < _frameskipOptions.length - 1,
                     ),
                   ),
                   KeyedSubtree(
                     key: _rowKeys[4],
                     child: _OptionRow(
+                      icon: Icons.aspect_ratio,
+                      label: l.aspectRatio,
+                      value: l.ps1AspectLabels[_aspectIdx],
+                      selected: _selectedIndex == 4,
+                      canLeft:  _aspectIdx > 0,
+                      canRight: _aspectIdx < _aspectOptions.length - 1,
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: _rowKeys[5],
+                    child: _OptionRow(
+                      icon: Icons.query_stats,
+                      label: l.showFps,
+                      value: l.fpsShowLabels[_fpsShowIdx],
+                      selected: _selectedIndex == 5,
+                      canLeft:  _fpsShowIdx > 0,
+                      canRight: _fpsShowIdx < _fpsShowOptions.length - 1,
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: _rowKeys[6],
+                    child: _OptionRow(
                       icon: Icons.volume_up,
                       label: l.audioGain,
                       value: l.audioGainValue(_audioVolumeOptions[_audioVolumeIdx]),
-                      selected: _selectedIndex == 4,
+                      selected: _selectedIndex == 6,
                       canLeft:  _audioVolumeIdx > 0,
                       canRight: _audioVolumeIdx < _audioVolumeOptions.length - 1,
                     ),
@@ -224,11 +264,11 @@ class _Playstation2SettingsPageState extends State<Playstation2SettingsPage> {
                     exists: _coreExists,
                   ),
                   KeyedSubtree(
-                    key: _rowKeys[5],
+                    key: _rowKeys[7],
                     child: _ActionRow(
                       icon: Icons.restore,
                       label: l.restoreDefaults,
-                      selected: _selectedIndex == 5,
+                      selected: _selectedIndex == 7,
                     ),
                   ),
                 ],

@@ -71,6 +71,7 @@ class AppLocalizations {
   // Settings menu entries
   String get settingsNintendo64   => _pick('Nintendo 64 Settings', 'Configurações: Nintendo 64');
   String get settingsPlaystation2 => _pick('PlayStation 2 Settings', 'Configurações: PlayStation 2');
+  String get settingsPlaystation1 => _pick('PlayStation 1 Settings', 'Configurações: PlayStation 1');
   String get aboutSystem        => _pick('About System', 'Sobre o sistema');
   String get shutdown           => _pick('Shutdown', 'Desligar');
 
@@ -186,25 +187,31 @@ class AppLocalizations {
 
   String get nintendo64Title    => 'NINTENDO 64';
   String get playstation2Title  => 'PLAYSTATION 2';
+  String get playstation1Title  => 'PLAYSTATION 1';
 
   // ── Playstation 2 Settings Page ───────────────────────────────────────────
 
   String get playstation2SettingsTitle  => _pick('PLAYSTATION 2 — SETTINGS', 'PLAYSTATION 2 — CONFIGURAÇÕES');
   String get ps2UpscaleMultiplier       => _pick('Upscale Multiplier', 'Multiplicador de Escala');
-  String get ps2BilinearFilter          => _pick('Texture Filter', 'Filtro de Textura');
-  String get ps2Fxaa                    => 'FXAA (Anti-Aliasing)';
-  String get ps2Renderer                => _pick('Renderer', 'Renderizador');
-  String get ps2BlendingAccuracy        => _pick('Blending Accuracy', 'Precisão de Blending');
+  String get ps2PresentationMode        => _pick('Presentation Mode', 'Modo de Apresentação');
+  String get ps2BilinearFilter          => _pick('Bilinear Filtering', 'Filtro Bilinear');
 
-  List<String> get ps2AspectLabels =>
-      ['4:3', '16:9', _pick('Fill Screen', 'Preencher Tela')];
-  List<String> get ps2UpscaleLabels =>
-      [_pick('Native (1x)', 'Nativo (1x)'), '2x', '3x', '4x', '6x', '8x'];
-  List<String> get ps2BilinearLabels =>
-      [_pick('Nearest (pixelated)', 'Nearest (pixelado)'), _pick('Bilinear (PS2)', 'Bilinear (PS2)'), _pick('Bilinear (Forced)', 'Bilinear (Forçado)')];
-  List<String> get ps2FxaaLabels        => [off, on];
-  List<String> get ps2RendererLabels    => ['Auto', 'OpenGL', 'Vulkan', 'Software'];
-  List<String> get ps2BlendingLabels    => ['Minimum', 'Basic', 'Medium', 'High', 'Full', 'Ultra'];
+  List<String> get ps2UpscaleLabels       => ['1x', '2x', '4x', '8x'];
+  List<String> get ps2PresentationLabels  =>
+      [_pick('Fit Screen', 'Ajustar Tela'), _pick('Fill Screen', 'Preencher Tela'), _pick('Original Size', 'Tamanho Original')];
+  List<String> get ps2BilinearLabels      => [off, on];
+
+  // ── Playstation 1 Settings Page ───────────────────────────────────────────
+  String get playstation1SettingsTitle => _pick('PLAYSTATION 1 — SETTINGS', 'PLAYSTATION 1 — CONFIGURAÇÕES');
+  String get ps1Dithering              => 'Dithering';
+  String get ps1SmoothSprites          => _pick('Smooth Sprites', 'Sprites Suavizados');
+  String get ps1HiResSprites           => _pick('Hi-Res Sprites', 'Sprites em Alta Resolução');
+  String get ps1Frameskip              => 'Frameskip';
+  List<String> get ps1DitheringLabels  => [on, off];
+  List<String> get ps1SmoothLabels     => [off, on];
+  List<String> get ps1HiResLabels      => [off, on];
+  List<String> get ps1FrameskipLabels  => [_pick('Disabled', 'Desativado'), 'Auto'];
+  List<String> get ps1AspectLabels     => ['4:3', _pick('Fill Screen', 'Preencher Tela')];
 
   // ── Game Open ─────────────────────────────────────────────────────────────
 

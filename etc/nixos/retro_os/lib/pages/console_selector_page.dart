@@ -8,6 +8,7 @@ import '../utils/app_localizations.dart';
 import '../utils/sound.dart';
 import '../widgets/console_image.dart';
 import 'nintendo64_games_page.dart';
+import 'playstation1_games_page.dart';
 import 'playstation2_games_page.dart';
 
 class ConsoleSelectorPage extends StatefulWidget {
@@ -72,6 +73,8 @@ class _ConsoleSelectorPageState extends State<ConsoleSelectorPage> {
     switch (console) {
       case 'Nintendo 64':
         Navigator.push(context, MaterialPageRoute(builder: (_) => const Nintendo64GamesPage()));
+      case 'Playstation 1':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const Playstation1GamesPage()));
       case 'Playstation 2':
         Navigator.push(context, MaterialPageRoute(builder: (_) => const Playstation2GamesPage()));
     }

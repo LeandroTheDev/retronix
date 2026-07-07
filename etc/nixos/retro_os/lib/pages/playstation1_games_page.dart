@@ -1,0 +1,209 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import '../services/gamepad_service.dart';
+import '../utils/debug_logger.dart';
+import '../utils/devices.dart';
+import '../utils/app_localizations.dart';
+import '../utils/app_menu.dart';
+import '../utils/snackbar.dart';
+import '../utils/sound.dart';
+import '../widgets/console_image.dart';
+import 'playstation1_game_details_page.dart';
+
+class Playstation1GamesPage extends StatefulWidget {
+  const Playstation1GamesPage({super.key});
+
+  @override
+  State<Playstation1GamesPage> createState() => _Playstation1GamesPageState();
+}
+
+class _Playstation1GamesPageState extends State<Playstation1GamesPage> {
+  List<String> _games = [];
+  int _selectedIndex = 0;
+  bool _loading = true;
+  late final StreamSubscription<GamepadAction> _sub;
+  final _scrollController = ScrollController();
+
+  static const _itemHeight = 88.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _sub = GamepadService.instance.actions.listen(_handleAction);
+    _loadGames();
+  }
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadGames() async {
+    final games = await getAvailableGames('Playstation 1');
+    if (!mounted) return;
+    setState(() {
+      _games = games;
+      _loading = false;
+    });
+  }
+
+  void _handleAction(GamepadAction action) {
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    // DebugLogger.log('[Playstation1GamesPage] action: $action | loading: $_loading | games: ${_games.length}');
+    if (action == GamepadAction.back) {
+      DebugLogger.log('[Playstation1GamesPage] popping');
+      Navigator.pop(context);
+      return;
+    }
+    if (action == GamepadAction.start) {
+      showAppSettingsDialog(context);
+      return;
+    }
+    if (_games.isEmpty) return;
+    switch (action) {
+      case GamepadAction.up:
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, -1, _games.length - 1));
+        _scrollToSelected();
+      case GamepadAction.down:
+        setState(() => _selectedIndex = navigateIndex(_selectedIndex, 1, _games.length - 1));
+        _scrollToSelected();
+      case GamepadAction.confirm:
+        _openGameDetails();
+      default:
+        break;
+    }
+  }
+
+  void _scrollToSelected() {
+    final offset = (_selectedIndex * _itemHeight) -
+        (_scrollController.position.viewportDimension / 2) +
+        (_itemHeight / 2);
+    _scrollController.animateTo(
+      offset.clamp(0.0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+    );
+  }
+
+  Future<void> _openGameDetails() async {
+    final game = _games[_selectedIndex];
+    final error = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => Playstation1GameDetailsPage(gameName: game)),
+    );
+    if (error != null && mounted) {
+      showErrorSnackBar(context, error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 80, bottom: 48),
+            child: Text(
+              l.playstation1Title,
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 18,
+                letterSpacing: 6,
+              ),
+            ),
+          ),
+          Expanded(child: _buildBody(l)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody(AppLocalizations l) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
+    }
+    if (_games.isEmpty) {
+      return Center(
+        child: Text(
+          l.noGameFound,
+          style: const TextStyle(color: Colors.white30, fontSize: 16),
+        ),
+      );
+    }
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: _games.length,
+      itemExtent: _itemHeight,
+      itemBuilder: (context, index) => _GameItem(
+        console: 'Playstation 1',
+        name: _games[index],
+        selected: index == _selectedIndex,
+      ),
+    );
+  }
+}
+
+class _GameItem extends StatelessWidget {
+  const _GameItem({
+    required this.console,
+    required this.name,
+    required this.selected,
+  });
+
+  final String console;
+  final String name;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final imagePath = getGameImagePath(console, name);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      margin: const EdgeInsets.symmetric(horizontal: 80, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: selected ? Colors.white : Colors.white10,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: ConsoleImage(
+              path: imagePath,
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
+              placeholder: Container(
+                width: 56,
+                height: 56,
+                color: selected ? Colors.black12 : Colors.white10,
+                child: Icon(
+                  Icons.videogame_asset,
+                  color: selected ? Colors.black38 : Colors.white30,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Text(
+              name,
+              style: TextStyle(
+                color: selected ? Colors.black : Colors.white,
+                fontSize: 20,
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
