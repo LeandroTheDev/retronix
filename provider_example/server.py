@@ -23,7 +23,7 @@ BIOS_EXTS = {".bin", ".mec", ".nvm"}
 
 # Maps console folder name → RetroArch system subdirectory for BIOS files
 BIOS_DEST_MAP = {
-    "Playstation 2": "PCSX2/bios",
+    "Playstation 2": "pcsx2/bios",
 }
 
 
