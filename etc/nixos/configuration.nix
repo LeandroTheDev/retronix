@@ -70,14 +70,24 @@
     };
   };
 
-  # bwrap setuid — needed because the Pi kernel disables unprivileged user
-  # namespaces, so umu-launcher/Proton cannot sandbox itself otherwise.
-  security.wrappers.bwrap = {
-    source = "${pkgs.bubblewrap}/bin/bwrap";
-    owner  = "root";
-    group  = "root";
-    setuid = true;
-  };
+  # bwrap setuid — the Pi kernel does not support unprivileged user namespaces,
+  # so bwrap must run via setuid instead.  The stock nixpkgs bubblewrap is
+  # built with -Drequire-userns=enabled which explicitly refuses setuid; we
+  # rebuild it with that flag disabled so the setuid path is compiled in.
+  security.wrappers.bwrap =
+    let
+      bwrap-suid = pkgs.bubblewrap.overrideAttrs (old: {
+        mesonFlags =
+          builtins.filter (f: !(lib.hasPrefix "-Drequire-userns" f))
+            (old.mesonFlags or [])
+          ++ [ "-Drequire-userns=disabled" ];
+      });
+    in {
+      source = "${bwrap-suid}/bin/bwrap";
+      owner  = "root";
+      group  = "root";
+      setuid = true;
+    };
 
   # Goodies for administrators (no passwords)
   security.sudo.wheelNeedsPassword = false;
