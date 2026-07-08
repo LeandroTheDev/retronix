@@ -4,6 +4,17 @@ let
   pkgs-x86 = import pkgs.path {
     system = "x86_64-linux";
     config = pkgs.config;
+    # Replace x86_64 bwrap with a shell script that delegates to the native
+    # ARM setuid bwrap (/run/wrappers/bin/bwrap).  The Pi kernel does not
+    # support unprivileged user namespaces, so the x86_64 bwrap (running
+    # under box64 emulation) can never acquire the privileges it needs.
+    # box64 cannot exec a shell script as x86_64 ELF, falls back to native
+    # ARM exec — which is exactly what we want so the setuid bit takes effect.
+    overlays = [(self: super: {
+      bubblewrap = pkgs.writeShellScriptBin "bwrap" ''
+        exec /run/wrappers/bin/bwrap "$@"
+      '';
+    })];
   };
 in
 {
