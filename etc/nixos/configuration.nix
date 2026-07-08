@@ -70,24 +70,11 @@
     };
   };
 
-  # bwrap setuid — the Pi kernel does not support unprivileged user namespaces,
-  # so bwrap must run via setuid instead.  The stock nixpkgs bubblewrap is
-  # built with -Drequire-userns=enabled which explicitly refuses setuid; we
-  # rebuild it with that flag disabled so the setuid path is compiled in.
-  security.wrappers.bwrap =
-    let
-      bwrap-suid = pkgs.bubblewrap.overrideAttrs (old: {
-        mesonFlags =
-          builtins.filter (f: !(lib.hasPrefix "-Drequire-userns" f))
-            (old.mesonFlags or [])
-          ++ [ "-Drequire-userns=disabled" ];
-      });
-    in {
-      source = "${bwrap-suid}/bin/bwrap";
-      owner  = "root";
-      group  = "root";
-      setuid = true;
-    };
+  # bwrap / pressure-vessel (used by umu-launcher + Proton) requires the
+  # ability to create user namespaces.  On standard kernels this sysctl
+  # controls the per-user limit; 0 disables them for unprivileged users.
+  security.unprivilegedUsernsClone = true;
+  boot.kernel.sysctl."user.max_user_namespaces" = 15000;
 
   # Goodies for administrators (no passwords)
   security.sudo.wheelNeedsPassword = false;
